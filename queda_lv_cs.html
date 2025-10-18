@@ -1,0 +1,864 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<title>Queda Livre - Simulação Dinâmica</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  body {
+    margin: 0;
+    font-family: system-ui, Segoe UI, Roboto, Arial;
+    background: #071026;
+    color: #e6eef8;
+    overflow-x: hidden;
+  }
+  
+  header {
+    padding: 12px 15px;
+    background: #061226;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  h1 {
+    font-size: clamp(16px, 4vw, 18px);
+    margin: 0;
+  }
+  
+  .small {
+    font-size: clamp(11px, 2.5vw, 13px);
+    color: #bcd6ff;
+  }
+  
+  #controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 12px 15px;
+    background: #041224;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .control-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: clamp(11px, 2.5vw, 13px);
+    color: #bcd6ff;
+    white-space: nowrap;
+  }
+  
+  input, select, button {
+    background: #0b3b5a;
+    color: #e6eef8;
+    border: 1px solid #1d5676;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: clamp(12px, 2.5vw, 14px);
+    min-height: 36px;
+    transition: all 0.2s;
+  }
+  
+  input[type=number] {
+    width: 80px;
+    text-align: center;
+  }
+  
+  input:focus, button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(79, 195, 247, 0.5);
+  }
+  
+  button {
+    cursor: pointer;
+    min-width: 90px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  button:hover {
+    background: #0d4a6e;
+    transform: translateY(-2px);
+  }
+  
+  button:active {
+    transform: translateY(0);
+  }
+  
+  .toggle {
+    background: #0b3b5a;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid #1d5676;
+    color: #e6eef8;
+    min-width: 180px;
+  }
+  
+  .on {
+    background: #1e7a3a;
+  }
+  
+  .canvas-container {
+    width: 100%;
+    height: calc(100vh - 180px);
+    min-height: 300px;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(#082033, #04121b);
+  }
+  
+  .stats {
+    margin-left: 8px;
+    font-size: clamp(12px, 2.5vw, 13px);
+    color: #cfe8ff;
+  }
+  
+  .touch-hint {
+    display: none;
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 10;
+  }
+  
+  .impact-time {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.7);
+    color: #ffd66b;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  
+  .impact-time.show {
+    opacity: 1;
+  }
+  
+  .trail {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0.7;
+  }
+  
+  .particle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0.8;
+  }
+  
+  @media (max-width: 768px) {
+    header {
+      padding: 10px 12px;
+    }
+    
+    #controls {
+      padding: 10px 12px;
+      gap: 8px;
+    }
+    
+    .control-group {
+      gap: 6px;
+    }
+    
+    input[type=number] {
+      width: 70px;
+    }
+    
+    button {
+      min-width: 80px;
+      padding: 6px 8px;
+    }
+    
+    .toggle {
+      min-width: 160px;
+    }
+    
+    .touch-hint {
+      display: block;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .canvas-container {
+      height: calc(100vh - 220px);
+    }
+    
+    input[type=number] {
+      width: 60px;
+    }
+    
+    button {
+      min-width: 70px;
+      padding: 5px 7px;
+    }
+    
+    .toggle {
+      min-width: 140px;
+      font-size: 12px;
+    }
+    
+    #controls {
+      gap: 6px;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    #controls {
+      justify-content: space-between;
+    }
+    
+    .control-group {
+      justify-content: flex-start;
+    }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Queda Livre — Simulação Dinâmica</h1>
+  <div class="small">Arraste para ajustar parâmetros • Toque na tela para pausar/continuar</div>
+</header>
+
+<div id="controls">
+  <div class="control-group">
+    <label class="small">Altura (m): <input id="h0" type="number" value="100" step="1"></label>
+    <label class="small">Massa (kg): <input id="mass" type="number" value="1" step="0.1"></label>
+    <label class="small">Área (m²): <input id="area" type="number" value="0.03" step="0.01"></label>
+  </div>
+  
+  <div class="control-group">
+    <label class="small">Cd: <input id="cd" type="number" value="0.47" step="0.01"></label>
+    <label class="small">ρ ar: <input id="rho" type="number" value="1.225" step="0.01"></label>
+    <label class="small">g: <input id="g" type="number" value="9.81" step="0.01"></label>
+  </div>
+  
+  <div class="control-group">
+    <button id="startBtn">▶ Iniciar</button>
+    <button id="pauseBtn">⏸ Pausar</button>
+    <button id="resetBtn">⏹ Reset</button>
+  </div>
+  
+  <div class="control-group">
+    <label class="small">Tempo alvo (s): <input id="tTarget" type="number" value="2" step="0.01"></label>
+    <button id="autoPauseBtn" class="toggle">Pausar ao alcançar: OFF</button>
+    <button id="gotoBtn">⏩ Ir para t</button>
+    <button id="analyticJumpBtn">⚡ Ajustar ideal</button>
+  </div>
+  
+  <div class="stats">
+    <div class="small">t: <span id="tDisplay">0.00</span> s</div>
+  </div>
+</div>
+
+<div class="canvas-container">
+  <canvas id="c"></canvas>
+  <div class="touch-hint">Toque na tela para pausar/continuar</div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  
+  // Configuração responsiva do canvas
+  function setupCanvas() {
+    const container = canvas.parentElement;
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+    
+    // Para alta resolução em dispositivos com pixel ratio alto
+    const dpr = window.devicePixelRatio || 1;
+    canvas.style.width = containerWidth + 'px';
+    canvas.style.height = containerHeight + 'px';
+    canvas.width = containerWidth * dpr;
+    canvas.height = containerHeight * dpr;
+    ctx.scale(dpr, dpr);
+    
+    return { width: containerWidth, height: containerHeight };
+  }
+  
+  let canvasSize = setupCanvas();
+  
+  // UI elements
+  const h0El = document.getElementById('h0');
+  const massEl = document.getElementById('mass');
+  const areaEl = document.getElementById('area');
+  const cdEl = document.getElementById('cd');
+  const rhoEl = document.getElementById('rho');
+  const gEl = document.getElementById('g');
+  const startBtn = document.getElementById('startBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const tTargetEl = document.getElementById('tTarget');
+  const autoPauseBtn = document.getElementById('autoPauseBtn');
+  const gotoBtn = document.getElementById('gotoBtn');
+  const analyticJumpBtn = document.getElementById('analyticJumpBtn');
+  const tDisplay = document.getElementById('tDisplay');
+
+  // simulation state
+  let sim = {
+    running: false,
+    t: 0,
+    dt: 0.016,
+    last: performance.now(),
+    ideal: { y: 0, v: 0, impactTime: null, trails: [], particles: [] },
+    drag: { y: 0, v: 0, impactTime: null, trails: [], particles: [] },
+    params: {}
+  };
+
+  // auto-pause flag and target
+  let autoPause = false;
+  function updateAutoPauseUI() {
+    autoPauseBtn.classList.toggle('on', autoPause);
+    autoPauseBtn.textContent = 'Pausar ao alcançar: ' + (autoPause ? 'ON' : 'OFF');
+  }
+  
+  autoPauseBtn.addEventListener('click', () => {
+    autoPause = !autoPause;
+    updateAutoPauseUI();
+  });
+  
+  updateAutoPauseUI();
+
+  function applyParams() {
+    const h0 = parseFloat(h0El.value);
+    sim.params.h0 = Math.max(0, isFinite(h0) ? h0 : 100);
+    sim.params.mass = Math.max(0.001, parseFloat(massEl.value));
+    sim.params.area = Math.max(0, parseFloat(areaEl.value));
+    sim.params.cd = Math.max(0, parseFloat(cdEl.value));
+    sim.params.rho = Math.max(0, parseFloat(rhoEl.value));
+    sim.params.g = parseFloat(gEl.value);
+  }
+
+  function resetState() {
+    applyParams();
+    sim.t = 0;
+    sim.ideal.y = sim.params.h0;
+    sim.ideal.v = 0;
+    sim.ideal.impactTime = null;
+    sim.ideal.trails = [];
+    sim.ideal.particles = [];
+    
+    sim.drag.y = sim.params.h0;
+    sim.drag.v = 0;
+    sim.drag.impactTime = null;
+    sim.drag.trails = [];
+    sim.drag.particles = [];
+    
+    sim.running = false;
+    tDisplay.textContent = sim.t.toFixed(2);
+    draw();
+  }
+
+  // drag (quadratic) - Física melhorada
+  function dragForce(v, p) {
+    if (v === 0) return 0;
+    const s = 0.5 * p.rho * p.cd * p.area * v * Math.abs(v);
+    return -s;
+  }
+
+  // integrator semi-implicit e subdivisão
+  function step(dt) {
+    sim.t += dt;
+    const p = sim.params;
+    
+    // Ideal - sem arrasto
+    if (sim.ideal.y > 0) {
+      sim.ideal.v += -p.g * dt;
+      sim.ideal.y += sim.ideal.v * dt;
+      
+      // Adicionar rastro
+      if (sim.t % 0.05 < dt) {
+        sim.ideal.trails.push({
+          x: canvasSize.width * 0.33,
+          y: toCanvasY(sim.ideal.y),
+          life: 1.0
+        });
+      }
+      
+      if (sim.ideal.y <= 0) {
+        sim.ideal.y = 0;
+        sim.ideal.v = 0;
+        sim.ideal.impactTime = sim.t;
+        createImpactEffect(sim.ideal, canvasSize.width * 0.33);
+      }
+    }
+
+    // Drag - com arrasto (integração melhorada)
+    if (sim.drag.y > 0) {
+      const Fd = dragForce(sim.drag.v, p);
+      const a = -p.g + Fd / p.mass;
+      sim.drag.v += a * dt;
+      sim.drag.y += sim.drag.v * dt;
+      
+      // Adicionar rastro
+      if (sim.t % 0.05 < dt) {
+        sim.drag.trails.push({
+          x: canvasSize.width * 0.66,
+          y: toCanvasY(sim.drag.y),
+          life: 1.0
+        });
+      }
+      
+      if (sim.drag.y <= 0) {
+        sim.drag.y = 0;
+        sim.drag.v = 0;
+        sim.drag.impactTime = sim.t;
+        createImpactEffect(sim.drag, canvasSize.width * 0.66);
+      }
+    }
+  }
+
+  // Converter coordenada Y do mundo para coordenada do canvas
+  function toCanvasY(worldY) {
+    const margin = Math.max(20, canvasSize.width / 30);
+    const hMax = Math.max(sim.params.h0, 1);
+    return margin + (canvasSize.height - margin * 2) * (1 - Math.min(worldY, hMax) / hMax);
+  }
+
+  // Criar efeito de impacto
+  function createImpactEffect(obj, x) {
+    const groundY = toCanvasY(0);
+    
+    // Criar partículas
+    for (let i = 0; i < 15; i++) {
+      obj.particles.push({
+        x: x,
+        y: groundY,
+        vx: (Math.random() - 0.5) * 8,
+        vy: -Math.random() * 10,
+        life: 1.0,
+        color: obj === sim.ideal ? '#6fb8ff' : '#ffd66b'
+      });
+    }
+    
+    // Criar elemento de tempo de impacto
+    const impactTimeEl = document.createElement('div');
+    impactTimeEl.className = 'impact-time show';
+    impactTimeEl.textContent = `t = ${obj.impactTime.toFixed(2)}s`;
+    impactTimeEl.style.left = `${x - 30}px`;
+    impactTimeEl.style.top = `${groundY - 40}px`;
+    document.querySelector('.canvas-container').appendChild(impactTimeEl);
+    
+    // Remover após 3 segundos
+    setTimeout(() => {
+      impactTimeEl.classList.remove('show');
+      setTimeout(() => {
+        if (impactTimeEl.parentNode) {
+          impactTimeEl.parentNode.removeChild(impactTimeEl);
+        }
+      }, 300);
+    }, 3000);
+  }
+
+  // Atualizar partículas e rastros
+  function updateEffects(obj, dt) {
+    // Atualizar rastros
+    for (let i = obj.trails.length - 1; i >= 0; i--) {
+      obj.trails[i].life -= dt * 0.5;
+      if (obj.trails[i].life <= 0) {
+        obj.trails.splice(i, 1);
+      }
+    }
+    
+    // Atualizar partículas
+    for (let i = obj.particles.length - 1; i >= 0; i--) {
+      const p = obj.particles[i];
+      p.vy += 0.5; // gravidade
+      p.x += p.vx;
+      p.y += p.vy;
+      p.life -= dt * 2;
+      
+      if (p.life <= 0) {
+        obj.particles.splice(i, 1);
+      }
+    }
+  }
+
+  // draw
+  function draw() {
+    // Redimensionar canvas se necessário
+    canvasSize = setupCanvas();
+    const W = canvasSize.width;
+    const H = canvasSize.height;
+    
+    ctx.clearRect(0, 0, W, H);
+    
+    // Fundo com gradiente
+    const gradient = ctx.createLinearGradient(0, 0, 0, H);
+    gradient.addColorStop(0, '#082033');
+    gradient.addColorStop(1, '#04121b');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, W, H);
+    
+    // Grade de referência
+    ctx.strokeStyle = 'rgba(29, 86, 118, 0.3)';
+    ctx.lineWidth = 1;
+    
+    const gridSize = Math.max(20, W / 30);
+    for (let x = gridSize; x < W; x += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, H);
+      ctx.stroke();
+    }
+    
+    for (let y = gridSize; y < H; y += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W, y);
+      ctx.stroke();
+    }
+    
+    const margin = Math.max(20, W / 30);
+    const hMax = Math.max(sim.params.h0, 1);
+    
+    // ground
+    ctx.fillStyle = '#092231';
+    ctx.fillRect(0, H - 20, W, 20);
+    
+    // ground line
+    ctx.strokeStyle = '#0fa3ff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, toCanvasY(0));
+    ctx.lineTo(W, toCanvasY(0));
+    ctx.stroke();
+
+    const xI = W * 0.33;
+    const xD = W * 0.66;
+    
+    // Desenhar rastros
+    drawTrails(sim.ideal, '#6fb8ff');
+    drawTrails(sim.drag, '#ffd66b');
+    
+    // Desenhar partículas
+    drawParticles(sim.ideal);
+    drawParticles(sim.drag);
+    
+    // Draw objects
+    const objRadius = Math.max(8, W / 50);
+    
+    // Efeito de brilho para objetos em movimento
+    if (sim.ideal.y > 0) {
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba(111, 184, 255, 0.3)';
+      ctx.arc(xI, toCanvasY(sim.ideal.y), objRadius * 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    if (sim.drag.y > 0) {
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba(255, 214, 107, 0.3)';
+      ctx.arc(xD, toCanvasY(sim.drag.y), objRadius * 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    // Ideal object
+    ctx.beginPath();
+    ctx.fillStyle = '#6fb8ff';
+    ctx.arc(xI, toCanvasY(sim.ideal.y), objRadius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Drag object
+    ctx.beginPath();
+    ctx.fillStyle = '#ffd66b';
+    ctx.arc(xD, toCanvasY(sim.drag.y), objRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Labels
+    ctx.fillStyle = '#cfe8ff';
+    const fontSize = Math.max(12, W / 40);
+    ctx.font = `bold ${fontSize}px system-ui, Segoe UI, Roboto, Arial`;
+    ctx.textAlign = 'center';
+    ctx.fillText('Sem arrasto', xI, 20);
+    ctx.fillText('Com arrasto', xD, 20);
+
+    // Stats
+    ctx.textAlign = 'left';
+    const statFontSize = Math.max(10, W / 50);
+    ctx.font = `${statFontSize}px system-ui, Segoe UI, Roboto, Arial`;
+    
+    ctx.fillStyle = '#cfe8ff';
+    ctx.fillText(`t: ${sim.t.toFixed(3)} s`, 12, 30);
+    ctx.fillText(`Ideal y: ${sim.ideal.y.toFixed(3)} m  v: ${sim.ideal.v.toFixed(3)} m/s`, 12, 50);
+    ctx.fillText(`Drag y: ${sim.drag.y.toFixed(3)} m  v: ${sim.drag.v.toFixed(3)} m/s`, 12, 70);
+    
+    // Mostrar tempos de impacto
+    if (sim.ideal.impactTime) {
+      ctx.fillText(`Impacto ideal: ${sim.ideal.impactTime.toFixed(3)} s`, 12, 90);
+    }
+    if (sim.drag.impactTime) {
+      ctx.fillText(`Impacto com arrasto: ${sim.drag.impactTime.toFixed(3)} s`, 12, 110);
+    }
+    
+    ctx.fillStyle = '#bcd6ff';
+    ctx.fillText(`m=${sim.params.mass}kg A=${sim.params.area}m² Cd=${sim.params.cd} ρ=${sim.params.rho} g=${sim.params.g}`, 12, H - 10);
+  }
+
+  // Desenhar rastros
+  function drawTrails(obj, color) {
+    for (const trail of obj.trails) {
+      ctx.beginPath();
+      ctx.fillStyle = color.replace(')', `, ${trail.life})`).replace('rgb', 'rgba');
+      ctx.arc(trail.x, trail.y, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Desenhar partículas
+  function drawParticles(obj) {
+    for (const p of obj.particles) {
+      ctx.beginPath();
+      ctx.fillStyle = p.color.replace(')', `, ${p.life})`).replace('rgb', 'rgba');
+      ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // main loop with subdivisão para estabilidade
+  let last = performance.now();
+  function loop(now) {
+    if (sim.running) {
+      let elapsed = (now - last) / 1000;
+      if (elapsed > 0.2) elapsed = 0.2;
+      sim.last = now;
+      const steps = Math.max(1, Math.ceil(elapsed / 0.016));
+      const dt = elapsed / steps;
+      
+      for (let i = 0; i < steps; i++) {
+        step(dt);
+        
+        // Atualizar efeitos visuais
+        updateEffects(sim.ideal, dt);
+        updateEffects(sim.drag, dt);
+        
+        // check auto-pause after each micro-step
+        const target = parseFloat(tTargetEl.value);
+        if (autoPause && isFinite(target) && target >= 0 && sim.t >= target) {
+          sim.running = false;
+          break;
+        }
+      }
+      
+      tDisplay.textContent = sim.t.toFixed(3);
+      draw();
+    } else {
+      last = now;
+    }
+    
+    requestAnimationFrame(loop);
+  }
+
+  // "Ir para t" faz integração rápida até t_target com limites para evitar travar
+  async function gotoTime(target) {
+    if (!isFinite(target) || target < 0) return;
+    
+    // se target < current, reset para t=0 e recompute até target
+    if (target < sim.t) {
+      resetState();
+    }
+    
+    const timeBudgetMs = 200; // máximo tempo gasto na operação síncrona (ms)
+    const maxMicroDt = 0.01;  // passo máximo por micro-step
+    let startClock = performance.now();
+    
+    while (sim.t < target) {
+      const now = performance.now();
+      if (now - startClock > timeBudgetMs) {
+        // pausa curto para liberar thread e continuar depois
+        await new Promise(r => setTimeout(r, 10));
+        startClock = performance.now();
+      }
+      
+      const remaining = target - sim.t;
+      const dt = Math.min(maxMicroDt, remaining);
+      step(dt);
+      
+      // Atualizar efeitos visuais mesmo durante o salto
+      updateEffects(sim.ideal, dt);
+      updateEffects(sim.drag, dt);
+      
+      // safety: se ficar preso, quebrar
+      if (sim.t > 1e6) break;
+    }
+    
+    // depois de alcançado ou aproximado, atualize display e pause
+    sim.running = false;
+    tDisplay.textContent = sim.t.toFixed(3);
+    draw();
+  }
+
+  // ajuste analítico do objeto ideal para tempo t (fácil e imediato)
+  function analyticJump(target) {
+    if (!isFinite(target) || target < 0) return;
+    applyParams();
+    
+    // y(t) = h0 + v0*t - 0.5*g*t^2, v0 initial = 0
+    const h0 = sim.params.h0;
+    const g = sim.params.g;
+    let y = h0 - 0.5 * g * target * target;
+    let v = -g * target;
+    
+    if (y < 0) {
+      y = 0;
+      v = 0;
+      if (!sim.ideal.impactTime) {
+        sim.ideal.impactTime = target;
+        createImpactEffect(sim.ideal, canvasSize.width * 0.33);
+      }
+    }
+    
+    sim.ideal.y = y;
+    sim.ideal.v = v;
+    
+    // leave sim.t unchanged for drag unless user wants
+    draw();
+  }
+
+  // UI wiring
+  startBtn.addEventListener('click', () => {
+    applyParams();
+    sim.running = true;
+    last = performance.now();
+  });
+  
+  pauseBtn.addEventListener('click', () => {
+    sim.running = false;
+  });
+  
+  resetBtn.addEventListener('click', () => resetState());
+
+  gotoBtn.addEventListener('click', () => {
+    const tT = parseFloat(tTargetEl.value);
+    if (isFinite(tT) && tT >= 0) gotoTime(tT);
+  });
+
+  analyticJumpBtn.addEventListener('click', () => {
+    const tT = parseFloat(tTargetEl.value);
+    if (isFinite(tT) && tT >= 0) analyticJump(tT);
+  });
+
+  // Controle por toque na tela
+  canvas.addEventListener('click', () => {
+    sim.running = !sim.running;
+    if (sim.running) {
+      last = performance.now();
+    }
+  });
+
+  // Efeito de ripple nos botões
+  document.querySelectorAll('button').forEach(button => {
+    button.addEventListener('click', function(e) {
+      const ripple = document.createElement('span');
+      const rect = this.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      const x = e.clientX - rect.left - size / 2;
+      const y = e.clientY - rect.top - size / 2;
+      
+      ripple.style.cssText = `
+        position: absolute;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.5);
+        transform: scale(0);
+        animation: ripple 0.6s linear;
+        width: ${size}px;
+        height: ${size}px;
+        left: ${x}px;
+        top: ${y}px;
+      `;
+      
+      this.appendChild(ripple);
+      
+      setTimeout(() => {
+        ripple.remove();
+      }, 600);
+    });
+  });
+
+  // Adicionar estilo para o efeito de ripple
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes ripple {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+    button {
+      position: relative;
+      overflow: hidden;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // live param change
+  [h0El, massEl, areaEl, cdEl, rhoEl, gEl].forEach(i => i.addEventListener('change', () => {
+    applyParams();
+    if (!sim.running) {
+      sim.ideal.y = sim.params.h0;
+      sim.drag.y = sim.params.h0;
+      draw();
+    }
+  }));
+
+  // Sliders para dispositivos móveis
+  [h0El, massEl, areaEl, cdEl, rhoEl, gEl].forEach(input => {
+    input.addEventListener('input', () => {
+      applyParams();
+      if (!sim.running) {
+        draw();
+      }
+    });
+  });
+
+  // Redimensionar quando a janela mudar de tamanho
+  window.addEventListener('resize', () => {
+    draw();
+  });
+
+  // init
+  resetState();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

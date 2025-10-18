@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de Circuitos Elétricos</title>
+  <style>
+    * { 
+      box-sizing: border-box; 
+      margin:0; 
+      padding:0;
+    }
+    
+    body { 
+      font-family: system-ui, Segoe UI, Roboto, Arial;
+      background: #071026; 
+      color: #e6eef8;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    header {
+      padding: 12px 15px;
+      background: #061226;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    h1 {
+      font-size: clamp(16px, 4vw, 18px);
+      margin: 0;
+    }
+    
+    .small {
+      font-size: clamp(11px, 2.5vw, 13px);
+      color: #bcd6ff;
+    }
+    
+    .main-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    
+    #toolbar {
+      width: 240px;
+      background: #041224;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      border-right: 1px solid #1d5676;
+    }
+    
+    @media (max-width: 768px) {
+      .main-container {
+        flex-direction: column;
+      }
+      
+      #toolbar {
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 8px;
+        max-height: 120px;
+      }
+    }
+    
+    #toolbar button {
+      background: #0b3b5a;
+      border: 1px solid #1d5676;
+      color: #e6eef8;
+      padding: 10px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      font-size: 14px;
+      min-height: 44px;
+    }
+    
+    #toolbar button:hover {
+      background: #0d4a6e;
+    }
+    
+    #toolbar button.active { 
+      background: #1e7a3a;
+    }
+    
+    .tool-icon {
+      font-size: 18px;
+      width: 24px;
+      text-align: center;
+    }
+    
+    #canvas-container {
+      flex: 1;
+      position: relative;
+      background: linear-gradient(#082033, #04121b);
+      overflow: hidden;
+    }
+    
+    #work-area {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      transform-origin: 0 0;
+      transition: transform 0.2s;
+    }
+    
+    .component {
+      position: absolute;
+      width: 80px;
+      height: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 12px;
+      border-radius: 6px;
+      user-select: none;
+      cursor: move;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      transition: transform 0.1s, box-shadow 0.1s;
+      z-index: 10;
+    }
+    
+    .component:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+      z-index: 20;
+    }
+    
+    .component-icon {
+      font-size: 20px;
+      margin-bottom: 2px;
+    }
+    
+    .resistor  { background: #e67e22; border: 2px solid #d35400; }
+    .voltage   { background: #c0392b; border: 2px solid #a93226; }
+    .current   { background: #8e44ad; border: 2px solid #7d3c98; }
+    .capacitor { background: #16a085; border: 2px solid #138d75; }
+    .inductor  { background: #27ae60; border: 2px solid #229954; }
+    .diode     { background: #d35400; border: 2px solid #ba4a00; }
+    .lamp      { background: #f1c40f; color: #000; border: 2px solid #d4ac0d; }
+    .switch    { background: #2980b9; border: 2px solid #2471a3; }
+    .ground    { background: #7f8c8d; border: 2px solid #707b7c; }
+    
+    .socket {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: #2c3e50;
+      border: 2px solid #ecf0f1;
+      border-radius: 50%;
+      cursor: crosshair;
+      z-index: 15;
+    }
+    
+    .pin1 { left: -6px; top: 14px; }
+    .pin2 { right: -6px; top: 14px; }
+    
+    .node {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      background: rgba(52,152,219,0.8);
+      border: 2px solid #3498db;
+      border-radius: 50%;
+      cursor: crosshair;
+      z-index: 5;
+    }
+    
+    svg#wires {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    #actions {
+      position: absolute;
+      bottom: 15px;
+      left: 15px;
+      display: flex;
+      gap: 10px;
+      z-index: 30;
+    }
+    
+    #actions button {
+      background: #0b3b5a;
+      color: #e6eef8;
+      border: 1px solid #1d5676;
+      padding: 10px 15px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      min-height: 44px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    #actions button:hover {
+      background: #0d4a6e;
+    }
+    
+    .action-icon {
+      font-size: 16px;
+    }
+    
+    #output {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 320px;
+      max-width: calc(100% - 30px);
+      background: rgba(4, 18, 36, 0.9);
+      padding: 12px;
+      border: 1px solid #1d5676;
+      font-family: monospace;
+      white-space: pre-wrap;
+      max-height: 40vh;
+      overflow: auto;
+      border-radius: 6px;
+      z-index: 30;
+      font-size: 13px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    
+    #calcPanel {
+      position: absolute;
+      top: 60px;
+      right: 15px;
+      width: 320px;
+      max-width: calc(100% - 30px);
+      background: rgba(4, 18, 36, 0.95);
+      border: 1px solid #1d5676;
+      padding: 15px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      display: none;
+      z-index: 100;
+      max-height: 50vh;
+      overflow: auto;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    
+    #tooltip {
+      position: absolute;
+      background: rgba(0,0,0,0.8);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      pointer-events: none;
+      display: none;
+      white-space: nowrap;
+      z-index: 1000;
+      border: 1px solid #1d5676;
+    }
+    
+    .zoom-controls {
+      position: absolute;
+      bottom: 15px;
+      right: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      z-index: 30;
+    }
+    
+    .zoom-controls button {
+      background: rgba(11, 59, 90, 0.8);
+      color: #e6eef8;
+      border: 1px solid #1d5676;
+      width: 44px;
+      height: 44px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .zoom-controls button:hover {
+      background: rgba(13, 74, 110, 0.8);
+    }
+    
+    @media (max-width: 768px) {
+      #actions {
+        flex-wrap: wrap;
+      }
+      
+      #actions button {
+        flex: 1;
+        min-width: 140px;
+        justify-content: center;
+      }
+      
+      .zoom-controls {
+        bottom: 70px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      #toolbar button {
+        padding: 8px 10px;
+        font-size: 12px;
+        min-height: 40px;
+      }
+      
+      #actions button {
+        padding: 8px 12px;
+        min-height: 40px;
+        font-size: 12px;
+      }
+      
+      .component {
+        width: 70px;
+        height: 35px;
+        font-size: 10px;
+      }
+      
+      .component-icon {
+        font-size: 16px;
+      }
+    }
+    
+    .pulse {
+      animation: pulse 0.5s ease-in-out;
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    
+    .wire-highlight {
+      filter: drop-shadow(0 0 4px #0fa3ff);
+    }
+    
+    .wire-pending {
+      stroke-dasharray: 5,5;
+      stroke: #0fa3ff;
+    }
+    
+    .connection-hint {
+      position: absolute;
+      background: rgba(15, 163, 255, 0.2);
+      border: 2px dashed #0fa3ff;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 5;
+    }
+    
+    /* Animações para elétrons */
+    .electron {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      background: #0fa3ff;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 2;
+      box-shadow: 0 0 8px #0fa3ff;
+      opacity: 0;
+    }
+    
+    .electron-flow {
+      animation: electronFlow 2s linear infinite;
+    }
+    
+    @keyframes electronFlow {
+      0% {
+        transform: translateX(0) translateY(0);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateX(var(--tx)) translateY(var(--ty));
+        opacity: 0;
+      }
+    }
+    
+    /* Efeito de luz para lâmpada */
+    .lamp-light {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+    
+    .lamp-on .lamp-light {
+      opacity: 0.7;
+      animation: lampGlow 1.5s ease-in-out infinite alternate;
+    }
+    
+    @keyframes lampGlow {
+      0% {
+        box-shadow: 0 0 20px 10px #f1c40f;
+      }
+      100% {
+        box-shadow: 0 0 30px 15px #f1c40f;
+      }
+    }
+    
+    /* Efeito de faísca para interruptor */
+    .spark {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: #ff9900;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 3;
+      box-shadow: 0 0 6px #ff9900;
+      opacity: 0;
+    }
+    
+    .spark-effect {
+      animation: spark 0.3s ease-out;
+    }
+    
+    @keyframes spark {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(3);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Simulador de Circuitos Elétricos</h1>
+    <div class="small">Arraste componentes • Clique para conectar • Duplo-clique para alterar estados</div>
+  </header>
+
+  <div class="main-container">
+    <div id="toolbar">
+      <button data-tool="select" class="active">
+        <span class="tool-icon">↦</span> Selecionar
+      </button>
+      <button data-tool="resistor">
+        <span class="tool-icon">⏚</span> Resistor
+      </button>
+      <button data-tool="voltage">
+        <span class="tool-icon">⎓</span> Fonte V
+      </button>
+      <button data-tool="current">
+        <span class="tool-icon">⎔</span> Fonte I
+      </button>
+      <button data-tool="capacitor">
+        <span class="tool-icon">⎏</span> Capacitor
+      </button>
+      <button data-tool="inductor">
+        <span class="tool-icon">⎑</span> Indutor
+      </button>
+      <button data-tool="diode">
+        <span class="tool-icon">↦</span> Diodo
+      </button>
+      <button data-tool="lamp">
+        <span class="tool-icon">○</span> Lâmpada
+      </button>
+      <button data-tool="switch">
+        <span class="tool-icon">⭘</span> Interruptor
+      </button>
+      <button data-tool="ground">
+        <span class="tool-icon">⏚</span> Terra
+      </button>
+      <button data-tool="wire">
+        <span class="tool-icon">➰</span> Fio
+      </button>
+      <button data-tool="delete">
+        <span class="tool-icon">🗑</span> Excluir
+      </button>
+    </div>
+
+    <div id="canvas-container">
+      <div id="work-area"></div>
+      <svg id="wires"></svg>
+      
+      <div id="actions">
+        <button id="btnSim">
+          <span class="action-icon">⚡</span> Simular & Calcular
+        </button>
+        <button id="btnShowCalc">
+          <span class="action-icon">📊</span> Mostrar Cálculos
+        </button>
+        <button id="btnClearAll">
+          <span class="action-icon">🗑</span> Limpar Tudo
+        </button>
+        <button id="btnToggleAnimation">
+          <span class="action-icon">🎬</span> Animação: ON
+        </button>
+      </div>
+      
+      <div class="zoom-controls">
+        <button id="btnZoomIn">+</button>
+        <button id="btnZoomOut">-</button>
+        <button id="btnResetView">⟲</button>
+      </div>
+      
+      <div id="output">
+        Bem-vindo ao Simulador de Circuitos!
+        
+        Instruções:
+        1. Selecione um componente na barra de ferramentas
+        2. Clique na área para adicioná-lo
+        3. Use a ferramenta "Fio" para conectar componentes
+        4. Clique em "Simular & Calcular" para analisar o circuito
+        
+        Dica: Duplo-clique em interruptores e diodos para alterar seu estado.
+      </div>
+      
+      <div id="calcPanel">
+        <strong>Fórmulas Utilizadas</strong>
+        <pre>
+  // Análise de Circuito Série
+  // -------------------------
+  
+  1. Resistência Total (Rtot):
+     Rtot = Σ R_i (todos os resistores em série)
+  
+  2. Lei de Ohm Geral:
+     I = (Vfonte - Σ Vdiodos) / Rtot
+     * Considera quedas de tensão em diodos
+  
+  3. Queda de Tensão nos Componentes:
+     - Resistor: V = I × R
+     - Lâmpada: V = I × R
+     - Diodo (forward): V = Vf (valor fixo)
+     - Diodo (reverse): V = 0 (circuito aberto)
+     - Capacitor (DC): V = Vfonte (em estado estacionário)
+     - Indutor (DC): V = 0 (curto-circuito)
+     - Switch (fechado): V = 0
+     - Switch (aberto): V = indeterminado (circuito aberto)
+     - Fonte de Tensão: V = Valor da fonte
+     - Fonte de Corrente: I = Valor fixo
+  
+  4. Componentes que Abrem o Circuito:
+     - Capacitor em série com DC
+     - Diodo em polarização reversa
+     - Interruptor aberto
+  
+  5. Potência Dissipada:
+     P = V × I (para cada componente)
+        </pre>
+      </div>
+    </div>
+  </div>
+
+  <div id="tooltip"></div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const toolbar = document.getElementById('toolbar');
+    const workArea = document.getElementById('work-area');
+    const svg = document.getElementById('wires');
+    const btnSim = document.getElementById('btnSim');
+    const btnShowCalc = document.getElementById('btnShowCalc');
+    const btnClearAll = document.getElementById('btnClearAll');
+    const btnToggleAnimation = document.getElementById('btnToggleAnimation');
+    const btnZoomIn = document.getElementById('btnZoomIn');
+    const btnZoomOut = document.getElementById('btnZoomOut');
+    const btnResetView = document.getElementById('btnResetView');
+    const output = document.getElementById('output');
+    const calcPanel = document.getElementById('calcPanel');
+    const tooltip = document.getElementById('tooltip');
+
+    let tool = 'select';
+    let compCount = 0;
+    let dragObj = null;
+    let offsetX = 0, offsetY = 0;
+    let wireStart = null;
+    let pendingWire = null;
+    const connections = [];
+    let scale = 1;
+    let translateX = 0, translateY = 0;
+    let isPanning = false;
+    let startX, startY;
+    let animationEnabled = true;
+    let animationInterval = null;
+    let currentSimulation = null;
+
+    // Configuração de ícones para componentes
+    const componentIcons = {
+      resistor: '⏚',
+      voltage: '⎓',
+      current: '⎔',
+      capacitor: '⎏',
+      inductor: '⎑',
+      diode: '↦',
+      lamp: '○',
+      switch: '⭘',
+      ground: '⏚'
+    };
+
+    // Atualizar ferramenta ativa
+    toolbar.addEventListener('click', e => {
+      if (e.target.tagName === 'BUTTON' || e.target.parentElement.tagName === 'BUTTON') {
+        const button = e.target.tagName === 'BUTTON' ? e.target : e.target.parentElement;
+        tool = button.dataset.tool;
+        Array.from(toolbar.children).forEach(b => b.classList.remove('active'));
+        button.classList.add('active');
+        
+        // Limpar fio pendente ao mudar de ferramenta
+        if (pendingWire) {
+          pendingWire.remove();
+          pendingWire = null;
+        }
+        wireStart = null;
+        
+        // Feedback visual
+        button.classList.add('pulse');
+        setTimeout(() => button.classList.remove('pulse'), 500);
+      }
+    });
+
+    // Controles de zoom
+    btnZoomIn.onclick = () => {
+      scale = Math.min(scale * 1.2, 3);
+      updateWorkAreaTransform();
+    };
+
+    btnZoomOut.onclick = () => {
+      scale = Math.max(scale / 1.2, 0.3);
+      updateWorkAreaTransform();
+    };
+
+    btnResetView.onclick = () => {
+      scale = 1;
+      translateX = 0;
+      translateY = 0;
+      updateWorkAreaTransform();
+    };
+
+    function updateWorkAreaTransform() {
+      workArea.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+      redrawWires();
+    }
+
+    // Mostrar/ocultar painel de cálculos
+    btnShowCalc.onclick = () => {
+      calcPanel.style.display = calcPanel.style.display === 'block' ? 'none' : 'block';
+    };
+
+    // Limpar tudo
+    btnClearAll.onclick = () => {
+      if (confirm('Tem certeza que deseja limpar todo o circuito?')) {
+        workArea.innerHTML = '';
+        svg.innerHTML = '';
+        connections.length = 0;
+        compCount = 0;
+        stopAnimations();
+        output.textContent = 'Circuito limpo. Adicione novos componentes para começar.';
+      }
+    };
+
+    // Controle de animação
+    btnToggleAnimation.onclick = () => {
+      animationEnabled = !animationEnabled;
+      btnToggleAnimation.innerHTML = `<span class="action-icon">🎬</span> Animação: ${animationEnabled ? 'ON' : 'OFF'}`;
+      
+      if (animationEnabled && currentSimulation) {
+        startAnimations(currentSimulation);
+      } else {
+        stopAnimations();
+      }
+    };
+
+    // Eventos de mouse para a área de trabalho
+    workArea.addEventListener('mousedown', handleMouseDown);
+    workArea.addEventListener('mousemove', handleMouseMove);
+    workArea.addEventListener('mouseup', handleMouseUp);
+    
+    document.addEventListener('mousemove', handleGlobalMouseMove);
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+
+    function handleMouseDown(e) {
+      e.preventDefault();
+      const el = e.target;
+      const rect = workArea.getBoundingClientRect();
+      const x = (e.clientX - rect.left - translateX) / scale;
+      const y = (e.clientY - rect.top - translateY) / scale;
+
+      if (tool === 'delete') {
+        if (el.classList.contains('component')) removeComponent(el);
+        if (el.classList.contains('node')) removeNode(el);
+        if (el.classList.contains('socket')) removeConnectionsFromSocket(el);
+        return;
+      }
+
+      if (['resistor','voltage','current','capacitor','inductor',
+           'diode','lamp','switch','ground'].includes(tool)) {
+        let val = '';
+        if (tool === 'switch') {
+          val = prompt('Estado inicial (open/closed):', 'closed');
+        } else if (tool === 'ground') {
+          val = '0';
+        } else {
+          const labels = {
+            resistor: 'Resistência (Ω):', 
+            voltage: 'Tensão (V):',
+            current: 'Corrente (A):', 
+            capacitor: 'Capacitância (F):',
+            inductor: 'Indutância (H):', 
+            diode: 'Vf do Diodo (V):',
+            lamp: 'Resistência Lâmpada (Ω):'
+          };
+          const defaultValue = tool === 'voltage' ? '12' : '100';
+          val = prompt(labels[tool], defaultValue);
+        }
+        if (val === null) return;
+        addComponent(tool, val, x-40, y-20);
+        return;
+      }
+
+      if (tool === 'wire') {
+        let endpoint = null;
+        
+        // Verificar se clicou em um socket ou nó
+        if (el.classList.contains('socket') || el.classList.contains('node')) {
+          endpoint = el;
+        } 
+        // Se não clicou em um ponto de conexão, criar um nó
+        else {
+          const node = document.createElement('div');
+          node.className = 'node';
+          node.style.left = (x-7)+'px';
+          node.style.top = (y-7)+'px';
+          workArea.appendChild(node);
+          endpoint = node;
+        }
+        
+        if (!wireStart) {
+          // Iniciar uma nova conexão
+          wireStart = endpoint;
+          wireStart.style.boxShadow = '0 0 0 2px #0fa3ff';
+          
+          // Criar linha temporária
+          pendingWire = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          pendingWire.setAttribute('stroke', '#0fa3ff');
+          pendingWire.setAttribute('stroke-width', '2');
+          pendingWire.setAttribute('stroke-dasharray', '5,5');
+          pendingWire.setAttribute('class', 'wire-pending');
+          svg.appendChild(pendingWire);
+        } else if (wireStart !== endpoint) {
+          // Completar a conexão
+          connectPoints(wireStart, endpoint);
+          wireStart.style.boxShadow = '';
+          wireStart = null;
+          
+          if (pendingWire) {
+            pendingWire.remove();
+            pendingWire = null;
+          }
+        }
+        return;
+      }
+
+      if (tool === 'select') {
+        if (el.classList.contains('component') || el.classList.contains('node')) {
+          dragObj = el;
+          const r = el.getBoundingClientRect();
+          offsetX = e.clientX - r.left;
+          offsetY = e.clientY - r.top;
+        } else {
+          // Iniciar panning
+          isPanning = true;
+          startX = e.clientX - translateX;
+          startY = e.clientY - translateY;
+        }
+      }
+    }
+
+    function handleMouseMove(e) {
+      const rect = workArea.getBoundingClientRect();
+      const x = (e.clientX - rect.left - translateX) / scale;
+      const y = (e.clientY - rect.top - translateY) / scale;
+      
+      // Atualizar linha temporária durante conexão
+      if (pendingWire && wireStart) {
+        const startRect = wireStart.getBoundingClientRect();
+        const startX = startRect.left + startRect.width/2 - rect.left;
+        const startY = startRect.top + startRect.height/2 - rect.top;
+        
+        pendingWire.setAttribute('x1', startX);
+        pendingWire.setAttribute('y1', startY);
+        pendingWire.setAttribute('x2', e.clientX - rect.left);
+        pendingWire.setAttribute('y2', e.clientY - rect.top);
+      }
+      
+      // Atualizar tooltip
+      if (tooltip.style.display === 'block') {
+        tooltip.style.left = e.pageX + 10 + 'px';
+        tooltip.style.top = e.pageY + 10 + 'px';
+      }
+    }
+
+    function handleGlobalMouseMove(e) {
+      if (dragObj) {
+        const rect = workArea.getBoundingClientRect();
+        let x = (e.clientX - rect.left - offsetX) / scale;
+        let y = (e.clientY - rect.top - offsetY) / scale;
+        
+        // Limitar movimento dentro da área de trabalho
+        const maxX = (workArea.parentElement.clientWidth / scale) - 80;
+        const maxY = (workArea.parentElement.clientHeight / scale) - 40;
+        
+        x = Math.max(0, Math.min(maxX, x));
+        y = Math.max(0, Math.min(maxY, y));
+        
+        dragObj.style.left = x + 'px';
+        dragObj.style.top = y + 'px';
+        redrawWires();
+      } else if (isPanning) {
+        translateX = e.clientX - startX;
+        translateY = e.clientY - startY;
+        updateWorkAreaTransform();
+      }
+    }
+
+    function handleMouseUp(e) {
+      // Nada específico a fazer no mouseup local
+    }
+
+    function handleGlobalMouseUp(e) {
+      dragObj = null;
+      isPanning = false;
+    }
+
+    function connectPoints(a, b) {
+      // Verificar se já existe uma conexão entre esses pontos
+      const existingConnection = connections.find(conn => 
+        (conn.a === a && conn.b === b) || (conn.a === b && conn.b === a)
+      );
+      
+      if (existingConnection) {
+        output.textContent = 'Esses pontos já estão conectados!';
+        return;
+      }
+      
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('stroke', '#0fa3ff');
+      line.setAttribute('stroke-width', '3');
+      line.setAttribute('class', 'wire');
+      svg.appendChild(line);
+      connections.push({a, b, line});
+      redrawWires();
+      
+      // Efeito visual
+      line.classList.add('wire-highlight');
+      setTimeout(() => line.classList.remove('wire-highlight'), 500);
+      
+      output.textContent = `Conexão estabelecida entre os pontos. Total de conexões: ${connections.length}`;
+    }
+
+    function redrawWires() {
+      const rect = workArea.getBoundingClientRect();
+      connections.forEach(c => {
+        const ra = c.a.getBoundingClientRect();
+        const rb = c.b.getBoundingClientRect();
+        const x1 = ra.left + ra.width/2 - rect.left;
+        const y1 = ra.top + ra.height/2 - rect.top;
+        const x2 = rb.left + rb.width/2 - rect.left;
+        const y2 = rb.top + rb.height/2 - rect.top;
+        c.line.setAttribute('x1', x1);
+        c.line.setAttribute('y1', y1);
+        c.line.setAttribute('x2', x2);
+        c.line.setAttribute('y2', y2);
+      });
+    }
+
+    function addComponent(type, value, x, y) {
+      compCount++;
+      const c = document.createElement('div');
+      c.className = `component ${type}`;
+      c.dataset.id = compCount;
+      c.dataset.type = type;
+      c.dataset.value = value;
+      
+      const icon = document.createElement('div');
+      icon.className = 'component-icon';
+      icon.textContent = componentIcons[type];
+      
+      const label = document.createElement('div');
+      label.textContent = `${type[0].toUpperCase()}${compCount}`;
+      
+      c.appendChild(icon);
+      c.appendChild(label);
+      
+      // Adicionar efeito de luz para lâmpadas
+      if (type === 'lamp') {
+        const light = document.createElement('div');
+        light.className = 'lamp-light';
+        light.style.width = '60px';
+        light.style.height = '60px';
+        light.style.left = '-10px';
+        light.style.top = '-10px';
+        c.appendChild(light);
+      }
+      
+      if (type === 'switch' || type === 'diode') {
+        c.dataset.state = (type === 'switch' ? 'closed' : 'forward');
+        c.addEventListener('dblclick', () => {
+          if (type === 'switch') {
+            c.dataset.state = c.dataset.state === 'closed' ? 'open' : 'closed';
+            c.style.backgroundColor = c.dataset.state === 'closed' ? '#2980b9' : '#7f8c8d';
+            
+            // Efeito de faísca ao alternar interruptor
+            if (animationEnabled) {
+              createSpark(c);
+            }
+            
+            output.textContent = `Interruptor ${c.dataset.id} agora está ${c.dataset.state === 'closed' ? 'fechado' : 'aberto'}`;
+          } else {
+            c.dataset.state = c.dataset.state === 'forward' ? 'reverse' : 'forward';
+            c.style.backgroundColor = c.dataset.state === 'forward' ? '#d35400' : '#7f8c8d';
+            output.textContent = `Diodo ${c.dataset.id} agora está em polarização ${c.dataset.state === 'forward' ? 'direta' : 'reversa'}`;
+          }
+        });
+      }
+      
+      c.style.left = x + 'px'; 
+      c.style.top = y + 'px';
+      
+      // Adicionar sockets de conexão
+      ['pin1','pin2'].forEach(pin => {
+        const s = document.createElement('div');
+        s.className = `socket ${pin}`;
+        c.appendChild(s);
+      });
+      
+      // Tooltip interativo
+      c.addEventListener('mouseenter', e => {
+        let tip = `${type.toUpperCase()} #${c.dataset.id}\nValor: ${c.dataset.value}`;
+        if (c.dataset.state) tip += `\nEstado: ${c.dataset.state}`;
+        if (type === 'resistor' || type === 'lamp') tip += ' Ω';
+        else if (type === 'voltage') tip += ' V';
+        else if (type === 'current') tip += ' A';
+        else if (type === 'capacitor') tip += ' F';
+        else if (type === 'inductor') tip += ' H';
+        else if (type === 'diode') tip += ' V';
+        
+        tooltip.textContent = tip;
+        tooltip.style.display = 'block';
+      });
+      
+      c.addEventListener('mousemove', e => {
+        tooltip.style.left = e.pageX + 10 + 'px';
+        tooltip.style.top = e.pageY + 10 + 'px';
+      });
+      
+      c.addEventListener('mouseleave', () => tooltip.style.display = 'none');
+      
+      workArea.appendChild(c);
+      
+      // Efeito visual ao adicionar
+      c.classList.add('pulse');
+      
+      output.textContent = `${type} #${compCount} adicionado com valor ${value}`;
+    }
+
+    function removeComponent(el) {
+      const sockets = Array.from(el.querySelectorAll('.socket'));
+      
+      // Remover conexões relacionadas a este componente
+      for (let i = connections.length - 1; i >= 0; i--) {
+        if (sockets.includes(connections[i].a) || sockets.includes(connections[i].b)) {
+          connections[i].line.remove();
+          connections.splice(i, 1);
+        }
+      }
+      
+      // Efeito visual ao remover
+      el.style.transform = 'scale(0.5)';
+      el.style.opacity = '0';
+      setTimeout(() => {
+        el.remove();
+        output.textContent = `Componente ${el.dataset.type} #${el.dataset.id} removido`;
+      }, 300);
+    }
+
+    function removeNode(node) {
+      // Remover conexões relacionadas a este nó
+      for (let i = connections.length - 1; i >= 0; i--) {
+        if (connections[i].a === node || connections[i].b === node) {
+          connections[i].line.remove();
+          connections.splice(i, 1);
+        }
+      }
+      
+      // Efeito visual ao remover
+      node.style.transform = 'scale(0.5)';
+      node.style.opacity = '0';
+      setTimeout(() => {
+        node.remove();
+        output.textContent = 'Nó removido';
+      }, 300);
+    }
+
+    function removeConnectionsFromSocket(socket) {
+      // Remover conexões relacionadas a este socket
+      for (let i = connections.length - 1; i >= 0; i--) {
+        if (connections[i].a === socket || connections[i].b === socket) {
+          // Efeito visual ao remover
+          connections[i].line.style.strokeWidth = '6';
+          connections[i].line.style.stroke = '#e74c3c';
+          setTimeout(() => {
+            connections[i].line.remove();
+            connections.splice(i, 1);
+            output.textContent = 'Conexão removida';
+          }, 300);
+        }
+      }
+    }
+
+    // Animação de elétrons
+    function startAnimations(simulation) {
+      if (!animationEnabled) return;
+      
+      stopAnimations();
+      currentSimulation = simulation;
+      
+      // Criar elétrons para cada conexão com corrente
+      connections.forEach(connection => {
+        if (simulation.circuitCurrent > 0) {
+          createElectronsForConnection(connection);
+        }
+      });
+      
+      // Atualizar estado das lâmpadas
+      document.querySelectorAll('.component.lamp').forEach(lamp => {
+        const comp = simulation.comps.find(c => c.id === lamp.dataset.id);
+        if (comp && comp.current > 0) {
+          lamp.classList.add('lamp-on');
+        } else {
+          lamp.classList.remove('lamp-on');
+        }
+      });
+    }
+    
+    function stopAnimations() {
+      // Remover todos os elétrons
+      document.querySelectorAll('.electron').forEach(electron => {
+        electron.remove();
+      });
+      
+      // Desligar todas as lâmpadas
+      document.querySelectorAll('.lamp-on').forEach(lamp => {
+        lamp.classList.remove('lamp-on');
+      });
+      
+      if (animationInterval) {
+        clearInterval(animationInterval);
+        animationInterval = null;
+      }
+    }
+    
+    function createElectronsForConnection(connection) {
+      if (!animationEnabled) return;
+      
+      const rect = workArea.getBoundingClientRect();
+      const ra = connection.a.getBoundingClientRect();
+      const rb = connection.b.getBoundingClientRect();
+      
+      const x1 = ra.left + ra.width/2 - rect.left;
+      const y1 = ra.top + ra.height/2 - rect.top;
+      const x2 = rb.left + rb.width/2 - rect.left;
+      const y2 = rb.top + rb.height/2 - rect.top;
+      
+      // Calcular direção e distância
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const distance = Math.sqrt(dx*dx + dy*dy);
+      
+      // Criar múltiplos elétrons
+      const electronCount = Math.min(10, Math.max(3, Math.floor(distance / 30)));
+      
+      for (let i = 0; i < electronCount; i++) {
+        setTimeout(() => {
+          if (!animationEnabled) return;
+          
+          const electron = document.createElement('div');
+          electron.className = 'electron electron-flow';
+          electron.style.left = `${x1}px`;
+          electron.style.top = `${y1}px`;
+          electron.style.setProperty('--tx', `${dx}px`);
+          electron.style.setProperty('--ty', `${dy}px`);
+          
+          // Atraso aleatório para criar efeito mais natural
+          electron.style.animationDelay = `${Math.random() * 0.5}s`;
+          
+          document.getElementById('canvas-container').appendChild(electron);
+          
+          // Remover elétron após a animação
+          setTimeout(() => {
+            if (electron.parentNode) {
+              electron.remove();
+            }
+          }, 2000);
+        }, i * 200);
+      }
+      
+      // Continuar criando elétrons
+      animationInterval = setInterval(() => {
+        if (!animationEnabled) return;
+        createElectronsForConnection(connection);
+      }, electronCount * 200 + 1000);
+    }
+    
+    function createSpark(component) {
+      const rect = component.getBoundingClientRect();
+      const spark = document.createElement('div');
+      spark.className = 'spark spark-effect';
+      spark.style.left = `${rect.left + rect.width/2}px`;
+      spark.style.top = `${rect.top + rect.height/2}px`;
+      
+      document.getElementById('canvas-container').appendChild(spark);
+      
+      // Remover faísca após a animação
+      setTimeout(() => {
+        if (spark.parentNode) {
+          spark.remove();
+        }
+      }, 300);
+    }
+
+    // Simulação do circuito
+    btnSim.onclick = () => {
+      const comps = Array.from(workArea.children)
+        .filter(c => c.classList.contains('component'))
+        .map(c => ({
+          id: c.dataset.id,
+          type: c.dataset.type,
+          value: parseFloat(c.dataset.value) || 0,
+          state: c.dataset.state || 'forward'
+        }));
+      
+      if (comps.length === 0) {
+        output.textContent = 'Erro: Nenhum componente no circuito. Adicione componentes primeiro.';
+        return;
+      }
+      
+      const voltageSources = comps.filter(c => c.type === 'voltage');
+      const currentSources = comps.filter(c => c.type === 'current');
+      
+      if (voltageSources.length === 0 && currentSources.length === 0) {
+        output.textContent = 'Erro: Adicione pelo menos uma fonte de tensão ou corrente.';
+        return;
+      }
+      
+      // Cálculo simplificado para circuito série
+      let Rtotal = 0;
+      let Vtotal = voltageSources.reduce((sum, src) => sum + src.value, 0);
+      let diodeVoltageDrop = 0;
+      let isCircuitOpen = false;
+      
+      // Identificar componentes que abrem o circuito
+      comps.forEach(comp => {
+        if (comp.type === 'capacitor') isCircuitOpen = true;
+        if (comp.type === 'diode' && comp.state === 'reverse') isCircuitOpen = true;
+        if (comp.type === 'switch' && comp.state === 'open') isCircuitOpen = true;
+      });
+      
+      // Calcular resistência total e queda de tensão em diodos
+      comps.forEach(comp => {
+        if (comp.type === 'resistor' || comp.type === 'lamp') {
+          Rtotal += comp.value;
+        } else if (comp.type === 'diode' && comp.state === 'forward') {
+          diodeVoltageDrop += comp.value;
+        }
+      });
+      
+      // Calcular corrente (Lei de Ohm)
+      let circuitCurrent = 0;
+      if (!isCircuitOpen && Rtotal > 0) {
+        circuitCurrent = (Vtotal - diodeVoltageDrop) / Rtotal;
+      }
+      
+      // Gerar relatório
+      let report = `=== ANÁLISE DO CIRCUITO ===\n\n`;
+      report += `Fontes de Tensão: ${voltageSources.length} (Total: ${Vtotal.toFixed(2)} V)\n`;
+      report += `Fontes de Corrente: ${currentSources.length}\n`;
+      report += `Resistência Total: ${Rtotal.toFixed(2)} Ω\n`;
+      report += `Queda de Tensão em Diodos: ${diodeVoltageDrop.toFixed(2)} V\n`;
+      report += `Circuito ${isCircuitOpen ? 'ABERTO' : 'FECHADO'}\n`;
+      report += `Corrente do Circuito: ${circuitCurrent.toFixed(4)} A\n\n`;
+      report += `=== TENSÕES E CORRENTES ===\n\n`;
+      
+      comps.forEach(comp => {
+        let voltage = 0;
+        let current = circuitCurrent;
+        let power = 0;
+        
+        switch(comp.type) {
+          case 'resistor':
+          case 'lamp':
+            voltage = circuitCurrent * comp.value;
+            power = voltage * circuitCurrent;
+            break;
+            
+          case 'voltage':
+            voltage = comp.value;
+            power = voltage * circuitCurrent;
+            break;
+            
+          case 'current':
+            current = comp.value;
+            // Para fonte de corrente, a tensão depende do resto do circuito
+            voltage = current * Rtotal;
+            power = voltage * current;
+            break;
+            
+          case 'capacitor':
+            voltage = isCircuitOpen ? Vtotal : 0;
+            current = isCircuitOpen ? 0 : circuitCurrent;
+            break;
+            
+          case 'inductor':
+            // Em DC, indutor é curto-circuito
+            voltage = 0;
+            break;
+            
+          case 'diode':
+            if (comp.state === 'forward') {
+              voltage = comp.value;
+              current = circuitCurrent;
+            } else {
+              voltage = Vtotal;
+              current = 0;
+            }
+            power = voltage * current;
+            break;
+            
+          case 'switch':
+            if (comp.state === 'open') {
+              voltage = Vtotal;
+              current = 0;
+            } else {
+              voltage = 0;
+              current = circuitCurrent;
+            }
+            break;
+            
+          case 'ground':
+            voltage = 0;
+            break;
+        }
+        
+        report += `${comp.type.toUpperCase()} #${comp.id}:\n`;
+        report += `  Tensão: ${voltage.toFixed(2)} V\n`;
+        report += `  Corrente: ${current.toFixed(4)} A\n`;
+        if (power > 0) {
+          report += `  Potência: ${power.toFixed(4)} W\n`;
+        }
+        report += `\n`;
+      });
+      
+      output.textContent = report;
+      
+      // Iniciar animações
+      const simulation = {
+        comps: comps,
+        circuitCurrent: circuitCurrent,
+        isCircuitOpen: isCircuitOpen
+      };
+      
+      startAnimations(simulation);
+      
+      // Efeito visual na simulação
+      btnSim.classList.add('pulse');
+      setTimeout(() => btnSim.classList.remove('pulse'), 500);
+    };
+
+    // Inicialização
+    updateWorkAreaTransform();
+    
+    // Adicionar instruções iniciais
+    output.textContent = `Bem-vindo ao Simulador de Circuitos!
+
+Instruções:
+1. Selecione um componente na barra de ferramentas
+2. Clique na área para adicioná-lo
+3. Use a ferramenta "Fio" para conectar componentes
+4. Clique em "Simular & Calcular" para analisar o circuito
+
+Dica: Duplo-clique em interruptores e diodos para alterar seu estado.`;
+  });
+  </script>
+</body>
+</html>

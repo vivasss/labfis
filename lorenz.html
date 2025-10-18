@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fator de Lorentz — Interativo com objeto</title>
+<style>
+  :root{
+    --bg:#0b1222; --card:#0f1724; --text:#e6eef8; --muted:#9aa6b2; --accent:#34d1ea;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+    background:linear-gradient(180deg,#071021,#07101a);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+  header{padding:18px;text-align:center}
+  header h1{margin:0;font-size:20px}
+  header p{margin:6px 0 0;color:var(--muted);font-size:13px}
+  .wrap{max-width:1100px;margin:18px auto;padding:12px;display:grid;grid-template-columns:1.1fr 1fr;gap:14px}
+  @media (max-width:900px){.wrap{grid-template-columns:1fr}}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);border-radius:10px;padding:12px}
+  .title{color:var(--accent);font-weight:600;margin-bottom:8px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:600px){.grid{grid-template-columns:1fr}}
+  .field{background:#071727;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.02)}
+  .label{font-size:12px;color:var(--muted);margin-bottom:6px}
+  input[type=number],input[type=text]{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);background:#071822;color:var(--text)}
+  input[type=range]{width:100%;accent-color:var(--accent)}
+  .btns{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+  button{padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.02);background:#06202a;color:var(--text);cursor:pointer}
+  .primary{background:#063a45;border-color:#075a6a}
+  .danger{background:#2b0e12;border-color:#5d1f26}
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  @media (max-width:600px){.metrics{grid-template-columns:1fr}}
+  .metric{background:#071727;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.02)}
+  .metric .val{font-size:18px;font-weight:700;margin-top:6px}
+  .canvas-wrap{grid-column:1/-1;margin-top:8px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);background:#041021;padding:10px}
+  .plot-canvas{width:100%;height:260px;display:block;border-radius:6px;background:#07101a}
+  .scene{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
+  .scene .view{flex:1;min-height:160px;border-radius:8px;background:#07111a;border:1px solid rgba(255,255,255,0.02);position:relative;overflow:hidden}
+  .scene .controls{min-width:220px}
+  .small{font-size:12px;color:var(--muted)}
+  .legend{display:flex;gap:12px;color:var(--muted);font-size:12px;margin-top:8px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<header>
+  <h1>Fator de Lorentz γ — com objeto contraindo/dilatando</h1>
+  <p>Interaja com β (v/c) e veja o objeto (comprimento próprio L₀) sendo observado contraído conforme γ</p>
+</header>
+
+<div class="wrap">
+  <section class="card">
+    <div class="title">Entradas</div>
+
+    <div class="grid">
+      <div class="field">
+        <div class="label">β = v / c</div>
+        <input id="betaNum" type="number" min="0" max="0.999999" step="0.001" value="0.500">
+        <input id="betaRange" type="range" min="0" max="0.999" step="0.001" value="0.500">
+        <div class="small">β deve estar em [0,1). Valores próximos de 1 aumentam γ bruscamente.</div>
+      </div>
+
+      <div class="field">
+        <div class="label">Velocidade v (m/s)</div>
+        <input id="vText" type="text" placeholder="Ex.: 1.0e8">
+        <div class="btns">
+          <button id="setHalf" class="primary">v = 0.5 c</button>
+          <button id="setNine" class="primary">v = 0.9 c</button>
+          <button id="clearV" class="danger">Limpar v</button>
+        </div>
+        <div class="small">Preencha v para calcular β automaticamente (c = 299 792 458 m/s).</div>
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top:10px">
+      <div class="field">
+        <div class="label">Tempo próprio t₀ (s)</div>
+        <input id="t0" type="number" min="0" step="0.001" value="1.000">
+      </div>
+      <div class="field">
+        <div class="label">Comprimento próprio L₀ (m)</div>
+        <input id="L0" type="number" min="0" step="0.001" value="2.000">
+      </div>
+    </div>
+
+    <div class="btns" style="margin-top:10px">
+      <button id="reset" class="danger">Resetar</button>
+      <button id="copy">Copiar estado</button>
+    </div>
+
+    <div class="metrics">
+      <div class="metric">
+        <div class="small">Fator de Lorentz γ</div>
+        <div id="gOut" class="val">1.000000</div>
+      </div>
+      <div class="metric">
+        <div class="small">Tempo dilatado t = γ · t₀ (s)</div>
+        <div id="tOut" class="val">1.000</div>
+      </div>
+      <div class="metric">
+        <div class="small">Comprimento observado L = L₀ / γ (m)</div>
+        <div id="LOut" class="val">2.000</div>
+      </div>
+      <div class="metric">
+        <div class="small">Velocidade (m/s)</div>
+        <div id="vOut" class="val">0.500 c</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="title">Visualização e gráficos</div>
+    <div class="scene">
+      <div class="view" id="sceneView">
+        <canvas id="objectCanvas"></canvas>
+      </div>
+      <div class="controls">
+        <div class="small" style="margin-bottom:6px">Opções da cena</div>
+        <div style="display:flex;gap:8px">
+          <label class="small"><input id="showGrid" type="checkbox" checked> Mostrar grade</label>
+          <label class="small"><input id="animate" type="checkbox" checked> Animar movimento</label>
+        </div>
+        <div style="margin-top:12px" class="small">Escala de exibição (px por metro)</div>
+        <input id="scale" type="range" min="20" max="300" step="1" value="80">
+        <div class="small" id="scaleVal">80 px/m</div>
+        <div class="legend">
+          <span><span style="display:inline-block;width:12px;height:12px;background:#34d1ea;margin-right:6px;border-radius:2px"></span> L₀ (próprio)</span>
+          <span><span style="display:inline-block;width:12px;height:12px;background:#a78bfa;margin-right:6px;border-radius:2px"></span> L observado</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="canvas-wrap" style="margin-top:12px">
+      <canvas id="plot" class="plot-canvas"></canvas>
+    </div>
+  </section>
+</div>
+
+<script>
+  const C = 299792458;
+  const betaNum = document.getElementById('betaNum');
+  const betaRange = document.getElementById('betaRange');
+  const vText = document.getElementById('vText');
+  const setHalf = document.getElementById('setHalf');
+  const setNine = document.getElementById('setNine');
+  const clearV = document.getElementById('clearV');
+  const t0 = document.getElementById('t0');
+  const L0 = document.getElementById('L0');
+  const reset = document.getElementById('reset');
+  const copy = document.getElementById('copy');
+  const gOut = document.getElementById('gOut');
+  const tOut = document.getElementById('tOut');
+  const LOut = document.getElementById('LOut');
+  const vOut = document.getElementById('vOut');
+  const showGrid = document.getElementById('showGrid');
+  const animate = document.getElementById('animate');
+  const scaleInput = document.getElementById('scale');
+  const scaleVal = document.getElementById('scaleVal');
+
+  const objectCanvas = document.getElementById('objectCanvas');
+  const objCtx = objectCanvas.getContext('2d');
+
+  const plotCanvas = document.getElementById('plot');
+  const pctx = plotCanvas.getContext('2d');
+
+  function clamp(b){ if (!isFinite(b)||isNaN(b)) return 0; if (b<0) return 0; if (b>=0.999999) return 0.999999; return b; }
+  function gamma(b){ const s = 1 - b*b; if (s<=0) return Infinity; return 1/Math.sqrt(s); }
+  function fmt(x,d=6){ if (!isFinite(x)) return '∞'; const a=Math.abs(x); if (a===0) return '0'; if (a>=1e4||a<1e-3) return x.toExponential(4); return x.toFixed(d); }
+
+  function updateAllFromBeta(b){
+    const bb = clamp(b);
+    betaNum.value = bb.toFixed(3);
+    betaRange.value = bb.toFixed(3);
+    const g = gamma(bb);
+    const v = bb * C;
+    const t0v = parseFloat(t0.value) || 0;
+    const L0v = parseFloat(L0.value) || 0;
+    gOut.textContent = fmt(g,6);
+    tOut.textContent = fmt(g * t0v,3);
+    LOut.textContent = fmt(L0v / g,3);
+    vOut.textContent = `v = ${bb.toFixed(3)} c = ${fmt(v,3)} m/s`;
+    drawPlot(bb,g);
+    drawObjectScene(bb,g);
+  }
+
+  function syncFromV(){
+    const s = (vText.value||'').trim();
+    if (!s) return;
+    let val = Number(s);
+    if (!isFinite(val)||isNaN(val)) return;
+    if (val<0) val = 0;
+    const b = val / C;
+    updateAllFromBeta(b);
+  }
+
+  betaNum.addEventListener('input',()=> updateAllFromBeta(parseFloat(betaNum.value)||0));
+  betaRange.addEventListener('input',()=> updateAllFromBeta(parseFloat(betaRange.value)||0));
+  vText.addEventListener('change', syncFromV);
+  vText.addEventListener('keyup', e=> { if (e.key==='Enter') syncFromV(); });
+  setHalf.addEventListener('click',()=> { updateAllFromBeta(0.5); vText.value = (0.5*C).toExponential(6); });
+  setNine.addEventListener('click',()=> { updateAllFromBeta(0.9); vText.value = (0.9*C).toExponential(6); });
+  clearV.addEventListener('click',()=> { vText.value = ''; });
+  t0.addEventListener('input', ()=> updateAllFromBeta(parseFloat(betaNum.value)||0));
+  L0.addEventListener('input', ()=> updateAllFromBeta(parseFloat(betaNum.value)||0));
+  scaleInput.addEventListener('input', ()=> { scaleVal.textContent = scaleInput.value + ' px/m'; resizeScene(); drawObjectScene(parseFloat(betaNum.value)||0, gamma(parseFloat(betaNum.value)||0)); });
+
+  reset.addEventListener('click',()=>{
+    betaNum.value = '0.500';
+    betaRange.value = '0.500';
+    vText.value = '';
+    t0.value = '1.000';
+    L0.value = '2.000';
+    scaleInput.value = 80;
+    scaleVal.textContent = '80 px/m';
+    updateAllFromBeta(0.5);
+  });
+
+  copy.addEventListener('click', async ()=>{
+    const state = { beta: parseFloat(betaNum.value), vText: vText.value, t0: parseFloat(t0.value), L0: parseFloat(L0.value) };
+    try { await navigator.clipboard.writeText(JSON.stringify(state,null,2)); copy.textContent = 'Copiado!'; setTimeout(()=>copy.textContent='Copiar estado',1200); } catch { copy.textContent='Falha'; setTimeout(()=>copy.textContent='Copiar estado',1200); }
+  });
+
+  function resizePlot(){
+    const w = plotCanvas.clientWidth, h = plotCanvas.clientHeight;
+    plotCanvas.width = Math.round(w * devicePixelRatio);
+    plotCanvas.height = Math.round(h * devicePixelRatio);
+    pctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  }
+
+  function drawPlot(bCurrent,gCurrent){
+    resizePlot();
+    const w = plotCanvas.clientWidth, h = plotCanvas.clientHeight;
+    pctx.clearRect(0,0,w,h);
+    const pad = 36;
+    const x0 = pad, x1 = w - pad, y0 = h - pad, y1 = pad;
+    const plotW = x1 - x0, plotH = y0 - y1;
+    let gMax = Math.max(10, Math.min(100, Math.ceil(Math.max( gCurrent, 10))));
+    const mapX = b => x0 + (b/1) * plotW;
+    const mapY = g => y0 - ((g - 1) / (gMax - 1)) * plotH;
+    pctx.strokeStyle = '#19313b'; pctx.lineWidth = 1;
+    for (let i=0;i<=10;i++){ const xx = x0 + i*plotW/10; pctx.beginPath(); pctx.moveTo(xx,y0); pctx.lineTo(xx,y1); pctx.stroke(); }
+    for (let i=0;i<=10;i++){ const yy = y0 - i*plotH/10; pctx.beginPath(); pctx.moveTo(x0,yy); pctx.lineTo(x1,yy); pctx.stroke(); }
+    pctx.strokeStyle = '#34d1ea'; pctx.lineWidth = 2; pctx.beginPath();
+    const steps = 800;
+    for (let i=0;i<=steps;i++){ const beta = i/steps*0.9999; const gi = gamma(beta); const xx = mapX(beta); const yy = mapY(Math.min(gi,gMax)); if (i===0) pctx.moveTo(xx,yy); else pctx.lineTo(xx,yy); }
+    pctx.stroke();
+    const cx = mapX(bCurrent), cy = mapY(Math.min(gCurrent,gMax));
+    pctx.fillStyle = '#a78bfa'; pctx.beginPath(); pctx.arc(cx,cy,4,0,2*Math.PI); pctx.fill();
+    pctx.fillStyle = '#cbd5e1'; pctx.font = '12px system-ui'; pctx.textAlign='left'; pctx.fillText(`β=${bCurrent.toFixed(3)} γ=${fmt(gCurrent,3)}`,cx+8,cy-8);
+  }
+
+  function resizeScene(){
+    const container = document.getElementById('sceneView');
+    const w = container.clientWidth, h = container.clientHeight;
+    objectCanvas.width = Math.round(w * devicePixelRatio);
+    objectCanvas.height = Math.round(h * devicePixelRatio);
+    objectCanvas.style.width = w + 'px';
+    objectCanvas.style.height = h + 'px';
+    objCtx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  }
+
+  let lastTime = 0;
+  let animX = 0;
+  function drawObjectScene(b,g){
+    if (!objectCanvas.width) resizeScene();
+    const w = objectCanvas.clientWidth, h = objectCanvas.clientHeight;
+    objCtx.clearRect(0,0,w,h);
+    if (showGrid.checked){
+      objCtx.strokeStyle = 'rgba(255,255,255,0.03)'; objCtx.lineWidth = 1;
+      for (let x=0;x<=w;x+=20){ objCtx.beginPath(); objCtx.moveTo(x,0); objCtx.lineTo(x,h); objCtx.stroke(); }
+      for (let y=0;y<=h;y+=20){ objCtx.beginPath(); objCtx.moveTo(0,y); objCtx.lineTo(w,y); objCtx.stroke(); }
+    }
+    const pxPerM = parseFloat(scaleInput.value)||80;
+    const L0m = parseFloat(L0.value)||0;
+    const Lobs = L0m / g;
+    const L0px = Math.max(8, L0m * pxPerM);
+    const Lpx = Math.max(4, Lobs * pxPerM);
+    const centerY = h/2;
+    const baseX = w*0.08;
+    const travelW = w - baseX - 20;
+    if (animate.checked){
+      const t = performance.now() / 1000;
+      animX = (Math.sin(t*0.6)+1)/2;
+    } else {
+      animX = 0.5;
+    }
+    const objX = baseX + animX * travelW;
+    const objY = centerY;
+    // draw proper length (outline, semi-transparent)
+    objCtx.fillStyle = 'rgba(52,209,234,0.08)';
+    objCtx.strokeStyle = 'rgba(52,209,234,0.5)';
+    objCtx.lineWidth = 2;
+    objCtx.fillRect(objX - L0px/2, objY - 22, L0px, 44);
+    objCtx.strokeRect(objX - L0px/2, objY - 22, L0px, 44);
+    objCtx.fillStyle = 'rgba(167,139,250,0.95)';
+    objCtx.strokeStyle = 'rgba(167,139,250,0.95)';
+    objCtx.lineWidth = 2;
+    objCtx.fillRect(objX - Lpx/2, objY - 12, Lpx, 24);
+    objCtx.strokeRect(objX - Lpx/2, objY - 12, Lpx, 24);
+    objCtx.fillStyle = '#cbd5e1';
+    objCtx.font = '12px system-ui';
+    objCtx.textAlign = 'center';
+    objCtx.fillText(`L₀ = ${L0m} m`, objX, objY - 30);
+    objCtx.fillText(`L = ${Number.isFinite(Lobs)?Lobs.toFixed(4):'∞'} m`, objX, objY + 40);
+    // velocity arrow
+    const arrowLen = 40;
+    objCtx.strokeStyle = '#9ae6ff';
+    objCtx.lineWidth = 2;
+    objCtx.beginPath();
+    objCtx.moveTo(objX - (arrowLen/2), objY + 60);
+    objCtx.lineTo(objX + (arrowLen/2), objY + 60);
+    objCtx.stroke();
+    objCtx.beginPath();
+    objCtx.moveTo(objX + (arrowLen/2), objY + 60);
+    objCtx.lineTo(objX + (arrowLen/2) - 6, objY + 60 - 6);
+    objCtx.lineTo(objX + (arrowLen/2) - 6, objY + 60 + 6);
+    objCtx.closePath();
+    objCtx.fillStyle = '#9ae6ff';
+    objCtx.fill();
+  }
+
+  function loop(ts){
+    const b = parseFloat(betaNum.value)||0;
+    const g = gamma(b);
+    drawObjectScene(b,g);
+    requestAnimationFrame(loop);
+  }
+
+  window.addEventListener('resize', ()=>{ resizePlot(); resizeScene(); drawPlot(parseFloat(betaNum.value)||0,gamma(parseFloat(betaNum.value)||0)); drawObjectScene(parseFloat(betaNum.value)||0,gamma(parseFloat(betaNum.value)||0)); });
+  resizePlot(); resizeScene();
+  updateAllFromBeta(0.5);
+  requestAnimationFrame(loop);
+</script>
+</body>
+</html>
