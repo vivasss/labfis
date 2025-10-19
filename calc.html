@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Calculadora Científica — estilo fx-991EX (melhorada)</title>
+<style>
+:root{
+  --bg:#0b1220; --panel:#0f1724; --key:#1f2937; --accent:#0ea5a4; --accent2:#2563eb;
+  --muted:#9aa6b2; --text:#e6eef8; --glass: rgba(255,255,255,0.03);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:linear-gradient(180deg,#071024 0%, #0b1220 100%);display:flex;align-items:center;justify-content:center;padding:24px}
+.calc{
+  width:480px; max-width:96vw; border-radius:14px; background:linear-gradient(180deg,var(--panel),#071022);
+  color:var(--text); padding:14px; box-shadow:0 12px 40px rgba(2,6,23,.6);
+}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.brand{font-weight:700;font-size:14px;letter-spacing:0.6px}
+.mode{font-size:12px;color:var(--muted)}
+.display{
+  background:linear-gradient(180deg,#071428,#0c1a2a); border-radius:10px;padding:12px;min-height:92px;
+  display:flex;flex-direction:column;justify-content:center;margin-bottom:10px;border:1px solid rgba(255,255,255,0.04)
+}
+.topline{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.small{font-size:12px;color:var(--muted)}
+.expression{font-family: "Roboto Mono", monospace;font-size:15px;color:#bfe7ff;word-break:break-all}
+.result{font-family: "Roboto Mono", monospace;font-size:26px;font-weight:700;color:#eaf7ff;text-align:right}
+.row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+button.key{padding:10px;border-radius:8px;border:0;background:var(--key);color:var(--text);font-weight:600;cursor:pointer}
+button.key.small{padding:8px;font-size:13px}
+button.func{background:linear-gradient(180deg,#374151,#2b3440);color:#dbeafe}
+button.op{background:linear-gradient(180deg,#1f6feb,#175dc8);color:white}
+button.accent{background:linear-gradient(180deg,var(--accent),#08928a);color:#021117}
+button.wide{grid-column:span 2}
+.footer{margin-top:10px;display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:12px}
+.grid-matrix{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.input-m{width:100%;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:var(--glass);color:var(--text)}
+.note{font-size:12px;color:var(--muted);margin-top:6px}
+@media (max-width:520px){ .row{grid-template-columns:repeat(4,1fr)} .wide{grid-column:span 2} }
+</style>
+</head>
+<body>
+<div class="calc" role="application" aria-label="Calculadora científica melhorada">
+  <div class="header">
+    <div class="brand">CALC • fx‑991EX STYLE • 2ª EDIÇÃO (clone)</div>
+    <div class="mode" id="mode">MODE: DEG • M:0</div>
+  </div>
+
+  <div class="display" aria-live="polite">
+    <div class="topline"><div class="small">Entrada</div><div class="small" id="status">ANS: 0</div></div>
+    <div class="expression" id="expr">0</div>
+    <div class="result" id="result">0</div>
+  </div>
+
+  <div class="row" id="keys">
+    <button class="key func small" onclick="clearAll()">AC</button>
+    <button class="key func small" onclick="back()">DEL</button>
+    <button class="key func small" onclick="toggleAngle()">DEG</button>
+    <button class="key func small" onclick="toggleParen()">( )</button>
+    <button class="key func small" onclick="modeFrac()">a b/c</button>
+    <button class="key func small" onclick="toSci()">SCI</button>
+
+    <button class="key" onclick="input('7')">7</button>
+    <button class="key" onclick="input('8')">8</button>
+    <button class="key" onclick="input('9')">9</button>
+    <button class="key op" onclick="inputOperator('/')">÷</button>
+    <button class="key func" onclick="apply('sqrt')">√</button>
+    <button class="key func" onclick="apply('^')">x^y</button>
+
+    <button class="key" onclick="input('4')">4</button>
+    <button class="key" onclick="input('5')">5</button>
+    <button class="key" onclick="input('6')">6</button>
+    <button class="key op" onclick="inputOperator('*')">×</button>
+    <button class="key func" onclick="apply('log')">log</button>
+    <button class="key func" onclick="apply('ln')">ln</button>
+
+    <button class="key" onclick="input('1')">1</button>
+    <button class="key" onclick="input('2')">2</button>
+    <button class="key" onclick="input('3')">3</button>
+    <button class="key op" onclick="inputOperator('-')">−</button>
+    <button class="key func" onclick="applyTrig('sin')">sin</button>
+    <button class="key func" onclick="applyTrig('cos')">cos</button>
+
+    <button class="key wide" onclick="input('0')">0</button>
+    <button class="key" onclick="input('.')">.</button>
+    <button class="key op" onclick="inputOperator('+')">+</button>
+    <button class="key func" onclick="applyTrig('tan')">tan</button>
+    <button class="key func" onclick="apply('fact')">n!</button>
+
+    <button class="key func small" onclick="memClear()">MC</button>
+    <button class="key func small" onclick="memRecall()">MR</button>
+    <button class="key func small" onclick="memAdd()">M+</button>
+    <button class="key func small" onclick="memSub()">M-</button>
+    <button class="key func small" onclick="storeAns()">ANS</button>
+    <button class="key op" onclick="calculate()">=</button>
+
+    <button class="key func small" onclick="nCr()">nCr</button>
+    <button class="key func small" onclick="nPr()">nPr</button>
+    <button class="key func small" onclick="percent()">%</button>
+    <button class="key func small" onclick="toggleSign()">+/-</button>
+    <button class="key func small" onclick="constPi()">π</button>
+    <button class="key func small" onclick="constE()">e</button>
+
+  </div>
+
+  <hr style="border:none;border-top:1px solid rgba(255,255,255,0.04);margin:10px 0">
+
+  <div style="display:grid;grid-template-columns:1fr 220px;gap:12px">
+    <div>
+      <div style="font-weight:700;margin-bottom:8px">Matriz (2x2 / 3x3)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <div style="font-size:13px;color:var(--muted)">Matriz A</div>
+          <div class="grid-matrix" id="Ainputs"></div>
+        </div>
+        <div>
+          <div style="font-size:13px;color:var(--muted)">Matriz B</div>
+          <div class="grid-matrix" id="Binputs"></div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <select id="matSize" style="padding:8px;border-radius:6px;background:var(--glass);color:var(--text);border:1px solid rgba(255,255,255,0.04)">
+          <option value="2">2 x 2</option>
+          <option value="3">3 x 3</option>
+        </select>
+        <button class="key func small" onclick="matFillId('A')">Identidade A</button>
+        <button class="key func small" onclick="matFillId('B')">Identidade B</button>
+        <button class="key func small" onclick="matClear()">Limpar</button>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="key accent small" onclick="matOp('add')">A + B</button>
+        <button class="key accent small" onclick="matOp('sub')">A − B</button>
+        <button class="key accent small" onclick="matOp('mul')">A × B</button>
+        <button class="key func small" onclick="matOp('detA')">det A</button>
+        <button class="key func small" onclick="matOp('invA')">A⁻¹</button>
+      </div>
+
+      <div id="matResult" class="note"></div>
+    </div>
+
+    <div>
+      <div style="font-weight:700;margin-bottom:8px">Histórico / Notas rápidas</div>
+      <div id="history" style="min-height:120px;background:var(--glass);padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);font-size:13px;color:var(--muted);overflow:auto"></div>
+      <div class="note">Entrada matemática simples; exemplos: "3+4*2", "45/7", "2,3" para nCr/nPr; use as matrizes à esquerda e à direita.</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div>Versão local • UI inspirada na Casio fx‑991EX</div>
+    <div class="note" id="devnote">Pronto</div>
+  </div>
+</div>
+
+<script>
+/* Estado */
+let exprEl = document.getElementById('expr'), resEl = document.getElementById('result'), modeEl = document.getElementById('mode'), statusEl = document.getElementById('status');
+let historyEl = document.getElementById('history'), matResultEl = document.getElementById('matResult');
+let memory = 0, ans = 0, angleMode = 'DEG', parOpen=false;
+
+/* Inicialização matrizes */
+let Ainputs = document.getElementById('Ainputs'), Binputs = document.getElementById('Binputs'), matSize = document.getElementById('matSize');
+function buildMatrices(){
+  Ainputs.innerHTML=''; Binputs.innerHTML=''; let n = Number(matSize.value);
+  for(let i=0;i<n*n;i++){ let ia=document.createElement('input'); ia.className='input-m'; ia.value='0'; ia.id='A'+i; Ainputs.appendChild(ia);
+    let ib=document.createElement('input'); ib.className='input-m'; ib.value='0'; ib.id='B'+i; Binputs.appendChild(ib);
+  }
+}
+matSize.addEventListener('change',buildMatrices);
+buildMatrices();
+
+/* UI básicas */
+function refreshMode(){ modeEl.textContent = `MODE: ${angleMode} • M:${memory}`; statusEl.textContent = `ANS: ${ans}`; }
+function pushHistory(t){ let d = document.createElement('div'); d.textContent = t; historyEl.prepend(d); }
+
+/* Entrada e edição */
+let expr = '';
+function input(s){ if(expr==='0') expr=s; else expr+=s; exprEl.textContent = expr; }
+function inputOperator(op){ expr += op; exprEl.textContent = expr; }
+function clearAll(){ expr=''; exprEl.textContent='0'; resEl.textContent='0'; pushHistory('AC'); }
+function back(){ expr = expr.slice(0,-1); exprEl.textContent = expr || '0'; }
+function toggleAngle(){ angleMode = angleMode==='DEG'?'RAD':'DEG'; refreshMode(); }
+function toggleParen(){ if(!parOpen){ expr += '('; parOpen=true; } else { expr += ')'; parOpen=false; } exprEl.textContent = expr; }
+function modeFrac(){ pushHistory('Modo fração selecionado'); }
+function toSci(){ pushHistory('Notação científica ativada (visual)'); }
+
+/* Constantes e memória */
+function constPi(){ input(String(Math.PI)); }
+function constE(){ input(String(Math.E)); }
+function memClear(){ memory = 0; refreshMode(); pushHistory('MC'); }
+function memRecall(){ input(String(memory)); pushHistory('MR -> ' + memory); }
+function memAdd(){ memory += ans; refreshMode(); pushHistory('M+ ' + ans); }
+function memSub(){ memory -= ans; refreshMode(); pushHistory('M- ' + ans); }
+function storeAns(){ input(String(ans)); }
+
+/* Operações */
+function percent(){ try{ let v = safeEval(expr); let r = v/100; setResult(r); expr = String(r); pushHistory(expr + ' %'); }catch(e){ setError(); } }
+function toggleSign(){ try{ let v = safeEval(expr); v = -v; expr = String(v); exprEl.textContent = expr; setResult(v); }catch(e){} }
+
+/* funções matemáticas */
+function apply(fn){
+  try{
+    if(fn==='sqrt'){ let v = safeEval(expr||'0'); setResult(Math.sqrt(v)); expr = String(Math.sqrt(v)); exprEl.textContent = expr; return; }
+    if(fn==='^'){ expr += '**'; exprEl.textContent = expr; return; }
+    if(fn==='log'){ let v = safeEval(expr||'1'); setResult(Math.log10(v)); expr = String(Math.log10(v)); exprEl.textContent = expr; return; }
+    if(fn==='ln'){ let v = safeEval(expr||'1'); setResult(Math.log(v)); expr = String(Math.log(v)); exprEl.textContent = expr; return; }
+    if(fn==='fact'){ let v = Math.floor(safeEval(expr||'0')); setResult(factorial(v)); expr = String(factorial(v)); exprEl.textContent = expr; return; }
+  }catch(e){ setError(); }
+}
+function applyTrig(fn){
+  try{
+    let v = safeEval(expr||'0');
+    if(angleMode==='DEG') v = v*Math.PI/180;
+    let val = Math[fn](v);
+    setResult(val); expr = String(val); exprEl.textContent = expr;
+  }catch(e){ setError(); }
+}
+
+/* nCr nPr */
+function nCr(){ try{ let [n,m]=parseTwo(expr); let r = comb(n,m); setResult(r); expr=String(r); exprEl.textContent=expr; }catch(e){ setError(); } }
+function nPr(){ try{ let [n,m]=parseTwo(expr); let r = perm(n,m); setResult(r); expr=String(r); exprEl.textContent=expr; }catch(e){ setError(); } }
+function parseTwo(s){
+  let parts = s.split(',').map(x=>Number(x.trim()));
+  if(parts.length<2 || parts.some(isNaN)) throw 'err';
+  return parts;
+}
+
+/* Cálculo principal */
+function calculate(){
+  try{
+    let v = safeEval(expr);
+    setResult(v);
+    pushHistory(expr + ' = ' + v);
+    expr = String(v); exprEl.textContent = expr;
+  }catch(e){ setError(); }
+}
+function setResult(v){ ans = (typeof v==='number')? v : Number(v); resEl.textContent = formatNumber(v); refreshMode(); }
+function setError(){ resEl.textContent='Error'; pushHistory('Error with: ' + expr); }
+
+/* Avaliação segura */
+function safeEval(s){
+  if(!s) return 0;
+  s = s.replace(/÷/g,'/').replace(/×/g,'*').replace(/π/g, String(Math.PI));
+  s = s.replace(/[^0-9+\-*/().,eE**\sPIpi]/g, function(ch){ if(ch==='^') return '**'; return ''; });
+  // Convert exponent shorthand ^ to **
+  s = s.replace(/\^/g,'**');
+  // Use Function with Math access
+  let fn = new Function('Math','return ('+s+');');
+  let val = fn(Math);
+  if(typeof val !== 'number' || !isFinite(val)) throw 'eval err';
+  return val;
+}
+
+/* Helpers */
+function formatNumber(x){
+  if(typeof x!=='number') return String(x);
+  if(Math.abs(x) >= 1e10 || (Math.abs(x)>0 && Math.abs(x) < 1e-8)) return x.toExponential(10);
+  return Number(x.toPrecision(12)).toString();
+}
+function factorial(n){ if(n<0) return NaN; if(n>170) return Infinity; let r=1; for(let i=2;i<=n;i++) r*=i; return r; }
+function comb(n,r){ if(r<0||r>n) return 0; return Math.round(factorial(n)/(factorial(r)*factorial(n-r))); }
+function perm(n,r){ if(r<0||r>n) return 0; return Math.round(factorial(n)/factorial(n-r)); }
+
+/* Matrizes: leitura e operações */
+function readMat(prefix){
+  let n = Number(matSize.value), M = [];
+  for(let i=0;i<n;i++){ M[i]=[]; for(let j=0;j<n;j++){ let v = Number(document.getElementById(prefix + (i*n + j)).value || 0); M[i][j]=v; } }
+  return M;
+}
+function matFillId(prefix){
+  let n = Number(matSize.value);
+  for(let i=0;i<n;i++) for(let j=0;j<n;j++){ document.getElementById(prefix + (i*n + j)).value = (i===j?1:0); }
+}
+function matClear(){ let n=Number(matSize.value); for(let p of ['A','B']) for(let i=0;i<n*n;i++) document.getElementById(p+i).value='0'; matResultEl.textContent=''; }
+function matOp(op){
+  try{
+    let n = Number(matSize.value);
+    let A = readMat('A'), B = readMat('B'), R;
+    if(op==='add'){ R = matrixAdd(A,B); showMat(R); pushHistory('A + B'); return; }
+    if(op==='sub'){ R = matrixSub(A,B); showMat(R); pushHistory('A - B'); return; }
+    if(op==='mul'){ R = matrixMul(A,B); showMat(R); pushHistory('A × B'); return; }
+    if(op==='detA'){ let d = matrixDet(A); matResultEl.textContent = 'det(A) = ' + d; pushHistory('det(A) = ' + d); return; }
+    if(op==='invA'){ let inv = matrixInverse(A); if(!inv){ matResultEl.textContent='A singular (sem inversa)'; pushHistory('A singular'); } else { showMat(inv); pushHistory('A⁻¹'); } return; }
+  }catch(e){ matResultEl.textContent='Erro matriz'; }
+}
+function showMat(M){
+  let s = M.map(row => row.map(v=>formatNumber(v)).join('  |  ')).join('\n');
+  matResultEl.textContent = s;
+}
+
+/* Matrix utilities */
+function matrixAdd(A,B){ let n = A.length; let R = Array(n).fill(0).map(()=>Array(n).fill(0)); for(let i=0;i<n;i++) for(let j=0;j<n;j++) R[i][j]=A[i][j]+B[i][j]; return R; }
+function matrixSub(A,B){ let n = A.length; let R = Array(n).fill(0).map(()=>Array(n).fill(0)); for(let i=0;i<n;i++) for(let j=0;j<n;j++) R[i][j]=A[i][j]-B[i][j]; return R; }
+function matrixMul(A,B){ let n=A.length; let R=Array(n).fill(0).map(()=>Array(n).fill(0)); for(let i=0;i<n;i++) for(let j=0;j<n;j++) for(let k=0;k<n;k++) R[i][j]+=A[i][k]*B[k][j]; return R; }
+
+/* Determinant and inverse for 2x2 and 3x3 */
+function matrixDet(M){
+  let n=M.length;
+  if(n===2) return M[0][0]*M[1][1]-M[0][1]*M[1][0];
+  if(n===3){
+    let a=M;
+    return a[0][0]*(a[1][1]*a[2][2]-a[1][2]*a[2][1])
+         - a[0][1]*(a[1][0]*a[2][2]-a[1][2]*a[2][0])
+         + a[0][2]*(a[1][0]*a[2][1]-a[1][1]*a[2][0]);
+  }
+  throw 'det not supported';
+}
+function matrixInverse(M){
+  let n=M.length;
+  let det = matrixDet(M);
+  if(det===0) return null;
+  if(n===2){
+    let [[a,b],[c,d]] = M;
+    let inv = [[ d/det, -b/det], [-c/det, a/det]];
+    return inv;
+  }
+  if(n===3){
+    let a=M;
+    // cofactor matrix
+    let C = [
+      [  (a[1][1]*a[2][2]-a[1][2]*a[2][1]), -(a[1][0]*a[2][2]-a[1][2]*a[2][0]),  (a[1][0]*a[2][1]-a[1][1]*a[2][0]) ],
+      [ -(a[0][1]*a[2][2]-a[0][2]*a[2][1]),  (a[0][0]*a[2][2]-a[0][2]*a[2][0]), -(a[0][0]*a[2][1]-a[0][1]*a[2][0]) ],
+      [  (a[0][1]*a[1][2]-a[0][2]*a[1][1]), -(a[0][0]*a[1][2]-a[0][2]*a[1][0]),  (a[0][0]*a[1][1]-a[0][1]*a[1][0]) ]
+    ];
+    // transpose cofactor (adjugate) then divide by det
+    let adj = [[C[0][0],C[1][0],C[2][0]],[C[0][1],C[1][1],C[2][1]],[C[0][2],C[1][2],C[2][2]]];
+    for(let i=0;i<3;i++) for(let j=0;j<3;j++) adj[i][j] = adj[i][j]/det;
+    return adj;
+  }
+  return null;
+}
+
+refreshMode();
+</script>
+</body>
+</html>

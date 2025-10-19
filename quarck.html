@@ -1,0 +1,926 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Quarks e Glúons — Emissão e Troca de Cor</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    
+    body {
+      margin: 0;
+      background: #071026;
+      color: #e6eef8;
+      font-family: system-ui, Segoe UI, Roboto, Arial;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      touch-action: none;
+    }
+    
+    header {
+      padding: 10px 15px;
+      background: #061226;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      min-height: 50px;
+    }
+    
+    h1 {
+      font-size: clamp(16px, 4vw, 18px);
+      margin: 0;
+      white-space: nowrap;
+    }
+    
+    #ui {
+      padding: 10px 15px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: #041224;
+      flex-wrap: wrap;
+      min-height: 60px;
+    }
+    
+    button, select, input[type=range] {
+      background: #0b3b5a;
+      color: #e6eef8;
+      border: 1px solid #1d5676;
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: all 0.2s;
+      font-size: 14px;
+      min-height: 40px;
+      cursor: pointer;
+    }
+    
+    button:hover, select:hover {
+      background: #0d4a6e;
+    }
+    
+    .toggle-on {
+      background: #1e7a3a;
+    }
+    
+    input[type=range] {
+      padding: 0;
+      min-height: auto;
+    }
+    
+    canvas {
+      display: block;
+      width: 100vw;
+      height: calc(100vh - 120px);
+      height: calc(100dvh - 120px);
+      background: linear-gradient(180deg, #04121b, #082033);
+      touch-action: none;
+    }
+    
+    .small {
+      font-size: clamp(11px, 2.5vw, 12px);
+      color: #bcd6ff;
+    }
+    
+    .ui-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    
+    .legend {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-left: auto;
+    }
+    
+    @media (max-width: 768px) {
+      header {
+        padding: 8px 12px;
+        gap: 6px;
+      }
+      
+      #ui {
+        padding: 8px 12px;
+        gap: 6px;
+        justify-content: center;
+      }
+      
+      .ui-group {
+        flex: 1;
+        min-width: 45%;
+        justify-content: center;
+      }
+      
+      .legend {
+        margin-left: 0;
+        justify-content: center;
+        order: -1;
+        width: 100%;
+        margin-bottom: 5px;
+      }
+      
+      button, select {
+        padding: 10px;
+        font-size: 13px;
+        min-height: 44px;
+        flex: 1;
+        text-align: center;
+      }
+      
+      canvas {
+        height: calc(100vh - 140px);
+        height: calc(100dvh - 140px);
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .ui-group {
+        min-width: 100%;
+      }
+      
+      button, select {
+        min-height: 42px;
+        font-size: 12px;
+      }
+      
+      canvas {
+        height: calc(100vh - 160px);
+        height: calc(100dvh - 160px);
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    
+    .fade-in { 
+      animation: fadeIn 0.5s ease-out; 
+    }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    .pulse { 
+      animation: pulse 1.5s infinite; 
+    }
+    
+    .touch-hint {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      background: rgba(15, 163, 255, 0.2);
+      border: 2px solid #0fa3ff;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 100;
+      animation: touchPulse 1s ease-out;
+      transform: translate(-50%, -50%);
+    }
+    
+    @keyframes touchPulse {
+      0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Quarks & Glúons — Emissão e Troca</h1>
+    <div class="small">Toque no quark para forçar emissão; toque na tela para criar múon.</div>
+  </header>
+
+  <div id="ui">
+    <div class="legend small">
+      Legenda: <span style="color:#ff4d4d">u</span> 
+      <span style="color:#6bff7a">d</span> 
+      <span style="color:#6fb8ff">s</span> | 
+      múon: <span style="color:#ffd66b">μ</span> | 
+      glúon: <span style="color:#ffd34d">o</span>
+    </div>
+    
+    <div class="ui-group">
+      <label class="small">Modo:</label>
+      <select id="mode">
+        <option value="demo">Demo (trio)</option>
+        <option value="single">Quark isolado</option>
+        <option value="free">Muitos múons</option>
+      </select>
+    </div>
+    
+    <div class="ui-group">
+      <label class="small">Confinamento:</label>
+      <input id="kRange" type="range" min="0" max="1.5" step="0.01" value="0.35">
+    </div>
+    
+    <div class="ui-group">
+      <label class="small">Elasticidade:</label>
+      <input id="eRange" type="range" min="0" max="1" step="0.01" value="0.85">
+    </div>
+    
+    <button id="resetBtn">Reset</button>
+    <button id="freeMuonsBtn">Muons livres: OFF</button>
+  </div>
+
+  <canvas id="c" tabindex="0"></canvas>
+
+<script>
+(() => {
+  const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
+
+  // timing constants (fixo + substeps) — essenciais para estabilidade
+  const FIXED_MS = 16; // base ~60Hz
+  const SUBSTEPS = 6;  // aumentado para melhor estabilidade
+
+  // delay antes de emitir glúon após interação múon-quark (ms)
+  const GLUON_DELAY_MS = 400; // reduzido para mais dinamismo
+
+  let DPR = Math.max(1, window.devicePixelRatio || 1);
+  function resize(){
+    DPR = Math.max(1, window.devicePixelRatio || 1);
+    const cssW = innerWidth;
+    const cssH = Math.max(200, innerHeight - (window.innerWidth <= 768 ? 140 : 120));
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+    canvas.width = Math.floor(cssW * DPR);
+    canvas.height = Math.floor(cssH * DPR);
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.scale(DPR, DPR);
+  }
+  addEventListener('resize', resize);
+  resize();
+
+  const MODE = document.getElementById('mode'),
+        kRange = document.getElementById('kRange'),
+        eRange = document.getElementById('eRange'),
+        resetBtn = document.getElementById('resetBtn'),
+        freeMuonsBtn = document.getElementById('freeMuonsBtn');
+
+  function safeHypot(x,y){ const h = Math.hypot(x,y); return (h === 0 || !isFinite(h)) ? 0.0001 : h; }
+
+  class Particle {
+    constructor(x,y,opts={}){
+      this.x = x; this.y = y;
+      this.vx = opts.vx||0; this.vy = opts.vy||0;
+      this.r = opts.r||10; this.mass = opts.mass||1;
+      this.color = opts.color||'#fff'; this.type = opts.type||'muon'; this.label = opts.label||'';
+      this.fixed = !!opts.fixed; this.energyHighlight = 0;
+      // para quarks: cooldown timer (ms) até emitir glúon; null = sem emissão pendente
+      this.gluonCooldown = null;
+      // opcional: timestamp alvo em performance.now() quando emitir
+      this.gluonEmitAt = null;
+      // para animação de entrada
+      this.creationTime = performance.now();
+      this.entranceProgress = 0;
+      // para efeitos visuais
+      this.pulseEffect = 0;
+      this.trail = [];
+      this.maxTrailLength = 8;
+    }
+    applyForce(fx,fy){ if(this.fixed) return; this.vx += fx/this.mass; this.vy += fy/this.mass; }
+    
+    // Atualizar progresso da animação de entrada
+    updateEntrance(now) {
+      if (this.entranceProgress < 1) {
+        const elapsed = now - this.creationTime;
+        this.entranceProgress = Math.min(1, elapsed / 500); // 500ms para animação completa
+      }
+    }
+    
+    // Obter raio atualizado para animação de entrada
+    getCurrentRadius() {
+      // Easing function para animação suave
+      const eased = this.entranceProgress < 0.5 
+        ? 2 * this.entranceProgress * this.entranceProgress 
+        : 1 - Math.pow(-2 * this.entranceProgress + 2, 2) / 2;
+      return this.r * eased;
+    }
+    
+    // Adicionar posição ao rastro
+    addToTrail() {
+      this.trail.unshift({x: this.x, y: this.y});
+      if (this.trail.length > this.maxTrailLength) {
+        this.trail.pop();
+      }
+    }
+    
+    // Desenhar rastro
+    drawTrail(ctx) {
+      if (this.trail.length < 2) return;
+      
+      ctx.beginPath();
+      ctx.moveTo(this.trail[0].x, this.trail[0].y);
+      
+      for (let i = 1; i < this.trail.length; i++) {
+        const point = this.trail[i];
+        ctx.lineTo(point.x, point.y);
+      }
+      
+      ctx.strokeStyle = this.color.replace(')', ', 0.3)').replace('rgb', 'rgba');
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+  }
+
+  class Gluon {
+    constructor(x,y,target,carry,emitter){
+      this.x = x; this.y = y; this.target = target;
+      this.vx = 0; this.vy = 0; this.speed = 12; // aumentado para mais dinamismo
+      this.r = 5; this.carry = carry; this.emitter = emitter; this.alive = true;
+      // Animação de entrada para glúons também
+      this.creationTime = performance.now();
+      this.entranceProgress = 0;
+      // Efeito de rastro
+      this.trail = [];
+      this.maxTrailLength = 5;
+    }
+    
+    updateEntrance(now) {
+      if (this.entranceProgress < 1) {
+        const elapsed = now - this.creationTime;
+        this.entranceProgress = Math.min(1, elapsed / 200); // 200ms para animação rápida
+      }
+    }
+    
+    getCurrentRadius() {
+      const eased = this.entranceProgress < 0.5 
+        ? 2 * this.entranceProgress * this.entranceProgress 
+        : 1 - Math.pow(-2 * this.entranceProgress + 2, 2) / 2;
+      return this.r * eased;
+    }
+    
+    // Adicionar posição ao rastro
+    addToTrail() {
+      this.trail.unshift({x: this.x, y: this.y});
+      if (this.trail.length > this.maxTrailLength) {
+        this.trail.pop();
+      }
+    }
+    
+    // Desenhar rastro
+    drawTrail(ctx) {
+      if (this.trail.length < 2) return;
+      
+      ctx.beginPath();
+      ctx.moveTo(this.trail[0].x, this.trail[0].y);
+      
+      for (let i = 1; i < this.trail.length; i++) {
+        const point = this.trail[i];
+        ctx.lineTo(point.x, point.y);
+      }
+      
+      ctx.strokeStyle = 'rgba(255, 211, 77, 0.5)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+    
+    step(){
+      const dx = this.target.x - this.x, dy = this.target.y - this.y;
+      const dist = safeHypot(dx,dy);
+      const nx = dx/dist, ny = dy/dist;
+      const travel = Math.min(this.speed, dist);
+      this.x += nx*travel; this.y += ny*travel;
+      this.vx = nx * travel; this.vy = ny * travel;
+      if(dist <= 4) this.alive = false;
+    }
+    draw(ctx){
+      const currentRadius = this.getCurrentRadius();
+      
+      // Desenhar rastro
+      this.drawTrail(ctx);
+      
+      // Desenhar glúon
+      ctx.beginPath(); 
+      ctx.fillStyle = '#ffd34d'; 
+      ctx.arc(this.x, this.y, currentRadius, 0, Math.PI*2); 
+      ctx.fill();
+      
+      // Desenhar efeito de brilho
+      if (this.entranceProgress > 0.5) {
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(255, 211, 77, 0.7)';
+        ctx.lineWidth = 1;
+        ctx.arc(this.x, this.y, currentRadius + 3, 0, Math.PI*2);
+        ctx.stroke();
+      }
+      
+      // Só desenhar a cauda se o glúon já tiver uma animação de entrada significativa
+      if (this.entranceProgress > 0.3) {
+        ctx.beginPath(); 
+        ctx.strokeStyle = `rgba(255,211,77,${0.5 * this.entranceProgress})`; 
+        ctx.lineWidth = 2;
+        ctx.moveTo(this.x, this.y); 
+        ctx.lineTo(this.x - this.vx*1.5, this.y - this.vy*1.5); 
+        ctx.stroke();
+      }
+    }
+  }
+
+  let particles = [], springs = [], gluons = [];
+
+  function addMuon(x,y,vx=0,vy=0){
+    const m = new Particle(x,y,{r:9,mass:0.65,color:'#ffd66b',type:'muon',label:'μ'}); 
+    m.vx = vx; m.vy = vy; 
+    particles.push(m); 
+    return m;
+  }
+
+  function createTrio(cx,cy){
+    const cols = [{label:'u',color:'#ff4d4d'},{label:'d',color:'#6bff7a'},{label:'s',color:'#6fb8ff'}];
+    const R = 62;
+    const created = [];
+    for(let i=0;i<3;i++){
+      const a = Math.PI*2*i/3;
+      const x = cx + Math.cos(a)*R + (Math.random()-0.5)*4;
+      const y = cy + Math.sin(a)*R + (Math.random()-0.5)*4;
+      const q = new Particle(x,y,{r:14,mass:1.4,color:cols[i].color,type:'quark',label:cols[i].label});
+      const speed = 0.18;
+      q.vx = Math.cos(a + Math.PI/2)*speed + (Math.random()-0.5)*0.02;
+      q.vy = Math.sin(a + Math.PI/2)*speed + (Math.random()-0.5)*0.02;
+      created.push(q); 
+      particles.push(q);
+    }
+    const rest = Math.round(Math.sqrt(3) * R);
+    const kVal = Math.max(0.05, parseFloat(kRange.value));
+    for(let i=0;i<3;i++){
+      for(let j=i+1;j<3;j++){
+        springs.push({a:created[i],b:created[j],rest:rest,k:kVal});
+      }
+    }
+  }
+
+  function reset(mode){
+    particles = []; springs = []; gluons = [];
+    const cx = Math.max(120, innerWidth/2), cy = Math.max(140, (innerHeight-(window.innerWidth <= 768 ? 140 : 120))/2);
+    if(mode === 'demo'){ 
+      createTrio(cx,cy); 
+      addMuon(40,40,1.6,0.8); 
+      addMuon(innerWidth-60,80,-1.6,0.5); 
+    }
+    else if(mode === 'single'){ 
+      particles.push(new Particle(cx,cy,{r:18,mass:1.2,color:'#ff4d4d',type:'quark',label:'u'})); 
+    }
+    else { 
+      for(let i=0;i<5;i++){ 
+        const q = new Particle(120 + i*70,cy,{r:12,mass:1,color:'#6fb8ff',type:'quark',label:'s'}); 
+        q.vx=(Math.random()-0.5)*0.4; 
+        particles.push(q); 
+      } 
+      for(let i=0;i<10;i++) 
+        addMuon(Math.random()*innerWidth, Math.random()*(innerHeight-(window.innerWidth <= 768 ? 140 : 120)),(Math.random()-0.5)*2,(Math.random()-0.5)*2); 
+    }
+  }
+
+  reset(MODE.value);
+
+  MODE.addEventListener('change', ()=> reset(MODE.value));
+  kRange.addEventListener('input', ()=> springs.forEach(s=> s.k = Math.max(0.05, parseFloat(kRange.value))));
+  resetBtn.addEventListener('click', ()=> reset(MODE.value));
+
+  // freeMuons toggle
+  let freeMuons = false;
+  function updateFreeMuonsButton(){
+    freeMuonsBtn.textContent = 'Muons livres: ' + (freeMuons ? 'ON' : 'OFF');
+    freeMuonsBtn.classList.toggle('toggle-on', freeMuons);
+  }
+  freeMuonsBtn.addEventListener('click', ()=>{
+    freeMuons = !freeMuons;
+    updateFreeMuonsButton();
+  });
+  updateFreeMuonsButton();
+
+  // Emissão com atraso: quando múon colide, agendar emissão no quark
+  function scheduleGluonEmission(quark){
+    const now = performance.now();
+    if(quark.gluonEmitAt && quark.gluonEmitAt > now) return; // já agendado
+    quark.gluonEmitAt = now + GLUON_DELAY_MS;
+    quark.gluonCooldown = GLUON_DELAY_MS;
+    // destaque visual pequeno
+    quark.energyHighlight = Math.min(1, (quark.energyHighlight || 0) + 0.2);
+  }
+
+  function tryEmitScheduledGluons(now){
+    for(const p of particles){
+      if(p.type === 'quark' && p.gluonEmitAt){
+        if(now >= p.gluonEmitAt){
+          // efetua emissão agora
+          emitGluon(p);
+          p.gluonEmitAt = null;
+          p.gluonCooldown = null;
+        } else {
+          // atualizar cooldown (para debug ou exibição)
+          p.gluonCooldown = Math.max(0, p.gluonEmitAt - now);
+        }
+      }
+    }
+  }
+
+  function emitGluon(emitter){
+    const quarks = particles.filter(p => p.type === 'quark' && p !== emitter);
+    if(quarks.length === 0) return;
+    const target = quarks[Math.floor(Math.random()*quarks.length)];
+    const g = new Gluon(emitter.x, emitter.y, target, {from:emitter.color,to:target.color}, emitter);
+    const dx = target.x - emitter.x, dy = target.y - emitter.y;
+    const dist = safeHypot(dx,dy);
+    const nx = dx/dist, ny = dy/dist;
+    const recoilStrength = 1.2; // aumentado para mais dinamismo
+    emitter.vx -= nx * recoilStrength / emitter.mass;
+    emitter.vy -= ny * recoilStrength / emitter.mass;
+    gluons.push(g);
+  }
+
+  function pointerToCanvas(ev){
+    const rect = canvas.getBoundingClientRect();
+    let clientX, clientY;
+    
+    if (ev.type.includes('touch')) {
+      clientX = ev.touches[0].clientX;
+      clientY = ev.touches[0].clientY;
+    } else {
+      clientX = ev.clientX;
+      clientY = ev.clientY;
+    }
+    
+    return { 
+      x: (clientX - rect.left), 
+      y: (clientY - rect.top) 
+    };
+  }
+
+  function createTouchHint(x, y) {
+    const hint = document.createElement('div');
+    hint.className = 'touch-hint';
+    hint.style.left = x + 'px';
+    hint.style.top = y + 'px';
+    document.body.appendChild(hint);
+    
+    setTimeout(() => {
+      if (hint.parentNode) {
+        hint.remove();
+      }
+    }, 1000);
+  }
+
+  let mouse = {x:0,y:0,down:false,dragging:null,dragOffsetX:0,dragOffsetY:0};
+
+  // Eventos para desktop e mobile
+  canvas.addEventListener('pointerdown', handlePointerStart);
+  canvas.addEventListener('touchstart', handlePointerStart, { passive: false });
+  canvas.addEventListener('mousedown', handlePointerStart);
+
+  canvas.addEventListener('pointermove', handlePointerMove);
+  canvas.addEventListener('touchmove', handlePointerMove, { passive: false });
+  canvas.addEventListener('mousemove', handlePointerMove);
+
+  canvas.addEventListener('pointerup', handlePointerEnd);
+  canvas.addEventListener('touchend', handlePointerEnd);
+  canvas.addEventListener('mouseup', handlePointerEnd);
+
+  function handlePointerStart(e) {
+    e.preventDefault();
+    const p = pointerToCanvas(e);
+    mouse.x = p.x; mouse.y = p.y; mouse.down = true;
+    
+    // Feedback visual para toque
+    if (e.type.includes('touch')) {
+      createTouchHint(p.x, p.y);
+    }
+    
+    for(let i = particles.length - 1; i >= 0; i--){
+      const q = particles[i];
+      const d = safeHypot(q.x - mouse.x, q.y - mouse.y);
+      // Área de toque maior para mobile
+      const touchRadius = e.type.includes('touch') ? q.r + 20 : q.r + 6;
+      if(d <= touchRadius){
+        mouse.dragging = q;
+        mouse.dragOffsetX = q.x - mouse.x;
+        mouse.dragOffsetY = q.y - mouse.y;
+        return;
+      }
+    }
+    // Criar múon apenas em toques simples (não arrastar)
+    if (!mouse.dragging) {
+      addMuon(mouse.x, mouse.y, (Math.random()-0.5)*2, (Math.random()-0.5)*2);
+    }
+  }
+
+  function handlePointerMove(e) {
+    e.preventDefault();
+    const p = pointerToCanvas(e); 
+    mouse.x = p.x; mouse.y = p.y;
+    
+    if(mouse.dragging){
+      mouse.dragging.x = mouse.x + mouse.dragOffsetX;
+      mouse.dragging.y = mouse.y + mouse.dragOffsetY;
+      mouse.dragging.vx = 0; mouse.dragging.vy = 0;
+    }
+  }
+
+  function handlePointerEnd(e) {
+    e.preventDefault();
+    mouse.down = false;
+    if(mouse.dragging){
+      const dragged = mouse.dragging;
+      if(dragged.type === 'quark') scheduleGluonEmission(dragged);
+    }
+    mouse.dragging = null;
+  }
+
+  function worldBounds(p){
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    const e = parseFloat(eRange.value);
+    if(p.x - p.r < 0){ p.x = p.r; p.vx = Math.abs(p.vx) * e; }
+    if(p.x + p.r > w){ p.x = w - p.r; p.vx = -Math.abs(p.vx) * e; }
+    if(p.y - p.r < 0){ p.y = p.r; p.vy = Math.abs(p.vy) * e; }
+    if(p.y + p.r > h){ p.y = h - p.r; p.vy = -Math.abs(p.vy) * e; }
+  }
+
+  // physics
+  let last = performance.now();
+
+  function physicsStep(dt, now){
+    const globalDamping = 0.992; // reduzido ligeiramente para mais fluidez
+    const maxVel = 50;
+    const repulseStrength = 0.35; // reduzido para interações mais suaves
+
+    // Atualizar animações de entrada
+    for(const p of particles) p.updateEntrance(now);
+    for(const g of gluons) g.updateEntrance(now);
+
+    // Atualizar rastros
+    for(const p of particles) {
+      if (p.type === 'muon' || p.energyHighlight > 0) {
+        p.addToTrail();
+      }
+    }
+    for(const g of gluons) g.addToTrail();
+
+    // springs
+    for(const s of springs){
+      const dx = s.b.x - s.a.x, dy = s.b.y - s.a.y;
+      const dist = safeHypot(dx,dy);
+      const nx = dx/dist, ny = dy/dist;
+      const diff = dist - s.rest;
+      const kEff = (s.k || parseFloat(kRange.value)) / SUBSTEPS;
+      const force = -kEff * diff;
+      s.a.applyForce(force*nx, force*ny);
+      s.b.applyForce(-force*nx, -force*ny);
+      // damping along spring to reduce oscillation
+      const relvx = (s.b.vx - s.a.vx), relvy = (s.b.vy - s.a.vy);
+      const damp = 0.02;
+      const proj = relvx*nx + relvy*ny;
+      const fdx = -damp * proj * nx, fdy = -damp * proj * ny;
+      s.a.applyForce(fdx, fdy); s.b.applyForce(-fdx, -fdy);
+    }
+
+    // pairwise interactions
+    for(let i=0;i<particles.length;i++){
+      for(let j=i+1;j<particles.length;j++){
+        const a = particles[i], b = particles[j];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const dist = Math.hypot(dx,dy) || 0.0001;
+        const minDist = a.r + b.r;
+        if(dist < minDist){
+          const nx = dx/dist, ny = dy/dist;
+          const overlap = (minDist - dist);
+          const isMuonPair = (a.type === 'muon' || b.type === 'muon');
+          const skipRepel = freeMuons && isMuonPair;
+
+          if(!skipRepel){
+            const f = repulseStrength * overlap;
+            if(!a.fixed) a.applyForce(-f*nx, -f*ny);
+            if(!b.fixed) b.applyForce(f*nx, f*ny);
+          } else {
+            const tiny = 0.02 * overlap;
+            if(!a.fixed) a.applyForce(-tiny*nx, -tiny*ny);
+            if(!b.fixed) b.applyForce(tiny*nx, tiny*ny);
+          }
+
+          const relvx = b.vx - a.vx, relvy = b.vy - a.vy;
+          const rel = relvx*nx + relvy*ny;
+          if(rel < 0 && !skipRepel){
+            const e = parseFloat(eRange.value);
+            const j = -(1+e) * rel / (1/a.mass + 1/b.mass);
+            a.vx -= (j * nx)/a.mass; a.vy -= (j * ny)/a.mass;
+            b.vx += (j * nx)/b.mass; b.vy += (j * ny)/b.mass;
+          }
+
+          // quando múon colide com quark, agendar emissão com delay
+          if((a.type === 'muon' && b.type === 'quark')){
+            scheduleGluonEmission(b);
+            // Efeito visual de colisão
+            b.pulseEffect = 1;
+          }
+          if((b.type === 'muon' && a.type === 'quark')){
+            scheduleGluonEmission(a);
+            // Efeito visual de colisão
+            a.pulseEffect = 1;
+          }
+        }
+      }
+    }
+
+    // wandering for free muons
+    if(freeMuons){
+      for(const p of particles){
+        if(p.type === 'muon' && !p.fixed){
+          const wander = 6;
+          p.vx += (Math.random()-0.5) * wander * dt * 0.5;
+          p.vy += (Math.random()-0.5) * wander * dt * 0.5;
+        }
+      }
+    }
+
+    // integrate
+    for(const p of particles){
+      if(!p.fixed){
+        p.vx = Math.max(-maxVel, Math.min(maxVel, p.vx));
+        p.vy = Math.max(-maxVel, Math.min(maxVel, p.vy));
+        p.vx *= globalDamping;
+        p.vy *= globalDamping;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.energyHighlight *= 0.94;
+        p.pulseEffect *= 0.9;
+      }
+    }
+
+    // advance gluons and arrival handling
+    for(let i = gluons.length - 1; i >= 0; i--){
+      const g = gluons[i];
+      g.step();
+      if(!g.alive){
+        const emitter = g.emitter, target = g.target;
+        if(emitter && target && emitter.type === 'quark' && target.type === 'quark'){
+          const tmp = emitter.color;
+          emitter.color = target.color;
+          target.color = tmp;
+          const dx = target.x - emitter.x, dy = target.y - emitter.y;
+          const d = safeHypot(dx,dy) || 0.0001; const nx = dx/d, ny = dy/d;
+          target.vx += nx * 0.6; target.vy += ny * 0.6;
+          emitter.energyHighlight = Math.min(1, emitter.energyHighlight + 0.4);
+          target.energyHighlight = Math.min(1, target.energyHighlight + 0.6);
+          // Efeito de pulso na troca de cores
+          emitter.pulseEffect = 1;
+          target.pulseEffect = 1;
+        }
+        gluons.splice(i,1);
+      }
+    }
+
+    // population control
+    const muons = particles.filter(p => p.type === 'muon');
+    if(muons.length > 220){
+      const excess = muons.length - 200;
+      let removed = 0;
+      particles = particles.filter(p => {
+        if(p.type === 'muon' && removed < excess){ removed++; return false; }
+        return true;
+      });
+    }
+
+    // bounds
+    for(const p of particles) worldBounds(p);
+  }
+
+  function draw(){
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    ctx.clearRect(0,0,w,h);
+    const g = ctx.createLinearGradient(0,0,0,h);
+    g.addColorStop(0,'#04121b'); g.addColorStop(1,'#082033');
+    ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
+
+    ctx.lineWidth = 2;
+    for(const s of springs){
+      ctx.beginPath(); 
+      ctx.strokeStyle = 'rgba(100,160,200,0.25)';
+      ctx.moveTo(s.a.x, s.a.y); 
+      ctx.lineTo(s.b.x, s.b.y); 
+      ctx.stroke();
+    }
+
+    // Desenhar rastros primeiro (para ficarem atrás das partículas)
+    for(const p of particles) {
+      if (p.type === 'muon') {
+        p.drawTrail(ctx);
+      }
+    }
+    for(const gl of gluons) gl.drawTrail(ctx);
+
+    // Desenhar glúons
+    for(const gl of gluons) gl.draw(ctx);
+
+    // Desenhar partículas
+    for(const p of particles){
+      // se há um cooldown, desenhar um anel que decresce
+      if(p.gluonEmitAt){
+        const now = performance.now();
+        const remain = Math.max(0, p.gluonEmitAt - now);
+        const frac = 1 - Math.min(1, remain / GLUON_DELAY_MS);
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(255,200,80,' + (0.6 * (1-frac)) + ')';
+        ctx.lineWidth = 3;
+        ctx.arc(p.x,p.y,p.r + 8 * frac, -Math.PI/2, -Math.PI/2 + Math.PI*2*frac);
+        ctx.stroke();
+      }
+
+      if(p.energyHighlight > 0.01){
+        ctx.beginPath(); 
+        ctx.fillStyle = 'rgba(255,240,150,' + (p.energyHighlight*0.35) + ')';
+        ctx.arc(p.x,p.y,p.r+6*p.energyHighlight,0,Math.PI*2); 
+        ctx.fill();
+      }
+      
+      // Efeito de pulso
+      const pulseScale = 1 + p.pulseEffect * 0.1;
+      const currentRadius = p.getCurrentRadius() * pulseScale;
+      
+      ctx.beginPath(); 
+      ctx.fillStyle = p.color; 
+      ctx.strokeStyle = 'rgba(0,0,0,0.15)'; 
+      ctx.lineWidth = 1;
+      ctx.arc(p.x,p.y,currentRadius,0,Math.PI*2); 
+      ctx.fill(); 
+      ctx.stroke();
+      
+      if(p.label && p.entranceProgress > 0.7){
+        ctx.font = (window.innerWidth <= 768 ? '10px' : '12px') + ' system-ui,Segoe UI,Roboto,Arial';
+        ctx.fillStyle = '#04121b'; 
+        ctx.textAlign = 'center'; 
+        ctx.textBaseline = 'middle';
+        ctx.fillText(p.label, p.x, p.y);
+      }
+    }
+
+    ctx.font = (window.innerWidth <= 768 ? '10px' : '11px') + ' system-ui,Segoe UI,Roboto,Arial';
+    ctx.fillStyle = 'rgba(230,238,248,0.85)';
+    ctx.textAlign = 'left';
+    ctx.fillText('Partículas: ' + particles.length + '  Glúons: ' + gluons.length + (freeMuons ? '  (Muons livres)' : ''), 10, 18);
+  }
+
+  function stepFrame(now){
+    let elapsed = now - last;
+    if(elapsed > 300) elapsed = 300;
+    last = now;
+    const totalSteps = Math.max(1, Math.floor((elapsed / FIXED_MS) * SUBSTEPS));
+    const dt = (FIXED_MS / 16) / SUBSTEPS;
+    for(let s=0;s<totalSteps;s++){
+      physicsStep(dt, now);
+      // atualizar/emissão agendada por tempo em cada substep é aceitável
+      tryEmitScheduledGluons(performance.now());
+    }
+    draw();
+    requestAnimationFrame(stepFrame);
+  }
+
+  requestAnimationFrame(stepFrame);
+
+  window.addEventListener('keydown', (e)=>{
+    if(e.key === 'r') reset(MODE.value);
+    if(e.key === ' ') { 
+      const qs = particles.filter(p=>p.type==='quark'); 
+      if(qs.length) scheduleGluonEmission(qs[Math.floor(Math.random()*qs.length)]); 
+    }
+  });
+
+  // Prevenir gestos de zoom na página
+  document.addEventListener('gesturestart', function(e) {
+    e.preventDefault();
+  });
+  
+  document.addEventListener('gesturechange', function(e) {
+    e.preventDefault();
+  });
+  
+  document.addEventListener('gestureend', function(e) {
+    e.preventDefault();
+  });
+
+  window._sim = { particles, springs, gluons, toggleFreeMuons: () => { freeMuons = !freeMuons; updateFreeMuonsButton(); } };
+})();
+</script>
+
+</body>
+</html>

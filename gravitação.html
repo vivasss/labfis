@@ -1,0 +1,820 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Gravitação de Newton — Simulação</title>
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  :root {
+    --bg: #071022;
+    --panel: #0b2233;
+    --muted: #9fc7e6;
+    --accent: #39a2ff;
+  }
+  
+  body {
+    margin: 0;
+    height: 100vh;
+    background: linear-gradient(180deg, var(--bg), #02101a);
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    color: #e6f6ff;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    flex-wrap: wrap;
+  }
+  
+  h1 {
+    margin: 0;
+    font-size: clamp(16px, 4vw, 18px);
+    color: var(--accent);
+    text-transform: none;
+  }
+  
+  #ui {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), transparent);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .panel {
+    background: var(--panel);
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  
+  label {
+    font-size: clamp(12px, 2.5vw, 13px);
+    color: var(--muted);
+    margin-right: 6px;
+    white-space: nowrap;
+  }
+  
+  input[type="range"] {
+    width: clamp(100px, 20vw, 140px);
+  }
+  
+  input[type="number"] {
+    width: clamp(60px, 15vw, 80px);
+    padding: 4px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: transparent;
+    color: #e6f6ff;
+    font-size: clamp(12px, 2.5vw, 14px);
+  }
+  
+  select {
+    background: transparent;
+    color: #e6f6ff;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    padding: 4px;
+    font-size: clamp(12px, 2.5vw, 14px);
+  }
+  
+  button {
+    background: linear-gradient(90deg, var(--accent), #6fb8ff);
+    color: #041224;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: clamp(12px, 2.5vw, 14px);
+    min-height: 36px;
+    transition: all 0.2s;
+  }
+  
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  #canvasWrap {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+  }
+  
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 10% 10%, rgba(10, 25, 40, 0.6), rgba(2, 6, 18, 0.9));
+    touch-action: none;
+  }
+  
+  #info {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: clamp(11px, 2.5vw, 13px);
+    max-width: calc(100% - 24px);
+    z-index: 10;
+  }
+  
+  #props {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    background: rgba(0, 0, 0, 0.18);
+    padding: 10px;
+    border-radius: 8px;
+    font-size: clamp(11px, 2.5vw, 13px);
+    min-width: clamp(180px, 30vw, 220px);
+    z-index: 10;
+  }
+  
+  .small {
+    font-size: clamp(11px, 2.5vw, 12px);
+    color: var(--muted);
+  }
+  
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    color: var(--muted);
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: clamp(11px, 2.5vw, 13px);
+    min-height: 32px;
+  }
+  
+  footer {
+    padding: 8px 12px;
+    font-size: clamp(11px, 2.5vw, 12px);
+    color: var(--muted);
+    text-align: center;
+  }
+  
+  .mobile-hint {
+    display: none;
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 10;
+  }
+  
+  @media (max-width: 768px) {
+    header {
+      padding: 10px 12px;
+    }
+    
+    #ui {
+      padding: 8px;
+      gap: 8px;
+    }
+    
+    .panel {
+      padding: 6px;
+      gap: 6px;
+    }
+    
+    button {
+      padding: 6px 10px;
+      min-height: 32px;
+    }
+    
+    #info, #props {
+      position: relative;
+      left: auto;
+      top: auto;
+      right: auto;
+      margin: 8px;
+      max-width: calc(100% - 16px);
+    }
+    
+    #props {
+      margin-top: 0;
+    }
+    
+    .mobile-hint {
+      display: block;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    #ui {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .panel {
+      justify-content: space-between;
+    }
+    
+    button {
+      flex: 1;
+    }
+    
+    .btn-group {
+      display: flex;
+      gap: 6px;
+    }
+  }
+  
+  .pulse {
+    animation: pulse 0.5s ease-in-out;
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+  
+  .selected-body {
+    filter: drop-shadow(0 0 8px #ffffff);
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Gravitação de Newton — Simulação interativa</h1>
+  </header>
+
+  <div id="ui">
+    <div class="panel">
+      <label>G</label>
+      <input id="gRange" type="range" min="0.01" max="5" step="0.01" value="1">
+      <input id="gNum" type="number" min="0.001" step="0.01" value="1">
+    </div>
+
+    <div class="panel">
+      <label>Modo</label>
+      <select id="mode">
+        <option value="orbit">Dois corpos (órbita)</option>
+        <option value="nbody">N-corpos</option>
+      </select>
+    </div>
+
+    <div class="panel">
+      <label>Traços</label>
+      <input id="trails" type="checkbox" checked>
+      <label style="margin-left:8px">Velocidade</label>
+      <input id="velScale" type="range" min="0" max="5" step="0.1" value="1">
+    </div>
+
+    <div class="btn-group">
+      <button id="playPause">Pausar</button>
+      <button id="reset">Reset</button>
+      <button id="clearTrails" class="btn-ghost">Limpar Traços</button>
+    </div>
+  </div>
+
+  <div id="canvasWrap">
+    <canvas id="c"></canvas>
+    <div id="info" class="small">Toque para criar; Toque longo para criar com velocidade; Arraste para mover; Toque em um corpo para selecionar</div>
+    <div id="props">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div class="small"><strong>Corpo selecionado</strong></div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <label class="small">Massa</label><input id="selMass" type="number" min="0.01" step="0.1" value="10">
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <label class="small">Vx</label><input id="selVx" type="number" step="0.1" value="0">
+          <label class="small" style="margin-left:6px">Vy</label><input id="selVy" type="number" step="0.1" value="0">
+        </div>
+        <div style="display:flex;gap:6px">
+          <button id="applyProps" class="btn-ghost">Aplicar</button>
+          <button id="deleteBody" class="btn-ghost">Excluir</button>
+        </div>
+      </div>
+    </div>
+    <div class="mobile-hint">Toque longo para criar corpo com velocidade</div>
+  </div>
+
+  <footer>Unidades arbitrárias; ajuste G e escalas para observar órbitas e comportamento N-corpos.</footer>
+
+<script>
+(() => {
+  const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
+  let DPR = Math.max(1, window.devicePixelRatio || 1);
+  
+  function resize(){
+    const container = canvas.parentElement;
+    canvas.width = Math.floor(container.clientWidth * DPR);
+    canvas.height = Math.floor(container.clientHeight * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  
+  window.addEventListener('resize', resize);
+  resize();
+
+  // UI elements
+  const gRange = document.getElementById('gRange'), gNum = document.getElementById('gNum'),
+        playPauseBtn = document.getElementById('playPause'), resetBtn = document.getElementById('reset'),
+        modeSel = document.getElementById('mode'), trailsChk = document.getElementById('trails'),
+        clearTrailsBtn = document.getElementById('clearTrails'), velScale = document.getElementById('velScale');
+
+  const selMass = document.getElementById('selMass'), selVx = document.getElementById('selVx'), selVy = document.getElementById('selVy'),
+        applyProps = document.getElementById('applyProps'), deleteBody = document.getElementById('deleteBody');
+
+  // sync G controls
+  gRange.addEventListener('input', () => { 
+    gNum.value = gRange.value; 
+  });
+  
+  gNum.addEventListener('input', () => { 
+    gRange.value = Math.max(0.01, parseFloat(gNum.value) || 0.01); 
+  });
+
+  // simulation state
+  let G = parseFloat(gRange.value);
+  let running = true;
+  let bodies = [];
+  let trails = new Map();
+  let selected = null;
+  let mouse = {x:0, y:0, down:false, drag:null, creating:null, longPress: false};
+  let last = performance.now();
+  let touchStartTime = 0;
+  let touchStartX = 0;
+  let touchStartY = 0;
+
+  // utility
+  function dist(ax, ay, bx, by){ 
+    return Math.hypot(bx - ax, by - ay); 
+  }
+
+  class Body {
+    constructor(x, y, m = 10, vx = 0, vy = 0, r = 10, color = '#ffcc66'){
+      this.x = x; 
+      this.y = y; 
+      this.vx = vx; 
+      this.vy = vy; 
+      this.m = m; 
+      this.r = r; 
+      this.color = color;
+    }
+  }
+
+  // create initial example: two-body orbit if mode orbit
+  function initExample(){
+    bodies = [];
+    trails.clear();
+    selected = null;
+    
+    if(modeSel.value === 'orbit'){
+      const cx = canvas.clientWidth / 2, cy = canvas.clientHeight / 2;
+      const m1 = new Body(cx - 120, cy, 500, 0, 0, 18, '#ff9e9e');
+      const m2 = new Body(cx + 120, cy, 10, 0, 6.5, 10, '#9ecbff');
+      bodies.push(m1, m2);
+      trails.set(m1, []); 
+      trails.set(m2, []);
+    } else {
+      // random N-body
+      const N = 8;
+      const W = canvas.clientWidth, H = canvas.clientHeight;
+      for(let i = 0; i < N; i++){
+        const b = new Body(
+          Math.random() * W, 
+          Math.random() * H, 
+          5 + Math.random() * 30, 
+          (Math.random() - 0.5) * 1, 
+          (Math.random() - 0.5) * 1, 
+          6 + Math.random() * 8, 
+          `hsl(${Math.random() * 360}deg 70% 60%)`
+        );
+        bodies.push(b); 
+        trails.set(b, []);
+      }
+    }
+  }
+
+  initExample();
+
+  // physics: pairwise Newtonian gravity
+  function physicsStep(dt){
+    G = parseFloat(gRange.value);
+    // zero accelerations; we'll apply impulses to velocities
+    const n = bodies.length;
+    for(let i = 0; i < n; i++){
+      for(let j = i + 1; j < n; j++){
+        const A = bodies[i], B = bodies[j];
+        const dx = B.x - A.x, dy = B.y - A.y;
+        const r = Math.hypot(dx, dy);
+        const minR = A.r + B.r;
+        if(r < 0.5) continue;
+        // gravitational force magnitude: F = G * m1 * m2 / r^2
+        const F = G * A.m * B.m / (r * r);
+        const nx = dx / r, ny = dy / r;
+        // acceleration = F/m
+        const ax_on_A = F * nx / A.m;
+        const ay_on_A = F * ny / A.m;
+        const ax_on_B = -F * nx / B.m;
+        const ay_on_B = -F * ny / B.m;
+        A.vx += ax_on_A * dt;
+        A.vy += ay_on_A * dt;
+        B.vx += ax_on_B * dt;
+        B.vy += ay_on_B * dt;
+        // simple collision handling (inelastic merge) if they overlap significantly
+        if(r < minR * 0.6){
+          // merge smaller into larger
+          const big = A.m >= B.m ? A : B;
+          const small = A.m >= B.m ? B : A;
+          // conserve momentum
+          big.vx = (big.vx * big.m + small.vx * small.m) / (big.m + small.m);
+          big.vy = (big.vy * big.m + small.vy * small.m) / (big.m + small.m);
+          big.m += small.m;
+          big.r = Math.min(40, Math.cbrt(big.m) * 2 + 6);
+          // remove small
+          const idx = bodies.indexOf(small);
+          if(idx >= 0) {
+            bodies.splice(idx, 1);
+          }
+          trails.delete(small);
+          // restart loop safely
+          return;
+        }
+      }
+    }
+
+    // integrate positions
+    for(const b of bodies){
+      b.x += b.vx * dt * (1 + parseFloat(velScale.value));
+      b.y += b.vy * dt * (1 + parseFloat(velScale.value));
+      // keep trails
+      if(trails.has(b) && trailsChk.checked){
+        const arr = trails.get(b);
+        arr.push({x: b.x, y: b.y});
+        if(arr.length > 400) arr.shift();
+      }
+      // screen wrap
+      if(b.x < -50) b.x = canvas.clientWidth + 50;
+      if(b.x > canvas.clientWidth + 50) b.x = -50;
+      if(b.y < -50) b.y = canvas.clientHeight + 50;
+      if(b.y > canvas.clientHeight + 50) b.y = -50;
+    }
+  }
+
+  // drawing
+  function draw(){
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    ctx.clearRect(0, 0, W, H);
+
+    // optional background grid
+    ctx.save();
+    ctx.globalAlpha = 0.06;
+    ctx.strokeStyle = '#9ecbff';
+    for(let gx = 0; gx < W; gx += 100){
+      ctx.beginPath(); 
+      ctx.moveTo(gx, 0); 
+      ctx.lineTo(gx, H); 
+      ctx.stroke();
+    }
+    for(let gy = 0; gy < H; gy += 100){
+      ctx.beginPath(); 
+      ctx.moveTo(0, gy); 
+      ctx.lineTo(W, gy); 
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // trails
+    if(trailsChk.checked){
+      for(const [b, arr] of trails.entries()){
+        if(!arr || arr.length < 2) continue;
+        ctx.beginPath();
+        ctx.strokeStyle = b.color || '#fff';
+        ctx.lineWidth = 1;
+        for(let i = 0; i < arr.length; i++){
+          const p = arr[i];
+          if(i === 0) ctx.moveTo(p.x, p.y); 
+          else ctx.lineTo(p.x, p.y);
+        }
+        ctx.stroke();
+      }
+    }
+
+    // bodies
+    for(const b of bodies){
+      ctx.beginPath();
+      
+      // Highlight selected body
+      if (b === selected) {
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = '#ffffff';
+        ctx.shadowBlur = 15;
+      } else {
+        ctx.fillStyle = b.color || '#ffcc66';
+        ctx.shadowBlur = 0;
+      }
+      
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // outline and mass label
+      ctx.beginPath();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+      ctx.arc(b.x, b.y, b.r + 1, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = '#001124';
+      ctx.font = '11px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${Math.round(b.m)}`, b.x, b.y + 3);
+    }
+  }
+
+  // main loop
+  function loop(now){
+    const dt = Math.min(0.03, (now - last) / 1000);
+    last = now;
+    if(running){
+      // multiple small steps for stability
+      const steps = Math.max(1, Math.ceil(dt / 0.01));
+      for(let i = 0; i < steps; i++) physicsStep(dt / steps);
+    }
+    draw();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // Touch and mouse event handling
+  function getCanvasCoordinates(e) {
+    const rect = canvas.getBoundingClientRect();
+    let clientX, clientY;
+    
+    if (e.type.includes('touch')) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top
+    };
+  }
+
+  // Handle pointer down (mouse and touch)
+  canvas.addEventListener('mousedown', handlePointerDown);
+  canvas.addEventListener('touchstart', handlePointerDown, { passive: false });
+
+  function handlePointerDown(e) {
+    e.preventDefault();
+    const { x, y } = getCanvasCoordinates(e);
+    
+    mouse.down = true;
+    mouse.x = x;
+    mouse.y = y;
+    
+    // For touch events, set up long press detection
+    if (e.type === 'touchstart') {
+      touchStartTime = Date.now();
+      touchStartX = x;
+      touchStartY = y;
+      
+      // Set a timeout to detect long press
+      mouse.longPressTimeout = setTimeout(() => {
+        mouse.longPress = true;
+        // Create body with velocity on long press
+        mouse.creating = { x, y };
+      }, 500);
+    } else {
+      // For mouse, check if shift key is pressed
+      mouse.longPress = e.shiftKey;
+    }
+    
+    // Check if clicked on a body
+    selected = null;
+    for(const b of bodies.slice().reverse()){
+      if(dist(b.x, b.y, x, y) <= b.r + 6){
+        selected = b;
+        mouse.drag = b;
+        selMass.value = Math.max(0.01, Math.round(b.m * 100) / 100);
+        selVx.value = Math.round(b.vx * 100) / 100;
+        selVy.value = Math.round(b.vy * 100) / 100;
+        return;
+      }
+    }
+    
+    // Not clicked on body -> create new if not long press
+    if (!mouse.longPress) {
+      const mass = 10;
+      const b = new Body(
+        x, y, mass, 0, 0, 
+        8 + Math.cbrt(mass) * 1.6, 
+        `hsl(${Math.random() * 360}deg 70% 60%)`
+      );
+      bodies.push(b);
+      trails.set(b, []);
+    }
+  }
+
+  // Handle pointer move (mouse and touch)
+  canvas.addEventListener('mousemove', handlePointerMove);
+  canvas.addEventListener('touchmove', handlePointerMove, { passive: false });
+
+  function handlePointerMove(e) {
+    e.preventDefault();
+    const { x, y } = getCanvasCoordinates(e);
+    
+    mouse.x = x;
+    mouse.y = y;
+    
+    if(mouse.drag && mouse.down){
+      // drag selected body
+      mouse.drag.x = x;
+      mouse.drag.y = y;
+      mouse.drag.vx = 0;
+      mouse.drag.vy = 0;
+      // update trails to avoid long jump
+      if(trails.has(mouse.drag)) trails.set(mouse.drag, []);
+    }
+    
+    // For touch, cancel long press if moved too far
+    if (e.type === 'touchmove' && mouse.down && !mouse.drag) {
+      const moveDist = dist(touchStartX, touchStartY, x, y);
+      if (moveDist > 10) {
+        clearTimeout(mouse.longPressTimeout);
+        mouse.longPress = false;
+      }
+    }
+  }
+
+  // Handle pointer up (mouse and touch)
+  canvas.addEventListener('mouseup', handlePointerUp);
+  canvas.addEventListener('touchend', handlePointerUp);
+
+  function handlePointerUp(e) {
+    e.preventDefault();
+    const { x, y } = getCanvasCoordinates(e);
+    
+    mouse.down = false;
+    
+    // Clear long press timeout
+    if (mouse.longPressTimeout) {
+      clearTimeout(mouse.longPressTimeout);
+      mouse.longPressTimeout = null;
+    }
+    
+    if(mouse.creating && mouse.longPress){
+      const start = mouse.creating;
+      const vx = (x - start.x) * 0.1;
+      const vy = (y - start.y) * 0.1;
+      const mass = 8 + Math.random() * 20;
+      const b = new Body(
+        start.x, start.y, mass, vx, vy, 
+        8 + Math.cbrt(mass) * 1.6, 
+        `hsl(${Math.random() * 360}deg 70% 60%)`
+      );
+      bodies.push(b);
+      trails.set(b, []);
+      mouse.creating = null;
+      mouse.longPress = false;
+    }
+    
+    mouse.drag = null;
+  }
+
+  // selection props
+  applyProps.addEventListener('click', () => {
+    if(!selected) return;
+    const m = Math.max(0.01, parseFloat(selMass.value) || 1);
+    const vx = parseFloat(selVx.value) || 0;
+    const vy = parseFloat(selVy.value) || 0;
+    selected.m = m;
+    selected.vx = vx;
+    selected.vy = vy;
+    selected.r = 6 + Math.cbrt(m) * 1.8;
+    
+    // Visual feedback
+    applyProps.classList.add('pulse');
+    setTimeout(() => applyProps.classList.remove('pulse'), 500);
+  });
+
+  deleteBody.addEventListener('click', () => {
+    if(!selected) return;
+    const i = bodies.indexOf(selected);
+    if(i >= 0){ 
+      trails.delete(selected); 
+      bodies.splice(i, 1); 
+      selected = null; 
+    }
+    
+    // Visual feedback
+    deleteBody.classList.add('pulse');
+    setTimeout(() => deleteBody.classList.remove('pulse'), 500);
+  });
+
+  // control buttons
+  playPauseBtn.addEventListener('click', () => {
+    running = !running;
+    playPauseBtn.textContent = running ? 'Pausar' : 'Continuar';
+    
+    // Visual feedback
+    playPauseBtn.classList.add('pulse');
+    setTimeout(() => playPauseBtn.classList.remove('pulse'), 500);
+  });
+
+  resetBtn.addEventListener('click', () => {
+    initExample();
+    
+    // Visual feedback
+    resetBtn.classList.add('pulse');
+    setTimeout(() => resetBtn.classList.remove('pulse'), 500);
+  });
+
+  clearTrailsBtn.addEventListener('click', () => {
+    for(const k of trails.keys()) trails.set(k, []);
+    
+    // Visual feedback
+    clearTrailsBtn.classList.add('pulse');
+    setTimeout(() => clearTrailsBtn.classList.remove('pulse'), 500);
+  });
+
+  // mode switching preserves bodies roughly
+  modeSel.addEventListener('change', () => {
+    initExample();
+  });
+
+  // clicking empty space deselects
+  canvas.addEventListener('click', (e) => {
+    // For touch devices, we need to handle this differently
+    if (e.type === 'touchstart') return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left, y = e.clientY - rect.top;
+    // if clicked on nothing for a short region, deselect
+    let hit = false;
+    for(const b of bodies){
+      if(dist(b.x, b.y, x, y) <= b.r + 4){ 
+        hit = true; 
+        break; 
+      }
+    }
+    if(!hit) selected = null;
+  });
+
+  // Handle touch to deselect
+  canvas.addEventListener('touchend', (e) => {
+    if (mouse.drag || mouse.creating) return;
+    
+    const { x, y } = getCanvasCoordinates(e);
+    let hit = false;
+    for(const b of bodies){
+      if(dist(b.x, b.y, x, y) <= b.r + 4){ 
+        hit = true; 
+        break; 
+      }
+    }
+    if(!hit) selected = null;
+  });
+
+  // Adjust UI for mobile
+  function adjustUILayout() {
+    const isMobile = window.innerWidth <= 768;
+    
+    if (isMobile) {
+      // Adjust info text for mobile
+      document.getElementById('info').textContent = 
+        "Toque para criar; Toque longo para criar com velocidade; Arraste para mover";
+    }
+  }
+
+  // Initial UI adjustment
+  adjustUILayout();
+  window.addEventListener('resize', adjustUILayout);
+
+})();
+</script>
+</body>
+</html>

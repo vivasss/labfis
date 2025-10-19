@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulação Interativa - Primeira Lei da Termodinâmica</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #00ffff;
+            --secondary: #ff00ff;
+            --accent: #ffff00;
+            --background: #000000;
+            --text: #ffffff;
+            --card-bg: rgba(30, 30, 60, 0.7);
+            --success: #00ff00;
+            --warning: #ff9900;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: var(--background);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        /* Animações de fundo */
+        .background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(0, 255, 255, 0.3);
+            animation: float 15s infinite linear;
+        }
+        
+        .particle:nth-child(2n) {
+            background: rgba(255, 0, 255, 0.3);
+            animation-duration: 20s;
+        }
+        
+        .particle:nth-child(3n) {
+            background: rgba(255, 255, 0, 0.3);
+            animation-duration: 25s;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) translateX(0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.7;
+            }
+            90% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(-100px) translateX(100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        .grid-lines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+            animation: gridMove 20s linear infinite;
+        }
+        
+        @keyframes gridMove {
+            0% {
+                transform: translate(0, 0);
+            }
+            100% {
+                transform: translate(50px, 50px);
+            }
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from {
+                box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+            }
+            to {
+                box-shadow: 0 0 30px rgba(0, 255, 255, 0.8), 0 0 40px rgba(255, 0, 255, 0.5);
+            }
+        }
+        
+        h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                text-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+            }
+            50% {
+                text-shadow: 0 0 20px rgba(0, 255, 255, 1), 0 0 30px rgba(255, 0, 255, 0.7);
+            }
+        }
+        
+        .subtitle {
+            color: var(--secondary);
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 900px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .simulation-container, .controls, .explanation {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+        }
+        
+        .simulation-area {
+            height: 400px;
+            background: rgba(10, 10, 30, 0.7);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border: 2px solid rgba(0, 255, 255, 0.5);
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .piston-container {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 350px;
+        }
+        
+        .cylinder {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, #2c3e50, #34495e);
+            border-radius: 10px 10px 0 0;
+            border: 3px solid rgba(0, 255, 255, 0.7);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+        
+        .piston {
+            position: absolute;
+            bottom: 50px;
+            left: 10px;
+            width: 180px;
+            height: 30px;
+            background: linear-gradient(to bottom, #5d6d7e, #34495e);
+            border-radius: 5px;
+            transition: bottom 0.3s ease;
+            z-index: 2;
+            cursor: grab;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 255, 0.5);
+        }
+        
+        .piston:active {
+            cursor: grabbing;
+        }
+        
+        .piston-handle {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 15px;
+            background: var(--accent);
+            border-radius: 3px;
+            box-shadow: 0 0 10px rgba(255, 255, 0, 0.7);
+        }
+        
+        .gas {
+            position: absolute;
+            bottom: 0;
+            left: 10px;
+            width: 180px;
+            height: 50px;
+            background: rgba(231, 76, 60, 0.7);
+            border-radius: 5px 5px 0 0;
+            transition: height 0.3s ease;
+            z-index: 1;
+            box-shadow: 0 0 20px rgba(231, 76, 60, 0.5);
+        }
+        
+        .heat-source {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 20px;
+            background: linear-gradient(to right, #e74c3c, #c0392b);
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.7);
+            animation: heatPulse 2s infinite;
+        }
+        
+        @keyframes heatPulse {
+            0%, 100% {
+                box-shadow: 0 0 10px rgba(231, 76, 60, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 20px rgba(231, 76, 60, 1);
+            }
+        }
+        
+        .energy-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .energy-particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            opacity: 0;
+        }
+        
+        .values-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .value-card {
+            background: rgba(20, 20, 40, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+        }
+        
+        .value-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .value-card h3 {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+        
+        .value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--accent);
+            text-shadow: 0 0 10px rgba(255, 255, 0, 0.5);
+        }
+        
+        .unit {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+        
+        .controls h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(0, 255, 255, 0.3);
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group h3 {
+            margin-bottom: 10px;
+            color: var(--secondary);
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .slider-container label {
+            width: 120px;
+            font-weight: bold;
+        }
+        
+        input[type="range"] {
+            flex: 1;
+            height: 8px;
+            border-radius: 5px;
+            background: rgba(50, 50, 80, 0.7);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+        }
+        
+        .value-display {
+            width: 60px;
+            text-align: right;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            background: var(--primary);
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+        
+        button:hover {
+            background: #00cccc;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 255, 0.7);
+        }
+        
+        button.reset {
+            background: var(--accent);
+            color: #000;
+        }
+        
+        button.reset:hover {
+            background: #cccc00;
+            box-shadow: 0 5px 15px rgba(255, 255, 0, 0.7);
+        }
+        
+        .explanation {
+            margin-top: 20px;
+        }
+        
+        .explanation h2 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+        
+        .equation {
+            text-align: center;
+            font-size: 2rem;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(20, 20, 40, 0.7);
+            border-radius: 10px;
+            font-family: 'Cambria Math', serif;
+            color: var(--accent);
+            text-shadow: 0 0 10px rgba(255, 255, 0, 0.5);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+        }
+        
+        .formula {
+            color: var(--accent);
+            font-weight: bold;
+        }
+        
+        .processes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .process-card {
+            background: rgba(20, 20, 40, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid var(--warning);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+        }
+        
+        .process-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .process-card h3 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .process-card p {
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+        
+        .energy-flow {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(20, 20, 40, 0.7);
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .energy-item {
+            text-align: center;
+        }
+        
+        .energy-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent);
+            margin: 10px 0;
+            text-shadow: 0 0 10px rgba(255, 255, 0, 0.5);
+        }
+        
+        .energy-label {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+        
+        .arrow {
+            font-size: 2rem;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            text-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+        }
+        
+        .instructions {
+            background: rgba(30, 30, 60, 0.7);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .instructions h3 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+            color: #ccc;
+        }
+        
+        @media (max-width: 600px) {
+            .values-display {
+                grid-template-columns: 1fr;
+            }
+            
+            .energy-flow {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .arrow {
+                transform: rotate(90deg);
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+        
+        @keyframes moveParticle {
+            0% {
+                transform: translate(0, 0);
+                opacity: 0;
+            }
+            50% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty));
+                opacity: 0;
+            }
+        }
+        
+        .touch-controls {
+            display: none;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .touch-controls {
+                display: flex;
+            }
+        }
+        
+        .touch-btn {
+            padding: 10px 15px;
+            background: var(--secondary);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+        }
+        
+        .touch-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <div class="background-animation" id="background-animation"></div>
+    <div class="grid-lines"></div>
+    
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-atom"></i> Primeira Lei da Termodinâmica</h1>
+            <p class="subtitle">Simulação interativa com pistão arrastável - ΔU = Q - W</p>
+        </header>
+        
+        <div class="content">
+            <div class="simulation-container">
+                <h2><i class="fas fa-fire"></i> Sistema Pistão-Cilindro</h2>
+                <div class="simulation-area" id="simulation-area">
+                    <div class="piston-container">
+                        <div class="cylinder"></div>
+                        <div class="gas" id="gas"></div>
+                        <div class="piston" id="piston">
+                            <div class="piston-handle"></div>
+                        </div>
+                        <div class="heat-source" id="heat-source">Fonte de Calor</div>
+                        <div class="energy-particles" id="energy-particles"></div>
+                    </div>
+                </div>
+                
+                <div class="values-display">
+                    <div class="value-card">
+                        <h3><i class="fas fa-bolt"></i> Energia Interna (ΔU)</h3>
+                        <div class="value" id="internal-energy">0</div>
+                        <div class="unit">Joules</div>
+                    </div>
+                    <div class="value-card">
+                        <h3><i class="fas fa-temperature-high"></i> Calor (Q)</h3>
+                        <div class="value" id="heat">0</div>
+                        <div class="unit">Joules</div>
+                    </div>
+                    <div class="value-card">
+                        <h3><i class="fas fa-cogs"></i> Trabalho (W)</h3>
+                        <div class="value" id="work">0</div>
+                        <div class="unit">Joules</div>
+                    </div>
+                    <div class="value-card">
+                        <h3><i class="fas fa-thermometer-half"></i> Temperatura</h3>
+                        <div class="value" id="temperature">300</div>
+                        <div class="unit">Kelvin</div>
+                    </div>
+                </div>
+                
+                <div class="touch-controls">
+                    <button class="touch-btn" id="up-btn"><i class="fas fa-arrow-up"></i> Mover Pistão</button>
+                    <button class="touch-btn" id="down-btn"><i class="fas fa-arrow-down"></i> Mover Pistão</button>
+                </div>
+                
+                <div class="instructions">
+                    <h3><i class="fas fa-info-circle"></i> Como usar a simulação:</h3>
+                    <ul>
+                        <li><strong>Arraste o pistão</strong> para cima ou para baixo para realizar trabalho no sistema</li>
+                        <li>Use o controle de <strong>Calor (Q)</strong> para adicionar ou remover calor do sistema</li>
+                        <li>Observe como a <strong>Energia Interna (ΔU)</strong> muda de acordo com a Primeira Lei: ΔU = Q - W</li>
+                        <li>Use o botão <strong>Reiniciar Sistema</strong> para voltar ao estado inicial</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <h2><i class="fas fa-sliders-h"></i> Controles do Sistema</h2>
+                
+                <div class="control-group">
+                    <h3><i class="fas fa-fire"></i> Adicionar/Remover Calor</h3>
+                    <div class="slider-container">
+                        <label for="heat-control">Calor (Q):</label>
+                        <input type="range" id="heat-control" min="-1000" max="1000" value="0" step="10">
+                        <div class="value-display" id="heat-value">0 J</div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3><i class="fas fa-cogs"></i> Informações do Pistão</h3>
+                    <div class="slider-container">
+                        <label>Posição do Pistão:</label>
+                        <div class="value-display" id="piston-position">50%</div>
+                    </div>
+                    <div class="slider-container">
+                        <label>Trabalho Realizado:</label>
+                        <div class="value-display" id="work-value">0 J</div>
+                    </div>
+                </div>
+                
+                <div class="energy-flow">
+                    <div class="energy-item">
+                        <div class="energy-label">Calor Adicionado</div>
+                        <div class="energy-value" id="heat-added">0 J</div>
+                    </div>
+                    <div class="arrow"><i class="fas fa-arrow-right"></i></div>
+                    <div class="energy-item">
+                        <div class="energy-label">Energia Interna</div>
+                        <div class="energy-value" id="internal-energy-flow">0 J</div>
+                    </div>
+                    <div class="arrow"><i class="fas fa-arrow-right"></i></div>
+                    <div class="energy-item">
+                        <div class="energy-label">Trabalho Realizado</div>
+                        <div class="energy-value" id="work-done">0 J</div>
+                    </div>
+                </div>
+                
+                <div class="buttons">
+                    <button id="reset-btn"><i class="fas fa-redo"></i> Reiniciar Sistema</button>
+                    <button id="demo-btn"><i class="fas fa-play"></i> Demo Automático</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="explanation">
+            <h2><i class="fas fa-book"></i> A Primeira Lei da Termodinâmica</h2>
+            <p>A Primeira Lei da Termodinâmica é uma versão da lei de conservação de energia, adaptada para sistemas termodinâmicos. Ela estabelece que a variação da energia interna de um sistema é igual ao calor trocado com o ambiente menos o trabalho realizado pelo sistema:</p>
+            
+            <div class="equation">
+                ΔU = Q - W
+            </div>
+            
+            <p>Onde:</p>
+            <ul>
+                <li><span class="formula">ΔU</span> = Variação da energia interna do sistema</li>
+                <li><span class="formula">Q</span> = Calor trocado com o ambiente (positivo quando o sistema recebe calor)</li>
+                <li><span class="formula">W</span> = Trabalho realizado (positivo quando o sistema realiza trabalho sobre a vizinhança)</li>
+            </ul>
+            
+            <div class="processes">
+                <div class="process-card">
+                    <h3><i class="fas fa-thermometer-full"></i> Processo Isotérmico</h3>
+                    <p>Temperatura constante. Quando calor é adicionado, o sistema realiza trabalho para manter a temperatura.</p>
+                </div>
+                <div class="process-card">
+                    <h3><i class="fas fa-wind"></i> Processo Adiabático</h3>
+                    <p>Sem troca de calor. A variação de energia interna é igual ao trabalho realizado.</p>
+                </div>
+                <div class="process-card">
+                    <h3><i class="fas fa-tachometer-alt"></i> Processo Isobárico</h3>
+                    <p>Pressão constante. O calor adicionado aumenta a energia interna e realiza trabalho.</p>
+                </div>
+                <div class="process-card">
+                    <h3><i class="fas fa-arrows-alt-v"></i> Processo Isocórico</h3>
+                    <p>Volume constante. Todo calor adicionado aumenta a energia interna, sem realizar trabalho.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Elementos da simulação
+        const gas = document.getElementById('gas');
+        const piston = document.getElementById('piston');
+        const heatSource = document.getElementById('heat-source');
+        const energyParticles = document.getElementById('energy-particles');
+        const simulationArea = document.getElementById('simulation-area');
+        const backgroundAnimation = document.getElementById('background-animation');
+        
+        // Elementos de valores
+        const internalEnergyElement = document.getElementById('internal-energy');
+        const heatElement = document.getElementById('heat');
+        const workElement = document.getElementById('work');
+        const temperatureElement = document.getElementById('temperature');
+        const pistonPositionElement = document.getElementById('piston-position');
+        
+        // Elementos de controle
+        const heatControl = document.getElementById('heat-control');
+        const heatValue = document.getElementById('heat-value');
+        const workValue = document.getElementById('work-value');
+        const resetBtn = document.getElementById('reset-btn');
+        const demoBtn = document.getElementById('demo-btn');
+        const upBtn = document.getElementById('up-btn');
+        const downBtn = document.getElementById('down-btn');
+        
+        // Elementos do fluxo de energia
+        const heatAdded = document.getElementById('heat-added');
+        const internalEnergyFlow = document.getElementById('internal-energy-flow');
+        const workDone = document.getElementById('work-done');
+        
+        // Estado do sistema
+        let internalEnergy = 0;
+        let heat = 0;
+        let work = 0;
+        let temperature = 300; // Kelvin
+        let volume = 50; // Percentual (0-100)
+        let isDemoRunning = false;
+        let demoInterval;
+        
+        // Variáveis para arrastar o pistão
+        let isDragging = false;
+        let dragStartY = 0;
+        let pistonStartBottom = 0;
+        
+        // Criar partículas de fundo
+        function createBackgroundParticles() {
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Tamanho aleatório
+                const size = Math.random() * 10 + 5;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // Posição aleatória
+                const left = Math.random() * 100;
+                const delay = Math.random() * 15;
+                const duration = 15 + Math.random() * 10;
+                
+                particle.style.left = `${left}%`;
+                particle.style.animationDelay = `${delay}s`;
+                particle.style.animationDuration = `${duration}s`;
+                
+                backgroundAnimation.appendChild(particle);
+            }
+        }
+        
+        // Inicializar a simulação
+        function initSimulation() {
+            createBackgroundParticles();
+            updateSimulation();
+            setupEventListeners();
+        }
+        
+        // Configurar event listeners
+        function setupEventListeners() {
+            // Eventos para arrastar o pistão
+            piston.addEventListener('mousedown', startDrag);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', endDrag);
+            
+            // Eventos para toque (dispositivos móveis)
+            piston.addEventListener('touchstart', startDragTouch);
+            document.addEventListener('touchmove', dragTouch);
+            document.addEventListener('touchend', endDrag);
+            
+            // Controle de calor
+            heatControl.addEventListener('input', function() {
+                heat = parseInt(this.value);
+                applyFirstLaw();
+            });
+            
+            // Botão de reset
+            resetBtn.addEventListener('click', function() {
+                resetSystem();
+            });
+            
+            // Botão de demo
+            demoBtn.addEventListener('click', function() {
+                toggleDemo();
+            });
+            
+            // Botões de toque para móveis
+            upBtn.addEventListener('mousedown', function() {
+                startPistonMove('up');
+            });
+            
+            upBtn.addEventListener('mouseup', stopPistonMove);
+            upBtn.addEventListener('mouseleave', stopPistonMove);
+            
+            downBtn.addEventListener('mousedown', function() {
+                startPistonMove('down');
+            });
+            
+            downBtn.addEventListener('mouseup', stopPistonMove);
+            downBtn.addEventListener('mouseleave', stopPistonMove);
+            
+            // Eventos de toque para botões
+            upBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                startPistonMove('up');
+            });
+            
+            upBtn.addEventListener('touchend', stopPistonMove);
+            
+            downBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                startPistonMove('down');
+            });
+            
+            downBtn.addEventListener('touchend', stopPistonMove);
+        }
+        
+        let pistonMoveInterval;
+        
+        function startPistonMove(direction) {
+            const step = direction === 'up' ? 1 : -1;
+            pistonMoveInterval = setInterval(function() {
+                let newVolume = volume + step;
+                newVolume = Math.max(10, Math.min(90, newVolume));
+                updatePistonPosition(newVolume);
+            }, 50);
+        }
+        
+        function stopPistonMove() {
+            clearInterval(pistonMoveInterval);
+        }
+        
+        // Iniciar arrasto do pistão (mouse)
+        function startDrag(e) {
+            isDragging = true;
+            dragStartY = e.clientY;
+            pistonStartBottom = parseInt(piston.style.bottom) || 50;
+            piston.style.cursor = 'grabbing';
+            e.preventDefault();
+        }
+        
+        // Iniciar arrasto do pistão (toque)
+        function startDragTouch(e) {
+            isDragging = true;
+            dragStartY = e.touches[0].clientY;
+            pistonStartBottom = parseInt(piston.style.bottom) || 50;
+            e.preventDefault();
+        }
+        
+        // Arrastar o pistão (mouse)
+        function drag(e) {
+            if (!isDragging) return;
+            
+            const deltaY = dragStartY - e.clientY;
+            let newBottom = pistonStartBottom + (deltaY / 3.5); // Fator de escala para movimento suave
+            
+            // Limitar o movimento do pistão
+            newBottom = Math.max(10, Math.min(90, newBottom));
+            
+            updatePistonPosition(newBottom);
+            e.preventDefault();
+        }
+        
+        // Arrastar o pistão (toque)
+        function dragTouch(e) {
+            if (!isDragging) return;
+            
+            const deltaY = dragStartY - e.touches[0].clientY;
+            let newBottom = pistonStartBottom + (deltaY / 3.5); // Fator de escala para movimento suave
+            
+            // Limitar o movimento do pistão
+            newBottom = Math.max(10, Math.min(90, newBottom));
+            
+            updatePistonPosition(newBottom);
+            e.preventDefault();
+        }
+        
+        // Finalizar arrasto
+        function endDrag() {
+            isDragging = false;
+            piston.style.cursor = 'grab';
+        }
+        
+        // Atualizar a posição do pistão e recalcular o trabalho
+        function updatePistonPosition(newBottom) {
+            const oldVolume = volume;
+            volume = newBottom;
+            
+            // Calcular trabalho baseado na mudança de volume
+            // W = PΔV, mas para simplificar, vamos usar uma relação linear
+            const volumeChange = volume - oldVolume;
+            work += volumeChange * 5; // Fator de escala para o trabalho
+            
+            // Atualizar a interface
+            piston.style.bottom = `${volume}%`;
+            gas.style.height = `${volume}%`;
+            pistonPositionElement.textContent = `${Math.round(volume)}%`;
+            
+            // Aplicar a primeira lei da termodinâmica
+            applyFirstLaw();
+        }
+        
+        // Criar partículas de energia
+        function createEnergyParticles() {
+            energyParticles.innerHTML = '';
+            const particleCount = Math.min(50, Math.abs(heat) / 10 + Math.abs(work) / 20);
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('energy-particle');
+                
+                // Posição aleatória dentro do gás
+                const left = Math.random() * 160 + 10;
+                const bottom = Math.random() * (volume - 10) + 10;
+                
+                particle.style.left = `${left}px`;
+                particle.style.bottom = `${bottom}px`;
+                
+                // Cor baseada no tipo de energia
+                if (heat > 0) {
+                    particle.style.background = 'rgba(255, 100, 100, 0.8)';
+                } else if (heat < 0) {
+                    particle.style.background = 'rgba(100, 100, 255, 0.8)';
+                } else {
+                    particle.style.background = 'rgba(255, 255, 255, 0.8)';
+                }
+                
+                // Direção baseada no fluxo de energia
+                const tx = (Math.random() - 0.5) * 40;
+                const ty = heat > 0 ? -Math.random() * 40 : Math.random() * 40;
+                
+                particle.style.setProperty('--tx', `${tx}px`);
+                particle.style.setProperty('--ty', `${ty}px`);
+                
+                // Animação
+                const duration = 1 + Math.random() * 2;
+                const delay = Math.random() * 2;
+                
+                particle.style.animation = `moveParticle ${duration}s ease-in-out ${delay}s infinite`;
+                
+                energyParticles.appendChild(particle);
+            }
+        }
+        
+        // Atualizar a simulação visual
+        function updateSimulation() {
+            // Atualizar altura do gás e do pistão
+            gas.style.height = `${volume}%`;
+            piston.style.bottom = `${volume}%`;
+            
+            // Atualizar temperatura (simplificado)
+            temperature = 300 + (internalEnergy / 20);
+            temperatureElement.textContent = Math.round(temperature);
+            
+            // Atualizar cor do gás baseado na temperatura
+            const intensity = Math.min(1, (temperature - 300) / 200);
+            const red = 231;
+            const green = 76 - intensity * 76;
+            const blue = 60 - intensity * 60;
+            gas.style.background = `rgba(${red}, ${green}, ${blue}, ${0.7 + intensity * 0.3})`;
+            gas.style.boxShadow = `0 0 20px rgba(${red}, ${green}, ${blue}, ${0.5 + intensity * 0.5})`;
+            
+            // Atualizar partículas
+            createEnergyParticles();
+            
+            // Atualizar fonte de calor
+            if (heat > 0) {
+                heatSource.style.background = `linear-gradient(to right, #e74c3c, #c0392b)`;
+                heatSource.textContent = "Aquecendo";
+            } else if (heat < 0) {
+                heatSource.style.background = `linear-gradient(to right, #3498db, #2980b9)`;
+                heatSource.textContent = "Resfriando";
+            } else {
+                heatSource.style.background = `linear-gradient(to right, #95a5a6, #7f8c8d)`;
+                heatSource.textContent = "Fonte de Calor";
+            }
+        }
+        
+        // Atualizar valores numéricos
+        function updateValues() {
+            internalEnergyElement.textContent = Math.round(internalEnergy);
+            heatElement.textContent = Math.round(heat);
+            workElement.textContent = Math.round(work);
+            
+            heatValue.textContent = `${Math.round(heat)} J`;
+            workValue.textContent = `${Math.round(work)} J`;
+            
+            heatAdded.textContent = `${Math.round(heat)} J`;
+            internalEnergyFlow.textContent = `${Math.round(internalEnergy)} J`;
+            workDone.textContent = `${Math.round(work)} J`;
+        }
+        
+        // Aplicar a primeira lei da termodinâmica
+        function applyFirstLaw() {
+            // ΔU = Q - W
+            internalEnergy = heat - work;
+            
+            // Garantir que a energia interna não seja negativa (para simplificação)
+            if (internalEnergy < 0) {
+                internalEnergy = 0;
+                // Ajustar trabalho para manter a equação balanceada
+                work = heat;
+            }
+            
+            updateValues();
+            updateSimulation();
+        }
+        
+        // Reiniciar o sistema
+        function resetSystem() {
+            heat = 0;
+            work = 0;
+            internalEnergy = 0;
+            temperature = 300;
+            volume = 50;
+            
+            heatControl.value = 0;
+            
+            applyFirstLaw();
+            
+            // Parar demo se estiver rodando
+            if (isDemoRunning) {
+                clearInterval(demoInterval);
+                isDemoRunning = false;
+                demoBtn.innerHTML = '<i class="fas fa-play"></i> Demo Automático';
+            }
+        }
+        
+        // Alternar demo automático
+        function toggleDemo() {
+            if (isDemoRunning) {
+                clearInterval(demoInterval);
+                isDemoRunning = false;
+                demoBtn.innerHTML = '<i class="fas fa-play"></i> Demo Automático';
+            } else {
+                isDemoRunning = true;
+                demoBtn.innerHTML = '<i class="fas fa-stop"></i> Parar Demo';
+                
+                let demoStep = 0;
+                demoInterval = setInterval(function() {
+                    // Ciclo de demonstração
+                    if (demoStep < 50) {
+                        // Adicionar calor (processo isocórico)
+                        heat += 20;
+                        heatControl.value = heat;
+                    } else if (demoStep < 100) {
+                        // Realizar trabalho (processo adiabático)
+                        work += 20;
+                    } else if (demoStep < 150) {
+                        // Remover calor
+                        heat -= 20;
+                        heatControl.value = heat;
+                    } else if (demoStep < 200) {
+                        // Realizar trabalho negativo (comprimir)
+                        work -= 20;
+                    } else {
+                        demoStep = -1; // Reiniciar ciclo
+                    }
+                    
+                    demoStep++;
+                    applyFirstLaw();
+                }, 100);
+            }
+        }
+        
+        // Inicializar a simulação
+        initSimulation();
+    </script>
+</body>
+</html>

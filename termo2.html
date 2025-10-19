@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2ª Lei da Termodinâmica - Entropia Corrigida</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 10;
+            gap: 1.5rem;
+        }
+
+        .title {
+            font-size: clamp(1.8rem, 5vw, 3rem);
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, #ff0080, #00ffff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
+            animation: glow 2s infinite alternate;
+            margin-top: 1rem;
+        }
+
+        .simulation-area {
+            width: 95%;
+            max-width: 900px;
+            height: 50vh;
+            min-height: 350px;
+            background: rgba(20, 20, 30, 0.7);
+            border-radius: 15px;
+            border: 1px solid rgba(100, 100, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 150, 255, 0.2);
+            backdrop-filter: blur(5px);
+        }
+
+        .hot-object, .cold-object {
+            position: absolute;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+            transition: all 0.5s ease;
+            box-shadow: 0 0 30px currentColor;
+            z-index: 20;
+        }
+
+        .hot-object {
+            background: radial-gradient(circle, #ff0080, #ff4500);
+            width: clamp(100px, 20vw, 150px);
+            height: clamp(100px, 20vw, 150px);
+            top: 50%;
+            left: 20%;
+            transform: translate(-50%, -50%);
+            animation: pulse-hot 3s infinite alternate;
+            border: 2px solid rgba(255, 0, 128, 0.7);
+        }
+
+        .cold-object {
+            background: radial-gradient(circle, #00ffff, #0080ff);
+            width: clamp(100px, 20vw, 150px);
+            height: clamp(100px, 20vw, 150px);
+            top: 50%;
+            right: 20%;
+            transform: translate(50%, -50%);
+            animation: pulse-cold 3s infinite alternate;
+            border: 2px solid rgba(0, 255, 255, 0.7);
+        }
+
+        .heat-flow {
+            position: absolute;
+            top: 50%;
+            left: 20%;
+            width: 60%;
+            height: 6px;
+            background: linear-gradient(90deg, #ff0080, #00ffff);
+            transform: translateY(-50%);
+            border-radius: 3px;
+            box-shadow: 0 0 15px rgba(255, 0, 128, 0.7);
+            z-index: 5;
+        }
+
+        .temperature-flow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .flow-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #ff0080;
+            opacity: 0;
+            z-index: 15;
+        }
+
+        .arrow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+            animation: blink 2s infinite;
+            z-index: 15;
+        }
+
+        .info-panel {
+            background: rgba(10, 10, 20, 0.8);
+            border-radius: 10px;
+            padding: 1.5rem;
+            width: 95%;
+            max-width: 900px;
+            text-align: center;
+            border: 1px solid rgba(100, 100, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 150, 255, 0.2);
+            backdrop-filter: blur(5px);
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 95%;
+            max-width: 900px;
+        }
+
+        button {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            background: linear-gradient(45deg, #ff0080, #00ffff);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 0 15px rgba(0, 150, 255, 0.5);
+            flex: 1;
+            min-width: 160px;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 0, 128, 0.7);
+        }
+
+        .entropy-meter {
+            width: 95%;
+            max-width: 900px;
+            height: 30px;
+            background: rgba(20, 20, 30, 0.8);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid rgba(100, 100, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 150, 255, 0.2);
+            position: relative;
+        }
+
+        .entropy-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ff0080, #00ffff);
+            border-radius: 15px;
+            transition: width 1s ease;
+            box-shadow: 0 0 10px rgba(255, 0, 128, 0.7);
+        }
+
+        .entropy-value {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .entropy-label {
+            text-align: center;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+            width: 95%;
+            max-width: 900px;
+        }
+
+        .temperature-display {
+            display: flex;
+            justify-content: space-between;
+            width: 95%;
+            max-width: 900px;
+            gap: 1rem;
+        }
+
+        .temp-box {
+            background: rgba(10, 10, 20, 0.8);
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+            flex: 1;
+            min-width: 140px;
+            border: 1px solid rgba(100, 100, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 150, 255, 0.2);
+        }
+
+        .hot-temp {
+            color: #ff0080;
+            text-shadow: 0 0 10px #ff0080;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .cold-temp {
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .status {
+            text-align: center;
+            font-style: italic;
+            color: #00ffff;
+            text-shadow: 0 0 5px #00ffff;
+            width: 95%;
+            max-width: 900px;
+        }
+
+        #particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        @keyframes glow {
+            0% { text-shadow: 0 0 10px rgba(255, 0, 128, 0.5); }
+            100% { text-shadow: 0 0 20px rgba(0, 255, 255, 0.8); }
+        }
+
+        @keyframes pulse-hot {
+            0% { 
+                box-shadow: 0 0 30px #ff0080;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% { 
+                box-shadow: 0 0 50px #ff0080;
+                transform: translate(-50%, -50%) scale(1.05);
+            }
+        }
+
+        @keyframes pulse-cold {
+            0% { 
+                box-shadow: 0 0 30px #00ffff;
+                transform: translate(50%, -50%) scale(1);
+            }
+            100% { 
+                box-shadow: 0 0 50px #00ffff;
+                transform: translate(50%, -50%) scale(1.05);
+            }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes flowParticle {
+            0% {
+                left: 20%;
+                opacity: 0;
+                transform: translateY(-50%) scale(0.5);
+            }
+            10% {
+                opacity: 1;
+                transform: translateY(-50%) scale(1);
+            }
+            90% {
+                opacity: 0.7;
+            }
+            100% {
+                left: 80%;
+                opacity: 0;
+                transform: translateY(-50%) scale(0.5);
+            }
+        }
+
+        /* Media Queries para responsividade */
+        @media (max-width: 768px) {
+            .simulation-area {
+                height: 40vh;
+                min-height: 300px;
+            }
+            
+            .hot-object, .cold-object {
+                width: 90px;
+                height: 90px;
+                font-size: 0.9rem;
+            }
+            
+            .temperature-display {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .controls {
+                gap: 0.5rem;
+            }
+            
+            button {
+                min-width: 140px;
+                padding: 0.7rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hot-object, .cold-object {
+                width: 80px;
+                height: 80px;
+                font-size: 0.8rem;
+            }
+            
+            .hot-object {
+                left: 25%;
+            }
+            
+            .cold-object {
+                right: 25%;
+            }
+            
+            .heat-flow {
+                left: 25%;
+                width: 50%;
+            }
+            
+            button {
+                min-width: 120px;
+                padding: 0.6rem 0.8rem;
+                font-size: 0.8rem;
+            }
+            
+            .info-panel {
+                padding: 1rem;
+            }
+            
+            .info-panel h2 {
+                font-size: 1.2rem;
+            }
+            
+            .info-panel p {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="particles"></div>
+
+    <div class="container">
+        <h1 class="title">2ª Lei da Termodinâmica</h1>
+        
+        <div class="simulation-area">
+            <div class="hot-object" id="hotObject">
+                <div>QUENTE</div>
+                <div>🔥</div>
+                <div id="hotTemp">100°C</div>
+            </div>
+            <div class="cold-object" id="coldObject">
+                <div>FRIO</div>
+                <div>❄️</div>
+                <div id="coldTemp">0°C</div>
+            </div>
+            
+            <div class="heat-flow"></div>
+            <div class="temperature-flow" id="temperatureFlow"></div>
+            <div class="arrow">→</div>
+        </div>
+        
+        <div class="temperature-display">
+            <div class="temp-box">
+                <div>Temperatura Quente:</div>
+                <div class="hot-temp" id="displayHotTemp">100°C</div>
+            </div>
+            <div class="temp-box">
+                <div>Temperatura Fria:</div>
+                <div class="cold-temp" id="displayColdTemp">0°C</div>
+            </div>
+        </div>
+        
+        <div class="entropy-label">ENTROPIA DO SISTEMA</div>
+        <div class="entropy-meter">
+            <div class="entropy-bar" id="entropyBar"></div>
+            <div class="entropy-value" id="entropyValue">0%</div>
+        </div>
+        <div class="status" id="status">Sistema em processo de equalização térmica...</div>
+        
+        <div class="info-panel">
+            <h2>Segunda Lei da Termodinâmica</h2>
+            <p>O calor flui espontaneamente do corpo mais quente para o mais frio, aumentando a entropia do sistema.</p>
+            <p>A entropia (medida de desordem) sempre aumenta com o tempo, mesmo após o equilíbrio térmico.</p>
+        </div>
+        
+        <div class="controls">
+            <button onclick="increaseHeat()">Aumentar Calor 🔥</button>
+            <button onclick="decreaseHeat()">Diminuir Calor ❄️</button>
+            <button onclick="addCold()">Adicionar Frio 🌬️</button>
+            <button onclick="resetSimulation()">Reiniciar 🔄</button>
+        </div>
+    </div>
+
+    <script>
+        // Configurações das partículas de fundo
+        const particleConfig = {
+            count: 100,
+            speed: 0.5,
+            colors: ['#ff0080', '#00ffff', '#8000ff', '#ffff00', '#00ff80']
+        };
+
+        // Criar partículas de fundo
+        function createBackgroundParticles() {
+            const container = document.getElementById('particles');
+            
+            for (let i = 0; i < particleConfig.count; i++) {
+                const particle = document.createElement('div');
+                particle.style.position = 'absolute';
+                const size = Math.random() * 5 + 2;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.backgroundColor = particleConfig.colors[Math.floor(Math.random() * particleConfig.colors.length)];
+                particle.style.borderRadius = '50%';
+                particle.style.boxShadow = `0 0 ${Math.random() * 10 + 5}px currentColor`;
+                particle.style.opacity = Math.random() * 0.7 + 0.3;
+                
+                // Posição inicial aleatória
+                particle.style.left = `${Math.random() * 100}vw`;
+                particle.style.top = `${Math.random() * 100}vh`;
+                
+                // Animação
+                const duration = 20 + Math.random() * 30;
+                const delay = Math.random() * 5;
+                particle.style.animation = `float ${duration}s linear ${delay}s infinite`;
+                
+                container.appendChild(particle);
+            }
+            
+            // Adicionar estilos de animação
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes float {
+                    0% {
+                        transform: translate(0, 0) rotate(0deg);
+                        opacity: ${Math.random() * 0.7 + 0.3};
+                    }
+                    25% {
+                        transform: translate(${Math.random() * 100 - 50}vw, ${Math.random() * 100 - 50}vh) rotate(90deg);
+                    }
+                    50% {
+                        transform: translate(${Math.random() * 100 - 50}vw, ${Math.random() * 100 - 50}vh) rotate(180deg);
+                        opacity: ${Math.random() * 0.7 + 0.3};
+                    }
+                    75% {
+                        transform: translate(${Math.random() * 100 - 50}vw, ${Math.random() * 100 - 50}vh) rotate(270deg);
+                    }
+                    100% {
+                        transform: translate(0, 0) rotate(360deg);
+                        opacity: ${Math.random() * 0.7 + 0.3};
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // Variáveis da simulação
+        let hotTemperature = 100;
+        let coldTemperature = 0;
+        let entropy = 0;
+        let simulationRunning = true;
+        let equilibriumCounter = 0;
+        let timeCounter = 0;
+        
+        // Criar partículas de fluxo de temperatura
+        function createTemperatureFlow() {
+            const container = document.getElementById('temperatureFlow');
+            container.innerHTML = '';
+            
+            const diff = hotTemperature - coldTemperature;
+            const particleCount = Math.min(30, Math.floor(diff / 5));
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('flow-particle');
+                
+                // Posição vertical aleatória
+                const topOffset = (Math.random() * 60 - 30);
+                particle.style.top = `calc(50% + ${topOffset}px)`;
+                
+                // Cor baseada na temperatura
+                const colorValue = Math.floor(255 * (coldTemperature / 100));
+                particle.style.backgroundColor = `rgb(255, ${colorValue}, ${colorValue})`;
+                
+                // Animação com atraso aleatório
+                const delay = Math.random() * 2;
+                const duration = 2 + Math.random() * 2;
+                particle.style.animation = `flowParticle ${duration}s linear ${delay}s infinite`;
+                
+                container.appendChild(particle);
+            }
+        }
+        
+        function updateTemperatures() {
+            document.getElementById('hotTemp').textContent = `${Math.round(hotTemperature)}°C`;
+            document.getElementById('coldTemp').textContent = `${Math.round(coldTemperature)}°C`;
+            document.getElementById('displayHotTemp').textContent = `${Math.round(hotTemperature)}°C`;
+            document.getElementById('displayColdTemp').textContent = `${Math.round(coldTemperature)}°C`;
+            
+            // Atualizar tamanhos dos objetos baseado na temperatura
+            const hotObject = document.getElementById('hotObject');
+            const coldObject = document.getElementById('coldObject');
+            
+            const baseSize = window.innerWidth < 480 ? 80 : (window.innerWidth < 768 ? 90 : 120);
+            const hotSize = baseSize + (hotTemperature / 5);
+            const coldSize = baseSize + ((100 - coldTemperature) / 10);
+            
+            hotObject.style.width = `${hotSize}px`;
+            hotObject.style.height = `${hotSize}px`;
+            coldObject.style.width = `${coldSize}px`;
+            coldObject.style.height = `${coldSize}px`;
+            
+            // Atualizar status
+            const status = document.getElementById('status');
+            const diff = Math.abs(hotTemperature - coldTemperature);
+            
+            if (diff < 1) {
+                status.textContent = "Sistema em EQUILÍBRIO TÉRMICO! (Entropia continua aumentando)";
+                equilibriumCounter++;
+            } else if (diff < 10) {
+                status.textContent = "Sistema quase em equilíbrio térmico...";
+                equilibriumCounter = 0;
+            } else if (diff < 30) {
+                status.textContent = "Sistema em processo de equalização térmica...";
+                equilibriumCounter = 0;
+            } else {
+                status.textContent = "Transferência de calor ativa - equalização em andamento...";
+                equilibriumCounter = 0;
+            }
+            
+            // Atualizar fluxo de temperatura
+            createTemperatureFlow();
+        }
+        
+        function updateEntropy() {
+            // A entropia SEMPRE aumenta com o tempo, mesmo após o equilíbrio térmico
+            // Baseado na Segunda Lei da Termodinâmica
+            
+            // Fatores que contribuem para o aumento da entropia:
+            // 1. Diferença de temperatura (maior diferença = maior aumento)
+            const diff = Math.abs(hotTemperature - coldTemperature);
+            const diffFactor = diff * 0.001;
+            
+            // 2. Tempo (a entropia sempre aumenta com o tempo)
+            timeCounter += 0.1;
+            const timeFactor = 0.01 + (timeCounter * 0.0001);
+            
+            // 3. Flutuações térmicas (mesmo no equilíbrio)
+            const fluctuationFactor = 0.005;
+            
+            // Cálculo total do aumento de entropia
+            entropy += diffFactor + timeFactor + fluctuationFactor;
+            
+            // Atualizar a barra de entropia (módulo 100 para visualização)
+            const entropyBar = document.getElementById('entropyBar');
+            const entropyValue = document.getElementById('entropyValue');
+            const displayEntropy = entropy % 100;
+            
+            entropyBar.style.width = `${displayEntropy}%`;
+            entropyValue.textContent = `${Math.floor(entropy)} unidades`;
+            
+            // Muda a cor da barra conforme a entropia aumenta
+            if (displayEntropy < 30) {
+                entropyBar.style.background = 'linear-gradient(90deg, #00ff80, #00ffff)';
+            } else if (displayEntropy < 70) {
+                entropyBar.style.background = 'linear-gradient(90deg, #ffff00, #ff8000)';
+            } else {
+                entropyBar.style.background = 'linear-gradient(90deg, #ff8000, #ff0080)';
+            }
+        }
+        
+        function equalizeTemperatures() {
+            if (!simulationRunning) return;
+            
+            // Calcular a taxa de transferência de calor (proporcional à diferença de temperatura)
+            const diff = hotTemperature - coldTemperature;
+            const transferRate = diff * 0.01;
+            
+            // Aplicar a transferência de calor
+            if (diff > 0.1) {
+                hotTemperature -= transferRate;
+                coldTemperature += transferRate;
+            }
+            
+            updateTemperatures();
+            updateEntropy();
+        }
+        
+        function increaseHeat() {
+            hotTemperature += 20;
+            if (hotTemperature > 200) hotTemperature = 200;
+            updateTemperatures();
+        }
+        
+        function decreaseHeat() {
+            hotTemperature -= 20;
+            if (hotTemperature < coldTemperature) hotTemperature = coldTemperature + 1;
+            updateTemperatures();
+        }
+        
+        function addCold() {
+            coldTemperature -= 20;
+            if (coldTemperature < 0) coldTemperature = 0;
+            updateTemperatures();
+        }
+        
+        function resetSimulation() {
+            hotTemperature = 100;
+            coldTemperature = 0;
+            entropy = 0;
+            equilibriumCounter = 0;
+            timeCounter = 0;
+            
+            const entropyBar = document.getElementById('entropyBar');
+            entropyBar.style.width = '0%';
+            entropyBar.style.background = 'linear-gradient(90deg, #00ff80, #00ffff)';
+            
+            const entropyValue = document.getElementById('entropyValue');
+            entropyValue.textContent = '0%';
+            
+            updateTemperatures();
+        }
+        
+        // Inicializar a simulação
+        createBackgroundParticles();
+        updateTemperatures();
+        
+        // Executar a equalização a cada 100ms
+        setInterval(equalizeTemperatures, 100);
+        
+        // Atualizar fluxo de temperatura periodicamente
+        setInterval(createTemperatureFlow, 3000);
+        
+        // Ajustar layout em redimensionamento
+        window.addEventListener('resize', updateTemperatures);
+    </script>
+</body>
+</html>

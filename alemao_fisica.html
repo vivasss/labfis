@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>100 Termos de Física em Alemão – Vocabulário, Frases, Quiz e Áudio</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 2rem;
+      line-height: 1.4;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-bottom: 2rem;
+    }
+    th, td {
+      border: 1px solid #666;
+      padding: 0.5rem;
+      text-align: left;
+    }
+    th {
+      background: #eee;
+    }
+    section {
+      margin-bottom: 2rem;
+    }
+    h2 {
+      margin-top: 2rem;
+    }
+    button {
+      padding: 0.4rem 0.8rem;
+      margin: 0.3rem;
+      cursor: pointer;
+    }
+    .icon-btn {
+      background: none;
+      border: none;
+      font-size: 1rem;
+    }
+    .quiz-question {
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+    }
+    .quiz-question span {
+      flex-grow: 1;
+    }
+    #quizResult p {
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      background: #f0f0f0;
+    }
+    .sentence-block {
+      margin-bottom: 0.8rem;
+    }
+    .sentence-block p {
+      margin: 0.2rem 0;
+    }
+    .sentence-block .de {
+      font-style: italic;
+    }
+    .sentence-block .pt {
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>100 Termos de Física em Alemão</h1>
+
+  <section>
+    <h2>1. Vocabulário com Áudio</h2>
+    <table id="vocabTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Alemão</th>
+          <th>Português</th>
+          <th>🔊</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>2. Exemplos de Frases</h2>
+    <div id="sentences"></div>
+  </section>
+
+  <section>
+    <h2>3. Quiz de Sentenças</h2>
+    <div id="sentenceQuiz"></div>
+    <div id="quizResult"></div>
+    <button id="nextSentenceQuiz">Próxima questão</button>
+  </section>
+
+  <script>
+    // Função de texto para fala em alemão
+    function speak(text) {
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = "de-DE";
+      speechSynthesis.speak(utter);
+    }
+
+    // Lista de 100 termos de física em alemão
+    const vocabulary = [
+      {de:"die Kraft", pt:"força"},
+      {de:"die Masse", pt:"massa"},
+      {de:"der Weg", pt:"deslocamento"},
+      {de:"die Geschwindigkeit", pt:"velocidade"},
+      {de:"die Beschleunigung", pt:"aceleração"},
+      {de:"die Arbeit", pt:"trabalho"},
+      {de:"die Leistung", pt:"potência"},
+      {de:"die Energie", pt:"energia"},
+      {de:"der Impuls", pt:"impulso"},
+      {de:"der Moment", pt:"momento (força)"},
+      {de:"der Druck", pt:"pressão"},
+      {de:"der Hebelarm", pt:"braço de alavanca"},
+      {de:"die Feder", pt:"mola"},
+      {de:"die Federkonstante", pt:"constante elástica"},
+      {de:"das Gleichgewicht", pt:"equilíbrio"},
+      {de:"die Gravitation", pt:"gravitação"},
+      {de:"die Gravitationstheorie", pt:"teoria da gravitação"},
+      {de:"die Temperatur", pt:"temperatura"},
+      {de:"die Wärme", pt:"calor"},
+      {de:"die Entropie", pt:"entropia"},
+      {de:"der Strom", pt:"corrente elétrica"},
+      {de:"die Spannung", pt:"tensão"},
+      {de:"der Widerstand", pt:"resistência"},
+      {de:"der Leiter", pt:"condutor"},
+      {de:"der Isolator", pt:"isolante"},
+      {de:"der Kondensator", pt:"capacitor"},
+      {de:"die Induktivität", pt:"indutância"},
+      {de:"die Kapazität", pt:"capacitância"},
+      {de:"das Magnetfeld", pt:"campo magnético"},
+      {de:"das elektrische Feld", pt:"campo elétrico"},
+      {de:"das Licht", pt:"luz"},
+      {de:"die Welle", pt:"onda"},
+      {de:"die Frequenz", pt:"frequência"},
+      {de:"die Wellenlänge", pt:"comprimento de onda"},
+      {de:"das Photon", pt:"fóton"},
+      {de:"der Laser", pt:"laser"},
+      {de:"die Reflexion", pt:"reflexão"},
+      {de:"die Brechung", pt:"refração"},
+      {de:"das Spektrum", pt:"espectro"},
+      {de:"das Prisma", pt:"prisma"},
+      {de:"die Linse", pt:"lente"},
+      {de:"die Fokallänge", pt:"distância focal"},
+      {de:"die Optik", pt:"óptica"},
+      {de:"die Quantenmechanik", pt:"mecânica quântica"},
+      {de:"das Teilchen", pt:"partícula"},
+      {de:"der Atomkern", pt:"núcleo atômico"},
+      {de:"das Elektron", pt:"elétron"},
+      {de:"das Proton", pt:"próton"},
+      {de:"das Neutron", pt:"nêutron"},
+      {de:"die Wellenfunktion", pt:"função de onda"},
+      {de:"der Quantenzustand", pt:"estado quântico"},
+      {de:"der Tunneleffekt", pt:"efeito túnel"},
+      {de:"die Planck-Konstante", pt:"constante de Planck"},
+      {de:"die Relativitätstheorie", pt:"teoria da relatividade"},
+      {de:"die Zeitdilatation", pt:"dilatação do tempo"},
+      {de:"die Längenkontraktion", pt:"contração do comprimento"},
+      {de:"die Raumzeit", pt:"espaço-tempo"},
+      {de:"die Masse-Energie-Äquivalenz", pt:"equivalência massa-energia"},
+      {de:"der Kern", pt:"núcleo"},
+      {de:"der radioaktive Zerfall", pt:"decaimento radioativo"},
+      {de:"die Halbwertszeit", pt:"meia-vida"},
+      {de:"die Kernfusion", pt:"fusão nuclear"},
+      {de:"die Kernspaltung", pt:"fissão nuclear"},
+      {de:"das Isotop", pt:"isótopo"},
+      {de:"die Kernreaktion", pt:"reação nuclear"},
+      {de:"der Neutronenstrahl", pt:"feixe de nêutrons"},
+      {de:"der Teilchenbeschleuniger", pt:"acelerador de partículas"},
+      {de:"der Schall", pt:"som"},
+      {de:"die Schallgeschwindigkeit", pt:"velocidade do som"},
+      {de:"der Schallpegel", pt:"nível de som"},
+      {de:"das Mikrofon", pt:"microfone"},
+      {de:"der Lautsprecher", pt:"alto-falante"},
+      {de:"das Dezibel", pt:"decibel"},
+      {de:"die Schallwelle", pt:"onda sonora"},
+      {de:"die Größe", pt:"grandeza"},
+      {de:"die Einheit", pt:"unidade"},
+      {de:"das Internationale Einheitensystem", pt:"Sistema Internacional (SI)"},
+      {de:"das Messgerät", pt:"instrumento de medição"},
+      {de:"die Genauigkeit", pt:"precisão"},
+      {de:"die Unsicherheit", pt:"incerteza"},
+      {de:"die Skala", pt:"escala"},
+      {de:"die Formel", pt:"fórmula"},
+      {de:"die Variable", pt:"variável"},
+      {de:"die Konstante", pt:"constante"},
+      {de:"der Parameter", pt:"parâmetro"},
+      {de:"die Theorie", pt:"teoria"},
+      {de:"das Experiment", pt:"experimento"},
+      {de:"die Beobachtung", pt:"observação"}
+    ];
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // 1. Preenche tabela de vocabulário com botão de áudio
+      const tbody = document.querySelector("#vocabTable tbody");
+      vocabulary.forEach((item, i) => {
+        const row = tbody.insertRow();
+        row.insertCell().textContent = i + 1;
+        row.insertCell().textContent = item.de;
+        row.insertCell().textContent = item.pt;
+        const btnCell = row.insertCell();
+        const btn = document.createElement("button");
+        btn.className = "icon-btn";
+        btn.textContent = "🔊";
+        btn.onclick = () => speak(item.de);
+        btnCell.appendChild(btn);
+      });
+
+      // 2. Gera exemplos de frases com tradução total
+      const sentDiv = document.getElementById("sentences");
+      vocabulary.forEach(item => {
+        const block = document.createElement("div");
+        block.className = "sentence-block";
+        const pDe = document.createElement("p");
+        pDe.className = "de";
+        pDe.textContent = `DE: Das Wort "${item.de}" bedeutet "${item.pt}".`;
+        const pPt = document.createElement("p");
+        pPt.className = "pt";
+        pPt.textContent = `PT: A palavra "${item.de}" significa "${item.pt}".`;
+        block.appendChild(pDe);
+        block.appendChild(pPt);
+        sentDiv.appendChild(block);
+      });
+
+      // 3. Configura quiz de sentenças com áudio da palavra
+      let quizIdx = 0;
+      const quizDiv   = document.getElementById("sentenceQuiz");
+      const resultDiv = document.getElementById("quizResult");
+      const nextBtn   = document.getElementById("nextSentenceQuiz");
+
+      function loadSentenceQuiz() {
+        const {de, pt} = vocabulary[quizIdx % vocabulary.length];
+        const wrongs = vocabulary
+          .filter((_, idx) => idx !== quizIdx % vocabulary.length)
+          .sort(() => 0.5 - Math.random())
+          .slice(0, 3)
+          .map(w => w.de);
+        const options = [de, ...wrongs].sort(() => 0.5 - Math.random());
+
+        quizDiv.innerHTML   = "";
+        resultDiv.innerHTML = "";
+
+        // Questão com botão de áudio
+        const q = document.createElement("div");
+        q.className = "quiz-question";
+        const textSpan = document.createElement("span");
+        textSpan.textContent = `Vervollständige: Das Wort "____" bedeutet "${pt}".`;
+        const audioBtn = document.createElement("button");
+        audioBtn.className = "icon-btn";
+        audioBtn.textContent = "🔊";
+        audioBtn.onclick = () => speak(de);
+        q.appendChild(textSpan);
+        q.appendChild(audioBtn);
+        quizDiv.appendChild(q);
+
+        // Opções de resposta
+        options.forEach(opt => {
+          const b = document.createElement("button");
+          b.textContent = opt;
+          b.onclick = () => {
+            if (opt === de) {
+              resultDiv.innerHTML = `
+                <p>👍 Correto!</p>
+                <p><strong>Alemão:</strong> Das Wort "${de}" bedeutet "${pt}".</p>
+                <p><strong>Português:</strong> A palavra "${de}" significa "${pt}".</p>`;
+            } else {
+              resultDiv.innerHTML = `<p>❌ Errado. Tente novamente.</p>`;
+            }
+          };
+          quizDiv.appendChild(b);
+        });
+      }
+
+      nextBtn.onclick = () => {
+        quizIdx++;
+        loadSentenceQuiz();
+      };
+
+      loadSentenceQuiz();
+    });
+  </script>
+</body>
+</html>

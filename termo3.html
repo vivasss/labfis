@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3ª Lei da Termodinâmica - Átomo com Velocidade Integrada</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 10;
+            gap: 1.5rem;
+        }
+
+        .title {
+            font-size: clamp(1.8rem, 5vw, 3rem);
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, #00ffff, #8000ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            animation: glow 2s infinite alternate;
+            margin-top: 1rem;
+        }
+
+        .simulation-area {
+            width: 95%;
+            max-width: 900px;
+            height: 50vh;
+            min-height: 350px;
+            background: rgba(20, 20, 30, 0.7);
+            border-radius: 15px;
+            border: 1px solid rgba(100, 100, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 150, 255, 0.2);
+            backdrop-filter: blur(5px);
+        }
+
+        .atom {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: clamp(120px, 25vw, 200px);
+            height: clamp(120px, 25vw, 200px);
+            z-index: 20;
+        }
+
+        .nucleus {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, #00ffff, #0080ff);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.7);
+            z-index: 21;
+        }
+
+        .electron {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: radial-gradient(circle, #ff00ff, #8000ff);
+            border-radius: 50%;
+            box-shadow: 0 0 10px #ff00ff;
+        }
+
+        .orbit {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 1px dashed rgba(100, 100, 255, 0.5);
+            border-radius: 50%;
+        }
+
+        .temperature-display {
+            position: absolute;
+            top: 65%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 10, 20, 0.8);
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(100, 100, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 150, 255, 0.2);
+            z-index: 25;
+            min-width: 200px;
+        }
+
+        .temp-value {
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .velocity-indicator {
+            margin-top: 5px;
+            font-size: 0.9rem;
+            color: #ff00ff;
+        }
+
+        .entropy-meter {
+            width: 95%;
+            max-width: 900px;
+            height: 30px;
+            background: rgba(20, 20, 30, 0.8);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid rgba(100, 100, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 150, 255, 0.2);
+            position: relative;
+        }
+
+        .entropy-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #8000ff, #00ffff);
+            border-radius: 15px;
+            transition: width 1s ease;
+            box-shadow: 0 0 10px rgba(128, 0, 255, 0.7);
+        }
+
+        .entropy-value {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .entropy-label {
+            text-align: center;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+            width: 95%;
+            max-width: 900px;
+        }
+
+        .info-panel {
+            background: rgba(10, 10, 20, 0.8);
+            border-radius: 10px;
+            padding: 1.5rem;
+            width: 95%;
+            max-width: 900px;
+            text-align: center;
+            border: 1px solid rgba(100, 100, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 150, 255, 0.2);
+            backdrop-filter: blur(5px);
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 95%;
+            max-width: 900px;
+        }
+
+        button {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            background: linear-gradient(45deg, #8000ff, #00ffff);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 0 15px rgba(0, 150, 255, 0.5);
+            flex: 1;
+            min-width: 160px;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(128, 0, 255, 0.7);
+        }
+
+        .status {
+            text-align: center;
+            font-style: italic;
+            color: #00ffff;
+            text-shadow: 0 0 5px #00ffff;
+            width: 95%;
+            max-width: 900px;
+        }
+
+        .absolute-zero {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #8000ff;
+            text-shadow: 0 0 10px #8000ff;
+            font-weight: bold;
+            z-index: 15;
+        }
+
+        .molecules {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .molecule {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #00ffff;
+            opacity: 0.7;
+            box-shadow: 0 0 10px #00ffff;
+        }
+
+        #particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        @keyframes glow {
+            0% { text-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }
+            100% { text-shadow: 0 0 20px rgba(128, 0, 255, 0.8); }
+        }
+
+        @keyframes electron-orbit {
+            0% { transform: rotate(0deg) translateX(60px) rotate(0deg); }
+            100% { transform: rotate(360deg) translateX(60px) rotate(-360deg); }
+        }
+
+        @keyframes molecule-move {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+                opacity: 0.7;
+            }
+            25% {
+                transform: translate(calc(var(--tx) * 1px), calc(var(--ty) * 1px)) rotate(90deg);
+            }
+            50% {
+                transform: translate(calc(var(--tx) * 2px), calc(var(--ty) * 2px)) rotate(180deg);
+                opacity: 0.9;
+            }
+            75% {
+                transform: translate(calc(var(--tx) * 1px), calc(var(--ty) * 1px)) rotate(270deg);
+            }
+            100% {
+                transform: translate(0, 0) rotate(360deg);
+                opacity: 0.7;
+            }
+        }
+
+        /* Media Queries para responsividade */
+        @media (max-width: 768px) {
+            .simulation-area {
+                height: 40vh;
+                min-height: 300px;
+            }
+            
+            .temperature-display {
+                padding: 0.6rem 1.2rem;
+                min-width: 180px;
+            }
+            
+            .controls {
+                gap: 0.5rem;
+            }
+            
+            button {
+                min-width: 140px;
+                padding: 0.7rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .atom {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .temperature-display {
+                padding: 0.5rem 1rem;
+                min-width: 160px;
+            }
+            
+            button {
+                min-width: 120px;
+                padding: 0.6rem 0.8rem;
+                font-size: 0.8rem;
+            }
+            
+            .info-panel {
+                padding: 1rem;
+            }
+            
+            .info-panel h2 {
+                font-size: 1.2rem;
+            }
+            
+            .info-panel p {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="particles"></div>
+
+    <div class="container">
+        <h1 class="title">3ª Lei da Termodinâmica</h1>
+        
+        <div class="simulation-area">
+            <div class="atom" id="atom">
+                <div class="nucleus"></div>
+                <div class="orbit" id="orbit1" style="width: 120px; height: 120px;"></div>
+                <div class="orbit" id="orbit2" style="width: 160px; height: 160px;"></div>
+                <div class="electron" id="electron1"></div>
+                <div class="electron" id="electron2"></div>
+                <div class="electron" id="electron3"></div>
+            </div>
+            <div class="temperature-display">
+                <div>Temperatura: <span class="temp-value" id="temperatureValue">300 K</span></div>
+                <div class="velocity-indicator" id="velocityIndicator">Velocidade: 100%</div>
+            </div>
+            <div class="molecules" id="molecules"></div>
+            <div class="absolute-zero">Zero Absoluto: 0 K</div>
+        </div>
+        
+        <div class="entropy-label">ENTROPIA DO SISTEMA</div>
+        <div class="entropy-meter">
+            <div class="entropy-bar" id="entropyBar"></div>
+            <div class="entropy-value" id="entropyValue">100%</div>
+        </div>
+        <div class="status" id="status">Sistema em temperatura ambiente...</div>
+        
+        <div class="info-panel">
+            <h2>Terceira Lei da Termodinâmica</h2>
+            <p>A entropia de um cristal puro e perfeito se aproxima de zero à medida que a temperatura se aproxima do zero absoluto (0 K).</p>
+            <p>Nesta simulação, observe como a velocidade dos elétrons e moléculas diminui quando o sistema é resfriado.</p>
+            <p>A velocidade é determinada automaticamente pela temperatura - quanto mais frio, mais lento o movimento!</p>
+        </div>
+        
+        <div class="controls">
+            <button onclick="coolSystem()">Resfriar Sistema ❄️</button>
+            <button onclick="heatSystem()">Aquecer Sistema 🔥</button>
+            <button onclick="approachAbsoluteZero()">Aproximar do Zero Absoluto ⚡</button>
+            <button onclick="resetSimulation()">Reiniciar 🔄</button>
+        </div>
+    </div>
+
+    <script>
+        // Configurações das partículas de fundo
+        const particleConfig = {
+            count: 80,
+            speed: 0.5,
+            colors: ['#8000ff', '#00ffff', '#0080ff', '#00ff80']
+        };
+
+        // Criar partículas de fundo
+        function createBackgroundParticles() {
+            const container = document.getElementById('particles');
+            
+            for (let i = 0; i < particleConfig.count; i++) {
+                const particle = document.createElement('div');
+                particle.style.position = 'absolute';
+                const size = Math.random() * 4 + 2;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.backgroundColor = particleConfig.colors[Math.floor(Math.random() * particleConfig.colors.length)];
+                particle.style.borderRadius = '50%';
+                particle.style.boxShadow = `0 0 ${Math.random() * 8 + 4}px currentColor`;
+                particle.style.opacity = Math.random() * 0.7 + 0.3;
+                
+                // Posição inicial aleatória
+                particle.style.left = `${Math.random() * 100}vw`;
+                particle.style.top = `${Math.random() * 100}vh`;
+                
+                // Animação
+                const duration = 25 + Math.random() * 35;
+                const delay = Math.random() * 5;
+                particle.style.animation = `float ${duration}s linear ${delay}s infinite`;
+                
+                container.appendChild(particle);
+            }
+            
+            // Adicionar estilos de animação
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes float {
+                    0% {
+                        transform: translate(0, 0) rotate(0deg);
+                        opacity: ${Math.random() * 0.7 + 0.3};
+                    }
+                    25% {
+                        transform: translate(${Math.random() * 100 - 50}vw, ${Math.random() * 100 - 50}vh) rotate(90deg);
+                    }
+                    50% {
+                        transform: translate(${Math.random() * 100 - 50}vw, ${Math.random() * 100 - 50}vh) rotate(180deg);
+                        opacity: ${Math.random() * 0.7 + 0.3};
+                    }
+                    75% {
+                        transform: translate(${Math.random() * 100 - 50}vw, ${Math.random() * 100 - 50}vh) rotate(270deg);
+                    }
+                    100% {
+                        transform: translate(0, 0) rotate(360deg);
+                        opacity: ${Math.random() * 0.7 + 0.3};
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        // Variáveis da simulação
+        let temperature = 300; // Kelvin
+        let entropy = 100; // Percentual
+        let molecules = [];
+        
+        // Atualizar velocidade baseada na temperatura
+        function updateVelocity() {
+            const velocityIndicator = document.getElementById('velocityIndicator');
+            
+            // Velocidade proporcional à temperatura (0-100%)
+            const velocityPercent = Math.min(100, Math.max(0, (temperature / 300) * 100));
+            
+            // Atualizar indicador de velocidade
+            velocityIndicator.textContent = `Velocidade: ${velocityPercent.toFixed(0)}%`;
+            
+            // Atualizar velocidade dos elétrons
+            // Quanto mais quente, mais rápida a órbita
+            const orbitSpeed = 5 - (velocityPercent / 100) * 4; // 1s a 5s
+            const electron1 = document.getElementById('electron1');
+            const electron2 = document.getElementById('electron2');
+            const electron3 = document.getElementById('electron3');
+            
+            electron1.style.animation = `electron-orbit ${orbitSpeed}s infinite linear`;
+            electron2.style.animation = `electron-orbit ${orbitSpeed * 1.5}s infinite linear`;
+            electron3.style.animation = `electron-orbit ${orbitSpeed * 0.8}s infinite linear`;
+            
+            // Atualizar cor do indicador de velocidade baseado na velocidade
+            if (velocityPercent > 70) {
+                velocityIndicator.style.color = "#ff0000";
+            } else if (velocityPercent > 40) {
+                velocityIndicator.style.color = "#ffff00";
+            } else if (velocityPercent > 10) {
+                velocityIndicator.style.color = "#00ffff";
+            } else {
+                velocityIndicator.style.color = "#8000ff";
+            }
+        }
+        
+        // Criar moléculas
+        function createMolecules() {
+            const container = document.getElementById('molecules');
+            container.innerHTML = '';
+            molecules = [];
+            
+            // Número de moléculas baseado na temperatura
+            const moleculeCount = Math.max(3, Math.floor(temperature / 30));
+            
+            for (let i = 0; i < moleculeCount; i++) {
+                const molecule = document.createElement('div');
+                molecule.classList.add('molecule');
+                
+                // Posição inicial aleatória
+                const left = 30 + Math.random() * 40;
+                const top = 30 + Math.random() * 40;
+                
+                molecule.style.left = `${left}%`;
+                molecule.style.top = `${top}%`;
+                
+                // Velocidade baseada na temperatura
+                const speed = temperature / 300;
+                const tx = (Math.random() - 0.5) * 20 * speed;
+                const ty = (Math.random() - 0.5) * 20 * speed;
+                
+                molecule.style.setProperty('--tx', tx);
+                molecule.style.setProperty('--ty', ty);
+                
+                // Duração da animação baseada na temperatura (quanto mais frio, mais lento)
+                const duration = 10 / speed;
+                
+                molecule.style.animation = `molecule-move ${duration}s infinite linear`;
+                
+                container.appendChild(molecule);
+                molecules.push(molecule);
+            }
+        }
+        
+        function updateSimulation() {
+            // Atualizar temperatura
+            document.getElementById('temperatureValue').textContent = `${Math.round(temperature)} K`;
+            
+            // Atualizar entropia (baseado na 3ª Lei da Termodinâmica)
+            // A entropia se aproxima de zero quando T se aproxima de 0K
+            entropy = 100 * (temperature / 300) * (temperature / 300);
+            
+            const entropyBar = document.getElementById('entropyBar');
+            const entropyValue = document.getElementById('entropyValue');
+            
+            entropyBar.style.width = `${entropy}%`;
+            entropyValue.textContent = `${entropy.toFixed(1)}%`;
+            
+            // Atualizar cor do núcleo baseado na temperatura
+            const nucleus = document.querySelector('.nucleus');
+            const blueIntensity = Math.min(255, Math.floor(255 * (temperature / 300)));
+            const purpleIntensity = Math.min(255, Math.floor(255 * (1 - temperature / 300)));
+            
+            nucleus.style.background = `radial-gradient(circle, rgb(${purpleIntensity}, ${blueIntensity}, 255), rgb(0, ${blueIntensity}, 255))`;
+            
+            // Atualizar status
+            const status = document.getElementById('status');
+            
+            if (temperature < 10) {
+                status.textContent = "Sistema próximo do Zero Absoluto - Movimento quase parado!";
+                status.style.color = "#8000ff";
+            } else if (temperature < 50) {
+                status.textContent = "Sistema muito frio - Movimento muito lento";
+                status.style.color = "#0080ff";
+            } else if (temperature < 150) {
+                status.textContent = "Sistema frio - Movimento moderado";
+                status.style.color = "#00ffff";
+            } else {
+                status.textContent = "Sistema em temperatura ambiente - Movimento rápido";
+                status.style.color = "#00ffff";
+            }
+            
+            // Atualizar velocidade
+            updateVelocity();
+            
+            // Atualizar moléculas
+            createMolecules();
+        }
+        
+        function coolSystem() {
+            if (temperature > 0.1) {
+                temperature -= 10;
+                if (temperature < 0.1) temperature = 0.1;
+                updateSimulation();
+            }
+        }
+        
+        function heatSystem() {
+            if (temperature < 300) {
+                temperature += 10;
+                if (temperature > 300) temperature = 300;
+                updateSimulation();
+            }
+        }
+        
+        function approachAbsoluteZero() {
+            if (temperature > 0.1) {
+                temperature = Math.max(0.1, temperature * 0.7);
+                updateSimulation();
+            }
+        }
+        
+        function resetSimulation() {
+            temperature = 300;
+            updateSimulation();
+        }
+        
+        // Inicializar a simulação
+        createBackgroundParticles();
+        updateSimulation();
+        
+        // Adicionar animação dos elétrons ao CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes electron-orbit {
+                0% { transform: rotate(0deg) translateX(60px) rotate(0deg); }
+                100% { transform: rotate(360deg) translateX(60px) rotate(-360deg); }
+            }
+            
+            #electron1 {
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                animation: electron-orbit 5s infinite linear;
+            }
+            
+            #electron2 {
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                animation: electron-orbit 7.5s infinite linear;
+            }
+            
+            #electron3 {
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                animation: electron-orbit 4s infinite linear;
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Ajustar layout em redimensionamento
+        window.addEventListener('resize', createMolecules);
+    </script>
+</body>
+</html>
