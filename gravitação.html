@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulação de Gravitação Universal</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#020b1b;color:#eee;font-family:system-ui,Segoe UI,Roboto,Arial;overflow:hidden}
+  canvas{display:block;width:100vw;height:100vh;background:#061229;touch-action:none}
+  
+  #title {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #111a;
+    border-radius: 12px;
+    padding: 10px 20px;
+    box-shadow: 0 0 10px #0008;
+    backdrop-filter: blur(6px);
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    z-index: 10;
+  }
+  
+  #ui{
+    position:fixed;
+    top: 60px;
+    left: 10px;
+    background:#111a;
+    border-radius:12px;
+    padding:12px;
+    box-shadow:0 0 10px #0008;
+    backdrop-filter:blur(6px);
+    font-size:14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 200px;
+    z-index: 10;
+  }
+  
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  label {
+    font-size: 12px;
+    color: #aac;
+  }
+  
+  input, button, select {
+    margin: 2px;
+    padding: 6px;
+    border: none;
+    border-radius: 6px;
+    background: #223344;
+    color: #fff;
+  }
+  
+  input[type="range"] {
+    width: 100%;
+  }
+  
+  input[type="number"] {
+    width: 70px;
+  }
+  
+  button{
+    cursor:pointer;
+    background:#234;
+    color:#fff;
+    font-weight:600;
+    padding: 8px 12px;
+  }
+  
+  button:hover{
+    background:#356;
+  }
+  
+  #mass-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  #mass-value {
+    min-width: 40px;
+    text-align: center;
+    font-weight: bold;
+  }
+  
+  #info-panel {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    background: #111a;
+    border-radius: 12px;
+    box-shadow: 0 0 10px #0008;
+    backdrop-filter: blur(6px);
+    font-size: 12px;
+    max-width: 250px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    max-height: 40px;
+  }
+  
+  #info-panel.expanded {
+    max-height: 300px;
+    padding: 12px;
+  }
+  
+  #info-header {
+    padding: 10px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+  }
+  
+  #info-content {
+    padding: 0 12px 12px;
+    display: none;
+  }
+  
+  #info-panel.expanded #info-content {
+    display: block;
+  }
+  
+  #info-panel h3 {
+    margin-bottom: 8px;
+    color: #8af;
+  }
+  
+  #info-panel ul {
+    padding-left: 15px;
+  }
+  
+  #info-panel li {
+    margin-bottom: 5px;
+  }
+  
+  #edit-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #111e;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 0 20px #000a;
+    backdrop-filter: blur(10px);
+    display: none;
+    flex-direction: column;
+    gap: 15px;
+    min-width: 280px;
+    z-index: 20;
+  }
+  
+  #edit-panel h3 {
+    margin-bottom: 10px;
+    color: #8af;
+    text-align: center;
+  }
+  
+  .edit-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .edit-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+  
+  .edit-buttons button {
+    flex: 1;
+    margin: 0 5px;
+  }
+  
+  #overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #0008;
+    backdrop-filter: blur(2px);
+    display: none;
+    z-index: 15;
+  }
+  
+  .mass-input-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .mass-input-container input[type="number"] {
+    width: 80px;
+  }
+  
+  @media (max-width: 768px) {
+    #ui {
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+    
+    .control-group {
+      flex: 1;
+      min-width: 150px;
+    }
+    
+    #title {
+      top: 70px;
+      font-size: 16px;
+      padding: 8px 16px;
+    }
+    
+    #info-panel {
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
+      max-width: none;
+    }
+    
+    #edit-panel {
+      width: 90%;
+      min-width: unset;
+    }
+  }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<div id="title">Simulação de Gravitação Universal</div>
+
+<div id="ui">
+  <div class="control-group">
+    <label for="massRange">Massa do Novo Corpo:</label>
+    <div class="mass-input-container">
+      <input id="massRange" type="range" min="5" max="500" step="1" value="10">
+      <input id="massNum" type="number" min="5" max="500" step="1" value="10">
+    </div>
+  </div>
+  
+  <div class="control-group">
+    <label for="colorSelect">Cor do Novo Corpo:</label>
+    <select id="colorSelect">
+      <option value="random">Aleatória</option>
+      <option value="red">Vermelho</option>
+      <option value="blue">Azul</option>
+      <option value="green">Verde</option>
+      <option value="yellow">Amarelo</option>
+      <option value="purple">Roxo</option>
+    </select>
+  </div>
+  
+  <div class="control-group">
+    <button id="playPauseBtn">⏸️ Pausar</button>
+    <button id="resetBtn">🔄 Resetar</button>
+    <button id="clearTrailsBtn">🧹 Limpar Trilhas</button>
+  </div>
+</div>
+
+<div id="info-panel">
+  <div id="info-header">
+    <span>ℹ️ Instruções</span>
+    <span id="toggle-info">▼</span>
+  </div>
+  <div id="info-content">
+    <h3>Como usar:</h3>
+    <ul>
+      <li><b>Clique no espaço vazio</b> - Cria novo corpo</li>
+      <li><b>Clique em um corpo</b> - Seleciona para editar</li>
+      <li><b>Arraste o corpo</b> - Move sua posição</li>
+      <li><b>Arraste a ponta do vetor</b> - Altera velocidade</li>
+      <li><b>Duplo clique em um corpo</b> - Abre editor de massa</li>
+      <li><b>Massa pode ser de 5 a 500</b> - Use os controles</li>
+    </ul>
+  </div>
+</div>
+
+<div id="overlay"></div>
+
+<div id="edit-panel">
+  <h3>Editar Corpo</h3>
+  <div class="edit-controls">
+    <label for="editMassRange">Massa (5-500):</label>
+    <div class="mass-input-container">
+      <input id="editMassRange" type="range" min="5" max="500" step="1" value="10">
+      <input id="editMassNum" type="number" min="5" max="500" step="1" value="10">
+    </div>
+    
+    <label for="editColorSelect">Cor:</label>
+    <select id="editColorSelect">
+      <option value="red">Vermelho</option>
+      <option value="blue">Azul</option>
+      <option value="green">Verde</option>
+      <option value="yellow">Amarelo</option>
+      <option value="purple">Roxo</option>
+      <option value="random">Aleatória</option>
+    </select>
+  </div>
+  <div class="edit-buttons">
+    <button id="applyEditBtn">Aplicar</button>
+    <button id="cancelEditBtn">Cancelar</button>
+  </div>
+</div>
+
+<script>
+(()=>{
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const playPauseBtn = document.getElementById('playPauseBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const clearBtn = document.getElementById('clearTrailsBtn');
+  const massRange = document.getElementById('massRange');
+  const massNum = document.getElementById('massNum');
+  const colorSelect = document.getElementById('colorSelect');
+  const infoPanel = document.getElementById('info-panel');
+  const toggleInfo = document.getElementById('toggle-info');
+  const editPanel = document.getElementById('edit-panel');
+  const overlay = document.getElementById('overlay');
+  const editMassRange = document.getElementById('editMassRange');
+  const editMassNum = document.getElementById('editMassNum');
+  const editColorSelect = document.getElementById('editColorSelect');
+  const applyEditBtn = document.getElementById('applyEditBtn');
+  const cancelEditBtn = document.getElementById('cancelEditBtn');
+
+  let W, H;
+  function resize() {
+    W = canvas.width = innerWidth;
+    H = canvas.height = innerHeight;
+  }
+  addEventListener('resize', resize);
+  resize();
+
+  const G = 0.05; // Constante gravitacional
+  let running = true;
+  let bodies = [], trails = new Map();
+  let selectedMass = parseInt(massRange.value);
+  let selectedColor = colorSelect.value;
+  let selectedBody = null;
+  let lastClickTime = 0;
+
+  // Sincronizar controles de massa para novos corpos
+  function syncMassControls() {
+    selectedMass = parseInt(massRange.value);
+    massRange.value = selectedMass;
+    massNum.value = selectedMass;
+  }
+
+  massRange.addEventListener('input', syncMassControls);
+  massNum.addEventListener('input', () => {
+    let value = parseInt(massNum.value);
+    if (value < 5) value = 5;
+    if (value > 500) value = 500;
+    massNum.value = value;
+    massRange.value = value;
+    selectedMass = value;
+  });
+
+  // Sincronizar controles de massa para edição
+  function syncEditMassControls() {
+    const value = parseInt(editMassRange.value);
+    editMassRange.value = value;
+    editMassNum.value = value;
+  }
+
+  editMassRange.addEventListener('input', syncEditMassControls);
+  editMassNum.addEventListener('input', () => {
+    let value = parseInt(editMassNum.value);
+    if (value < 5) value = 5;
+    if (value > 500) value = 500;
+    editMassNum.value = value;
+    editMassRange.value = value;
+  });
+
+  // Atualizar cor selecionada
+  colorSelect.addEventListener('change', () => {
+    selectedColor = colorSelect.value;
+  });
+
+  // Toggle do painel de informações
+  toggleInfo.addEventListener('click', () => {
+    infoPanel.classList.toggle('expanded');
+    toggleInfo.textContent = infoPanel.classList.contains('expanded') ? '▲' : '▼';
+  });
+
+  class Body {
+    constructor(x, y, m, vx = 0, vy = 0, color = 'white') {
+      this.x = x;
+      this.y = y;
+      this.m = m;
+      this.vx = vx;
+      this.vy = vy;
+      this.r = Math.cbrt(m) * 2; // Raio baseado na massa
+      this.color = color;
+      this.selected = false;
+    }
+  }
+
+  function getRandomColor() {
+    const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3'];
+    return colors[Math.floor(Math.random() * colors.length)];
+  }
+
+  function getSelectedColor() {
+    switch(selectedColor) {
+      case 'red': return '#ff6b6b';
+      case 'blue': return '#4ecdc4';
+      case 'green': return '#96ceb4';
+      case 'yellow': return '#feca57';
+      case 'purple': return '#ff9ff3';
+      default: return getRandomColor();
+    }
+  }
+
+  function getColorByName(colorName) {
+    switch(colorName) {
+      case 'red': return '#ff6b6b';
+      case 'blue': return '#4ecdc4';
+      case 'green': return '#96ceb4';
+      case 'yellow': return '#feca57';
+      case 'purple': return '#ff9ff3';
+      default: return getRandomColor();
+    }
+  }
+
+  function init() {
+    bodies = [];
+    trails.clear();
+    selectedBody = null;
+    
+    // Criar dois corpos no centro com órbitas estáveis
+    const centerX = W/2;
+    const centerY = H/2;
+    const distance = 150; // Distância entre os corpos
+    
+    // Corpo 1 (mais massivo, no centro)
+    const body1 = new Body(
+      centerX - distance/2,
+      centerY,
+      100, // Massa maior
+      0,
+      0.8, // Velocidade inicial para criar órbita
+      '#ff6b6b' // Vermelho
+    );
+    
+    // Corpo 2 (menos massivo, orbitando)
+    const body2 = new Body(
+      centerX + distance/2,
+      centerY,
+      20, // Massa menor
+      0,
+      -0.8, // Velocidade inicial oposta para criar órbita
+      '#4ecdc4' // Azul
+    );
+    
+    bodies.push(body1, body2);
+    trails.set(body1, []);
+    trails.set(body2, []);
+  }
+
+  function drawGrid() {
+    const gridSize = 50;
+    ctx.strokeStyle = 'rgba(100, 150, 255, 0.1)';
+    ctx.lineWidth = 1;
+    
+    // Linhas verticais
+    for(let x = 0; x < W; x += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, H);
+      ctx.stroke();
+    }
+    
+    // Linhas horizontais
+    for(let y = 0; y < H; y += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W, y);
+      ctx.stroke();
+    }
+  }
+
+  function update() {
+    if(!running) return;
+    
+    // Calcular forças gravitacionais
+    for(let i = 0; i < bodies.length; i++) {
+      const a = bodies[i];
+      let ax = 0, ay = 0;
+      
+      for(let j = 0; j < bodies.length; j++) {
+        if(i === j) continue;
+        
+        const b = bodies[j];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const dist = Math.hypot(dx, dy);
+        
+        if(dist < 5) continue; // Evitar divisão por zero
+        
+        const F = G * b.m / (dist * dist);
+        ax += F * dx / dist;
+        ay += F * dy / dist;
+      }
+      
+      a.vx += ax;
+      a.vy += ay;
+    }
+
+    // Atualizar posições e verificar colisões
+    for(let i = bodies.length - 1; i >= 0; i--) {
+      const a = bodies[i];
+      a.x += a.vx;
+      a.y += a.vy;
+      
+      // Verificar colisões
+      for(let j = i - 1; j >= 0; j--) {
+        const b = bodies[j];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const dist = Math.hypot(dx, dy);
+        
+        if(dist < a.r + b.r) {
+          // Fusão de corpos (colisão inelástica)
+          const big = a.m >= b.m ? a : b;
+          const small = a.m < b.m ? a : b;
+          
+          // Conservação do momento
+          big.vx = (big.vx * big.m + small.vx * small.m) / (big.m + small.m);
+          big.vy = (big.vy * big.m + small.vy * small.m) / (big.m + small.m);
+          
+          // Aumentar massa
+          big.m += small.m;
+          big.r = Math.cbrt(big.m) * 2;
+          
+          // Remover corpo menor
+          bodies.splice(bodies.indexOf(small), 1);
+          trails.delete(small);
+          
+          // Se o corpo selecionado foi removido
+          if (selectedBody === small) {
+            selectedBody = null;
+          }
+        }
+      }
+      
+      // Atualizar trilhas
+      const t = trails.get(a);
+      if(t) {
+        t.push([a.x, a.y]);
+        if(t.length > 100) t.shift();
+      }
+    }
+  }
+
+  function draw() {
+    // Limpar canvas com transparência para efeito de rastro
+    ctx.fillStyle = "rgba(6, 18, 41, 0.3)";
+    ctx.fillRect(0, 0, W, H);
+    
+    // Desenhar grade
+    drawGrid();
+    
+    // Desenhar trilhas
+    for(const [b, t] of trails) {
+      if(t.length < 2) continue;
+      
+      ctx.beginPath();
+      ctx.moveTo(t[0][0], t[0][1]);
+      
+      for(let i = 1; i < t.length; i++) {
+        ctx.lineTo(t[i][0], t[i][1]);
+      }
+      
+      ctx.strokeStyle = b.color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // Desenhar corpos
+    for(const b of bodies) {
+      // Corpo (círculo)
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.fillStyle = b.color;
+      ctx.fill();
+      
+      // Borda do corpo (destaque se selecionado)
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.strokeStyle = b.selected ? "#fff" : "rgba(255,255,255,0.5)";
+      ctx.lineWidth = b.selected ? 3 : 1;
+      ctx.stroke();
+      
+      // Vetor velocidade
+      const vx = b.vx * 30;
+      const vy = b.vy * 30;
+      
+      ctx.beginPath();
+      ctx.moveTo(b.x, b.y);
+      ctx.lineTo(b.x + vx, b.y + vy);
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Ponta do vetor (seta)
+      ctx.beginPath();
+      ctx.arc(b.x + vx, b.y + vy, 4, 0, Math.PI * 2);
+      ctx.fillStyle = "#fff";
+      ctx.fill();
+      
+      // Texto da massa
+      ctx.fillStyle = "#fff";
+      ctx.font = "12px Segoe UI";
+      ctx.fillText("m=" + b.m, b.x - 12, b.y - b.r - 5);
+    }
+  }
+
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  // --- Sistema de interação ---
+  const mouse = {x: 0, y: 0, down: false, drag: null, editVec: null};
+
+  function getPos(e) {
+    if(e.touches) return {x: e.touches[0].clientX, y: e.touches[0].clientY};
+    return {x: e.clientX, y: e.clientY};
+  }
+
+  function down(e) {
+    const {x, y} = getPos(e);
+    mouse.down = true;
+    mouse.x = x;
+    mouse.y = y;
+    
+    // Desselecionar corpo anterior
+    if (selectedBody) {
+      selectedBody.selected = false;
+      selectedBody = null;
+    }
+    
+    // Verificar se é um duplo clique
+    const currentTime = new Date().getTime();
+    const isDoubleClick = currentTime - lastClickTime < 300;
+    lastClickTime = currentTime;
+    
+    // Verificar se clicou na ponta de um vetor de velocidade
+    for(const b of bodies) {
+      const tipX = b.x + b.vx * 30;
+      const tipY = b.y + b.vy * 30;
+      
+      if(Math.hypot(x - tipX, y - tipY) < 10) {
+        mouse.editVec = b;
+        return;
+      }
+    }
+    
+    // Verificar se clicou em um corpo
+    for(const b of bodies) {
+      if(Math.hypot(x - b.x, y - b.y) < b.r + 6) {
+        // Selecionar o corpo
+        b.selected = true;
+        selectedBody = b;
+        
+        // Se for duplo clique, abrir editor
+        if (isDoubleClick) {
+          openEditPanel(b);
+        } else {
+          mouse.drag = b;
+        }
+        return;
+      }
+    }
+    
+    // Se não clicou em nada existente, criar novo corpo
+    const color = getSelectedColor();
+    const newB = new Body(
+      x, 
+      y, 
+      selectedMass,
+      (Math.random() - 0.5) * 2,
+      (Math.random() - 0.5) * 2,
+      color
+    );
+    
+    bodies.push(newB);
+    trails.set(newB, []);
+  }
+
+  function move(e) {
+    if(!mouse.down) return;
+    
+    const {x, y} = getPos(e);
+    
+    if(mouse.drag) {
+      // Arrastar corpo
+      mouse.drag.x = x;
+      mouse.drag.y = y;
+    } else if(mouse.editVec) {
+      // Editar vetor velocidade
+      const b = mouse.editVec;
+      b.vx = (x - b.x) / 30;
+      b.vy = (y - b.y) / 30;
+    }
+  }
+
+  function up() {
+    mouse.down = false;
+    mouse.drag = null;
+    mouse.editVec = null;
+  }
+
+  function openEditPanel(body) {
+    // Preencher os controles com os valores atuais do corpo
+    editMassRange.value = body.m;
+    editMassNum.value = body.m;
+    
+    // Determinar a cor atual (aproximadamente)
+    const bodyColor = body.color;
+    let colorName = 'random';
+    
+    if (bodyColor === '#ff6b6b') colorName = 'red';
+    else if (bodyColor === '#4ecdc4') colorName = 'blue';
+    else if (bodyColor === '#96ceb4') colorName = 'green';
+    else if (bodyColor === '#feca57') colorName = 'yellow';
+    else if (bodyColor === '#ff9ff3') colorName = 'purple';
+    
+    editColorSelect.value = colorName;
+    
+    // Mostrar o painel de edição
+    editPanel.style.display = 'flex';
+    overlay.style.display = 'block';
+    
+    // Armazenar o corpo sendo editado
+    editPanel.currentBody = body;
+  }
+
+  function closeEditPanel() {
+    editPanel.style.display = 'none';
+    overlay.style.display = 'none';
+    editPanel.currentBody = null;
+  }
+
+  function applyEdit() {
+    const body = editPanel.currentBody;
+    if (body) {
+      // Aplicar nova massa
+      body.m = parseInt(editMassRange.value);
+      body.r = Math.cbrt(body.m) * 2;
+      
+      // Aplicar nova cor
+      const newColor = getColorByName(editColorSelect.value);
+      body.color = newColor;
+    }
+    
+    closeEditPanel();
+  }
+
+  // Event listeners
+  canvas.addEventListener('mousedown', down);
+  canvas.addEventListener('mousemove', move);
+  canvas.addEventListener('mouseup', up);
+  canvas.addEventListener('touchstart', e => {e.preventDefault(); down(e)});
+  canvas.addEventListener('touchmove', e => {e.preventDefault(); move(e)});
+  canvas.addEventListener('touchend', e => {e.preventDefault(); up()});
+
+  // Controles da UI
+  playPauseBtn.onclick = () => {
+    running = !running;
+    playPauseBtn.textContent = running ? '⏸️ Pausar' : '▶️ Continuar';
+  };
+  
+  resetBtn.onclick = () => init();
+  clearBtn.onclick = () => {for(const k of trails.keys()) trails.set(k, []);}
+
+  // Controles do painel de edição
+  applyEditBtn.onclick = applyEdit;
+  cancelEditBtn.onclick = closeEditPanel;
+  overlay.onclick = closeEditPanel;
+
+  // Inicializar simulação
+  init();
+  syncMassControls(); // Sincronizar controles iniciais
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

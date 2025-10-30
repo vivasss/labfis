@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratório do Capacitor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #071028;
+            --card: #0f1724;
+            --muted: #94a3b8;
+            --primary: #8a2be2;
+            --accent: #00bfff;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            color-scheme: dark;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: system-ui, 'Segoe UI', Roboto, Arial;
+            background: linear-gradient(180deg, #071028 0%, #071021 60%);
+            color: #e6eef8;
+            min-height: 100vh;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        h1 {
+            font-size: 18px;
+            margin: 0;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .tab-container {
+            display: flex;
+            background: var(--card);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .tab {
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            font-weight: 700;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 18px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 18px;
+            height: calc(100vh - 134px);
+            padding: 0 18px 18px;
+        }
+
+        .simulation-container {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .capacitor-visual {
+            flex: 1;
+            position: relative;
+            background: var(--card);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            touch-action: none;
+            min-height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .capacitor-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .plate {
+            width: 70%;
+            height: 16px;
+            border-radius: 6px;
+            position: absolute;
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 10;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        .plate:active {
+            cursor: grabbing;
+        }
+
+        .plate.upper {
+            background: linear-gradient(to bottom, #ff5252, #d32f2f);
+            transform: translateY(-30px);
+        }
+
+        .plate.lower {
+            background: linear-gradient(to top, #448aff, #2962ff);
+            transform: translateY(30px);
+        }
+
+        .charge {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .positive {
+            background: radial-gradient(circle at 30% 30%, #ffcdd2, #f44336);
+            box-shadow: 0 0 5px #ff5252;
+        }
+
+        .negative {
+            background: radial-gradient(circle at 30% 30%, #bbdefb, #2196f3);
+            box-shadow: 0 0 5px #448aff;
+        }
+
+        .charge-label {
+            position: absolute;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: white;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .electric-field {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .field-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent 0%, #ff9800 50%, transparent 100%);
+            opacity: 0.7;
+        }
+
+        .connection-wire {
+            position: absolute;
+            width: 20px;
+            height: 2px;
+            background-color: #795548;
+        }
+
+        .connection-wire.left {
+            left: 0;
+        }
+
+        .connection-wire.right {
+            right: 0;
+        }
+
+        .battery {
+            position: absolute;
+            width: 35px;
+            height: 50px;
+            background: linear-gradient(to right, #e0e0e0, #f5f5f5);
+            border: 2px solid #9e9e9e;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            z-index: 5;
+        }
+
+        .battery.positive {
+            right: -40px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .battery.negative {
+            left: -40px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .battery-terminal {
+            width: 20px;
+            height: 4px;
+            background-color: #9e9e9e;
+        }
+
+        .battery-label {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .distance-indicator {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #333;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 20;
+        }
+
+        .electron {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #bbdefb, #2196f3);
+            box-shadow: 0 0 6px #448aff;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .info-panel {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .info-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            border-left: 3px solid var(--primary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .info-card:nth-child(2) {
+            border-left-color: var(--accent);
+        }
+
+        .info-card:nth-child(3) {
+            border-left-color: var(--success);
+        }
+
+        .info-card:nth-child(4) {
+            border-left-color: var(--warning);
+        }
+
+        .info-card .label {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .info-card .value {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .controls {
+            background: var(--card);
+            padding: 16px;
+            border-radius: 12px;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .controls::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .controls::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        .controls::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 3px;
+        }
+
+        .group {
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        input[type='range'] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type='range']::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+        }
+
+        input[type='number'],
+        select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.02);
+            color: inherit;
+            margin-bottom: 8px;
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background: linear-gradient(90deg, var(--primary), #6a0dad);
+            border: 0;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+        }
+
+        button.secondary {
+            background: linear-gradient(90deg, #444, #666);
+        }
+
+        .muted {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .slider-container {
+            margin: 15px 0;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .checkbox-group {
+            margin-bottom: 15px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .checkbox-item:hover {
+            background: rgba(0,0,0,0.03);
+        }
+
+        .checkbox-item input {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+
+        .control-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .control-button {
+            padding: 10px 15px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .control-button:hover {
+            background-color: #6a0dad;
+        }
+
+        .control-button i {
+            font-size: 1rem;
+        }
+
+        .electron-counter {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .drag-hint {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.8rem;
+            z-index: 5;
+        }
+
+        .charts-container {
+            padding: 18px;
+        }
+
+        .charts-content {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            margin-bottom: 18px;
+        }
+
+        .charts-content h2 {
+            margin-bottom: 15px;
+            color: var(--accent);
+            font-size: 1.5rem;
+        }
+
+        .charts-content h3 {
+            margin: 20px 0 10px;
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        .charts-content p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .formula {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+            text-align: center;
+            border-left: 3px solid var(--accent);
+        }
+
+        .chart-panel {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .chart-container {
+            height: 240px;
+            width: 100%;
+        }
+
+        footer {
+            padding: 12px 20px;
+            font-size: 13px;
+            color: var(--muted);
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        @media (max-width: 1024px) {
+            main {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            
+            .capacitor-visual {
+                height: 420px;
+            }
+            
+            .info-panel {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .info-panel {
+                grid-template-columns: 1fr;
+            }
+            
+            header {
+                flex-direction: column;
+            }
+            
+            .tab-container {
+                width: 100%;
+            }
+            
+            .tab {
+                flex: 1;
+                text-align: center;
+            }
+            
+            .capacitor-visual {
+                height: 60vh;
+                min-height: 400px;
+            }
+            
+            .battery.positive, .battery.negative {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Laboratório do Capacitor - PHET</h1>
+            <div class="tab-container">
+                <div class="tab active" data-tab="simulation">Simulação</div>
+                <div class="tab" data-tab="charts">Gráficos</div>
+                <div class="tab" data-tab="explanation">Explicação</div>
+            </div>
+        </header>
+
+        <div class="tab-content active" id="simulation-tab">
+            <main>
+                <div class="simulation-container">
+                    <div class="capacitor-visual" id="capacitor-area">
+                        <div class="distance-indicator" id="distance-indicator">30.0 mm</div>
+                        <div class="drag-hint">← Arraste as placas para ajustar a distância →</div>
+                        <div class="capacitor-container">
+                            <div class="connection-wire left"></div>
+                            <div class="connection-wire right"></div>
+                            
+                            <div class="battery positive">
+                                <div class="battery-terminal"></div>
+                                <div class="battery-label">+</div>
+                                <div class="battery-terminal"></div>
+                            </div>
+                            
+                            <div class="battery negative">
+                                <div class="battery-terminal"></div>
+                                <div class="battery-label">-</div>
+                                <div class="battery-terminal"></div>
+                            </div>
+                            
+                            <div class="plate upper" id="upper-plate">
+                                <!-- Cargas positivas serão adicionadas via JavaScript -->
+                            </div>
+                            
+                            <div class="electric-field" id="electric-field">
+                                <!-- As linhas de campo serão adicionadas via JavaScript -->
+                            </div>
+                            
+                            <div class="plate lower" id="lower-plate">
+                                <!-- Cargas negativas serão adicionadas via JavaScript -->
+                            </div>
+                            
+                            <!-- Elétrons serão adicionados via JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="info-panel">
+                        <div class="info-card">
+                            <div class="label">Capacitância</div>
+                            <div class="value" id="capacitance-value">0.06 pF</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="label">Energia Armazenada</div>
+                            <div class="value" id="energy-value">4.32 µJ</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="label">Tensão</div>
+                            <div class="value" id="voltage-value">12.0 V</div>
+                        </div>
+                        <div class="info-card">
+                            <div class="label">Carga</div>
+                            <div class="value" id="charge-value">0.72 pC</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:12px; display:flex; gap:10px;">
+                        <button id="animateBtn">Animar Elétrons</button>
+                        <button id="resetBtn" class="secondary">Resetar</button>
+                    </div>
+                </div>
+
+                <aside class="controls">
+                    <div class="group">
+                        <label><strong>Parâmetros do Capacitor</strong></label>
+                        
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>Separação</span>
+                                <span id="separation-value">30.0 mm</span>
+                            </div>
+                            <input id="separation-slider" type="range" min="2" max="100" step="0.5" value="30">
+                        </div>
+
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>Área das Placas</span>
+                                <span id="area-value">200 mm²</span>
+                            </div>
+                            <input id="area-slider" type="range" min="100" max="500" value="200">
+                        </div>
+
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>Tensão</span>
+                                <span id="voltage-slider-value">12.0 V</span>
+                            </div>
+                            <input id="voltage-slider" type="range" min="1" max="50" value="12">
+                        </div>
+                    </div>
+
+                    <div class="group">
+                        <label><strong>Visualização</strong></label>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="show-electrons" checked>
+                                <label for="show-electrons">Mostrar Elétrons</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="show-distance" checked>
+                                <label for="show-distance">Mostrar Distância</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="electric-field-check" checked>
+                                <label for="electric-field-check">Campo Elétrico</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="group">
+                        <label><strong>Controles</strong></label>
+                        <div class="control-panel">
+                            <button class="control-button" id="reset-button">
+                                <i class="fas fa-redo"></i> Redefinir
+                            </button>
+                            <button class="control-button" id="max-distance-button">
+                                <i class="fas fa-arrows-alt-v"></i> Distância Máxima
+                            </button>
+                            <button class="control-button" id="min-distance-button">
+                                <i class="fas fa-compress-alt"></i> Distância Mínima
+                            </button>
+                        </div>
+                    </div>
+                </aside>
+            </main>
+        </div>
+
+        <div class="tab-content" id="charts-tab">
+            <div class="charts-container">
+                <div class="charts-content">
+                    <h2>Gráficos do Capacitor</h2>
+                    <p>Visualize como a capacitância, energia e outros parâmetros variam com a distância entre as placas.</p>
+                    
+                    <div class="chart-panel">
+                        <h3>Capacitância vs. Distância</h3>
+                        <div class="chart-container">
+                            <canvas id="capacitance-chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-panel">
+                        <h3>Energia Armazenada vs. Distância</h3>
+                        <div class="chart-container">
+                            <canvas id="energy-chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-panel">
+                        <h3>Campo Elétrico vs. Distância</h3>
+                        <div class="chart-container">
+                            <canvas id="field-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="explanation-tab">
+            <div class="charts-container">
+                <div class="charts-content">
+                    <h2>Como Funciona um Capacitor</h2>
+                    <p>Um capacitor é um componente eletrônico que armazena energia em um campo elétrico. Ele consiste em duas placas condutoras separadas por um material isolante (dielétrico).</p>
+                    
+                    <div class="formula">
+                        C = ε₀ * A / d
+                    </div>
+                    
+                    <p>Onde:</p>
+                    <ul>
+                        <li><strong>C</strong> é a capacitância (Farads)</li>
+                        <li><strong>ε₀</strong> é a permissividade do vácuo (8.854 × 10⁻¹² F/m)</li>
+                        <li><strong>A</strong> é a área das placas</li>
+                        <li><strong>d</strong> é a distância entre as placas</li>
+                    </ul>
+                    
+                    <h3>Energia Armazenada</h3>
+                    <p>A energia armazenada em um capacitor é dada por:</p>
+                    
+                    <div class="formula">
+                        E = 1/2 * C * V²
+                    </div>
+                    
+                    <p>Onde:</p>
+                    <ul>
+                        <li><strong>E</strong> é a energia (Joules)</li>
+                        <li><strong>C</strong> é a capacitância</li>
+                        <li><strong>V</strong> é a tensão entre as placas</li>
+                    </ul>
+                    
+                    <h3>Campo Elétrico</h3>
+                    <p>O campo elétrico entre as placas de um capacitor é uniforme e dado por:</p>
+                    
+                    <div class="formula">
+                        E = V / d
+                    </div>
+                    
+                    <p>Onde:</p>
+                    <ul>
+                        <li><strong>E</strong> é a intensidade do campo elétrico (V/m)</li>
+                        <li><strong>V</strong> é a tensão entre as placas</li>
+                        <li><strong>d</strong> é a distância entre as placas</li>
+                    </ul>
+                    
+                    <h3>Carga Armazenada</h3>
+                    <p>A carga armazenada nas placas é dada por:</p>
+                    
+                    <div class="formula">
+                        Q = C * V
+                    </div>
+                    
+                    <p>Onde:</p>
+                    <ul>
+                        <li><strong>Q</strong> é a carga (Coulombs)</li>
+                        <li><strong>C</strong> é a capacitância</li>
+                        <li><strong>V</strong> é a tensão entre as placas</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <footer>Simulador de Capacitor — HTML5 & Canvas & Chart.js</footer>
+    </div>
+
+    <script>
+        // Elementos DOM
+        const electricField = document.getElementById('electric-field');
+        const upperPlate = document.getElementById('upper-plate');
+        const lowerPlate = document.getElementById('lower-plate');
+        const separationSlider = document.getElementById('separation-slider');
+        const separationValue = document.getElementById('separation-value');
+        const areaSlider = document.getElementById('area-slider');
+        const areaValue = document.getElementById('area-value');
+        const voltageSlider = document.getElementById('voltage-slider');
+        const voltageSliderValue = document.getElementById('voltage-slider-value');
+        const capacitanceValue = document.getElementById('capacitance-value');
+        const energyValue = document.getElementById('energy-value');
+        const voltageValue = document.getElementById('voltage-value');
+        const chargeValue = document.getElementById('charge-value');
+        const distanceIndicator = document.getElementById('distance-indicator');
+        const electricFieldCheckbox = document.getElementById('electric-field-check');
+        const showElectronsCheckbox = document.getElementById('show-electrons');
+        const showDistanceCheckbox = document.getElementById('show-distance');
+        const resetButton = document.getElementById('reset-button');
+        const maxDistanceButton = document.getElementById('max-distance-button');
+        const minDistanceButton = document.getElementById('min-distance-button');
+        const animateBtn = document.getElementById('animateBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        
+        // Gráficos
+        let capacitanceChart, energyChart, fieldChart;
+        
+        // Constantes físicas
+        const EPSILON_0 = 8.854e-12; // Permissividade do vácuo em F/m
+        const ELEMENTARY_CHARGE = 1.602e-19; // Carga elementar em Coulombs
+        const fieldLineCount = 7;
+        const chargeCount = 15;
+        
+        // Variáveis de estado
+        let electrons = [];
+        let voltage = 12.0; // Volts
+        let animationId = null;
+        let isAnimating = false;
+        let lastTime = 0;
+        
+        // Dados para gráficos
+        const chartData = {
+            distances: [],
+            capacitances: [],
+            energies: [],
+            fields: []
+        };
+        
+        // Inicialização
+        function init() {
+            createFieldLines();
+            createCharges();
+            createElectrons();
+            updateCapacitance();
+            updateVisuals();
+            
+            // Inicializar gráficos
+            initCharts();
+            
+            // Configurar event listeners
+            setupEventListeners();
+        }
+        
+        // Inicializar gráficos
+        function initCharts() {
+            const capacitanceCtx = document.getElementById('capacitance-chart').getContext('2d');
+            capacitanceChart = new Chart(capacitanceCtx, {
+                type: 'line',
+                data: {
+                    labels: chartData.distances,
+                    datasets: [{
+                        label: 'Capacitância (pF)',
+                        data: chartData.capacitances,
+                        borderColor: '#8a2be2',
+                        backgroundColor: 'rgba(138, 43, 226, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Distância (mm)',
+                                color: '#94a3b8'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Capacitância (pF)',
+                                color: '#94a3b8'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e6eef8'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            const energyCtx = document.getElementById('energy-chart').getContext('2d');
+            energyChart = new Chart(energyCtx, {
+                type: 'line',
+                data: {
+                    labels: chartData.distances,
+                    datasets: [{
+                        label: 'Energia (µJ)',
+                        data: chartData.energies,
+                        borderColor: '#00bfff',
+                        backgroundColor: 'rgba(0, 191, 255, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Distância (mm)',
+                                color: '#94a3b8'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Energia (µJ)',
+                                color: '#94a3b8'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e6eef8'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            const fieldCtx = document.getElementById('field-chart').getContext('2d');
+            fieldChart = new Chart(fieldCtx, {
+                type: 'line',
+                data: {
+                    labels: chartData.distances,
+                    datasets: [{
+                        label: 'Campo Elétrico (kV/m)',
+                        data: chartData.fields,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Distância (mm)',
+                                color: '#94a3b8'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Campo Elétrico (kV/m)',
+                                color: '#94a3b8'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e6eef8'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Preencher dados iniciais
+            updateChartData();
+        }
+        
+        // Atualizar dados dos gráficos
+        function updateChartData() {
+            const separation = parseFloat(separationSlider.value);
+            const area = parseFloat(areaSlider.value);
+            
+            // Calcular valores atuais
+            const separationM = separation / 1000;
+            const areaM2 = area / 1000000;
+            
+            const capacitance = (EPSILON_0 * areaM2 / separationM) * 1e12;
+            const energy = (0.5 * (capacitance * 1e-12) * voltage * voltage) * 1e6;
+            const electricField = (voltage / separationM) / 1000; // Convertendo para kV/m
+            
+            // Adicionar dados aos gráficos se a distância mudou
+            if (chartData.distances.length === 0 || chartData.distances[chartData.distances.length - 1] !== separation) {
+                chartData.distances.push(separation);
+                chartData.capacitances.push(capacitance);
+                chartData.energies.push(energy);
+                chartData.fields.push(electricField);
+                
+                // Limitar número de pontos para performance
+                if (chartData.distances.length > 20) {
+                    chartData.distances.shift();
+                    chartData.capacitances.shift();
+                    chartData.energies.shift();
+                    chartData.fields.shift();
+                }
+                
+                // Atualizar gráficos
+                capacitanceChart.update();
+                energyChart.update();
+                fieldChart.update();
+            }
+        }
+        
+        // Configurar event listeners
+        function setupEventListeners() {
+            // Tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const id = tab.getAttribute('data-tab');
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById(id + '-tab').classList.add('active');
+                });
+            });
+            
+            separationSlider.addEventListener('input', function() {
+                separationValue.textContent = `${this.value}.0 mm`;
+                updateVisuals();
+                updatePlatePositions();
+                createElectrons(); // Recriar elétrons quando a separação mudar
+                updateChartData(); // Atualizar gráficos
+            });
+            
+            areaSlider.addEventListener('input', function() {
+                areaValue.textContent = `${this.value} mm²`;
+                updateVisuals();
+                updateChartData(); // Atualizar gráficos
+                
+                // Atualizar largura das placas
+                const plateWidth = 50 + (this.value / 500) * 30;
+                upperPlate.style.width = `${plateWidth}%`;
+                lowerPlate.style.width = `${plateWidth}%`;
+            });
+            
+            voltageSlider.addEventListener('input', function() {
+                voltage = parseFloat(this.value);
+                voltageSliderValue.textContent = `${voltage.toFixed(1)} V`;
+                updateVisuals();
+                updateChartData(); // Atualizar gráficos
+            });
+            
+            electricFieldCheckbox.addEventListener('change', function() {
+                electricField.style.display = this.checked ? 'block' : 'none';
+            });
+            
+            showElectronsCheckbox.addEventListener('change', function() {
+                updateVisuals();
+            });
+            
+            showDistanceCheckbox.addEventListener('change', function() {
+                updateVisuals();
+            });
+            
+            resetButton.addEventListener('click', function() {
+                separationSlider.value = 30;
+                areaSlider.value = 200;
+                voltageSlider.value = 12;
+                voltage = 12;
+                voltageSliderValue.textContent = "12.0 V";
+                updateVisuals();
+                updatePlatePositions();
+                createElectrons();
+                updateChartData(); // Atualizar gráficos
+            });
+            
+            maxDistanceButton.addEventListener('click', function() {
+                separationSlider.value = 100;
+                updateVisuals();
+                updatePlatePositions();
+                createElectrons();
+                updateChartData(); // Atualizar gráficos
+            });
+            
+            minDistanceButton.addEventListener('click', function() {
+                separationSlider.value = 2;
+                updateVisuals();
+                updatePlatePositions();
+                createElectrons();
+                updateChartData(); // Atualizar gráficos
+            });
+            
+            animateBtn.addEventListener('click', function() {
+                if (isAnimating) {
+                    cancelAnimationFrame(animationId);
+                    isAnimating = false;
+                    animateBtn.textContent = "Animar Elétrons";
+                } else {
+                    isAnimating = true;
+                    lastTime = performance.now();
+                    animateElectrons();
+                    animateBtn.textContent = "Parar Animação";
+                }
+            });
+            
+            resetBtn.addEventListener('click', function() {
+                separationSlider.value = 30;
+                areaSlider.value = 200;
+                voltageSlider.value = 12;
+                voltage = 12;
+                voltageSliderValue.textContent = "12.0 V";
+                updateVisuals();
+                updatePlatePositions();
+                createElectrons();
+                updateChartData(); // Atualizar gráficos
+                
+                if (isAnimating) {
+                    cancelAnimationFrame(animationId);
+                    isAnimating = false;
+                    animateBtn.textContent = "Animar Elétrons";
+                }
+            });
+            
+            // Arrastar placas com mouse
+            setupPlateDragging();
+        }
+        
+        // Configurar arrastar das placas
+        function setupPlateDragging() {
+            const plates = [upperPlate, lowerPlate];
+            let isDragging = false;
+            let draggedPlate = null;
+            let dragStartY = 0;
+            let startSeparation = 0;
+            
+            plates.forEach(plate => {
+                plate.addEventListener('mousedown', function(e) {
+                    isDragging = true;
+                    draggedPlate = e.target;
+                    dragStartY = e.clientY;
+                    startSeparation = parseInt(separationSlider.value);
+                    document.body.style.userSelect = 'none';
+                    draggedPlate.style.cursor = 'grabbing';
+                });
+            });
+            
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+                
+                const deltaY = dragStartY - e.clientY;
+                const sensitivity = 0.5;
+                const newSeparation = Math.max(2, Math.min(100, startSeparation + deltaY * sensitivity));
+                
+                separationSlider.value = newSeparation;
+                separationValue.textContent = `${newSeparation.toFixed(1)} mm`;
+                updateVisuals();
+                updatePlatePositions();
+                updateChartData(); // Atualizar gráficos
+            });
+            
+            document.addEventListener('mouseup', function() {
+                if (isDragging) {
+                    isDragging = false;
+                    document.body.style.userSelect = 'auto';
+                    plates.forEach(plate => {
+                        plate.style.cursor = 'grab';
+                    });
+                    createElectrons(); // Recriar elétrons após ajustar a separação
+                }
+            });
+        }
+        
+        // Atualizar posições das placas
+        function updatePlatePositions() {
+            const separation = parseFloat(separationSlider.value);
+            upperPlate.style.transform = `translateY(-${separation}px)`;
+            lowerPlate.style.transform = `translateY(${separation}px)`;
+        }
+        
+        // Criar linhas de campo elétrico
+        function createFieldLines() {
+            electricField.innerHTML = '';
+            for (let i = 0; i < fieldLineCount; i++) {
+                const fieldLine = document.createElement('div');
+                fieldLine.className = 'field-line';
+                fieldLine.style.top = `${(i + 1) * (100 / (fieldLineCount + 1))}%`;
+                electricField.appendChild(fieldLine);
+            }
+        }
+        
+        // Criar cargas nas placas
+        function createCharges() {
+            upperPlate.innerHTML = '';
+            lowerPlate.innerHTML = '';
+            
+            for (let i = 0; i < chargeCount; i++) {
+                // Cargas positivas na placa superior
+                const positiveCharge = document.createElement('div');
+                positiveCharge.className = 'charge positive';
+                const positiveLabel = document.createElement('div');
+                positiveLabel.className = 'charge-label';
+                positiveLabel.textContent = '+';
+                positiveCharge.appendChild(positiveLabel);
+                upperPlate.appendChild(positiveCharge);
+                
+                // Cargas negativas na placa inferior
+                const negativeCharge = document.createElement('div');
+                negativeCharge.className = 'charge negative';
+                const negativeLabel = document.createElement('div');
+                negativeLabel.className = 'charge-label';
+                negativeLabel.textContent = '-';
+                negativeCharge.appendChild(negativeLabel);
+                lowerPlate.appendChild(negativeCharge);
+            }
+        }
+        
+        // Criar elétrons no espaço entre as placas
+        function createElectrons() {
+            const capacitorArea = document.getElementById('capacitor-area');
+            // Remover elétrons existentes
+            document.querySelectorAll('.electron').forEach(el => el.remove());
+            electrons = [];
+            
+            const separation = parseFloat(separationSlider.value);
+            const capacitorHeight = capacitorArea.offsetHeight;
+            const capacitorWidth = capacitorArea.offsetWidth;
+            
+            // Calcular limites para posicionamento dos elétrons
+            const centerY = capacitorHeight / 2;
+            const upperLimit = centerY - separation;
+            const lowerLimit = centerY + separation;
+            const leftLimit = capacitorWidth * 0.3;
+            const rightLimit = capacitorWidth * 0.7;
+            
+            // Número de elétrons baseado na carga
+            const capacitance = (EPSILON_0 * (parseFloat(areaSlider.value) / 1000000) / (separation / 1000));
+            const charge = capacitance * voltage;
+            const electronCount = Math.min(50, Math.max(5, Math.round(Math.abs(charge) / ELEMENTARY_CHARGE)));
+            
+            for (let i = 0; i < electronCount; i++) {
+                const electron = document.createElement('div');
+                electron.className = 'electron';
+                
+                // Posição aleatória entre as placas
+                const leftPos = leftLimit + Math.random() * (rightLimit - leftLimit);
+                const topPos = upperLimit + Math.random() * (lowerLimit - upperLimit);
+                
+                electron.style.left = `${(leftPos / capacitorWidth) * 100}%`;
+                electron.style.top = `${(topPos / capacitorHeight) * 100}%`;
+                
+                capacitorArea.querySelector('.capacitor-container').appendChild(electron);
+                electrons.push({
+                    element: electron,
+                    x: (leftPos / capacitorWidth) * 100, // Em porcentagem
+                    y: (topPos / capacitorHeight) * 100, // Em porcentagem
+                    vx: (Math.random() - 0.5) * 0.3,
+                    vy: (Math.random() - 0.5) * 0.3
+                });
+            }
+        }
+        
+        // Animar elétrons - Versão fisicamente correta
+        function animateElectrons(timestamp) {
+            if (!isAnimating) return;
+            
+            const capacitorArea = document.getElementById('capacitor-area');
+            const capacitorHeight = capacitorArea.offsetHeight;
+            const capacitorWidth = capacitorArea.offsetWidth;
+            
+            const separation = parseFloat(separationSlider.value);
+            const centerY = 50; // 50% (centro)
+            const upperLimit = centerY - (separation / capacitorHeight * 100);
+            const lowerLimit = centerY + (separation / capacitorHeight * 100);
+            const leftLimit = 30; // 30%
+            const rightLimit = 70; // 70%
+            
+            // Calcular campo elétrico
+            const electricFieldStrength = voltage / (separation / 1000); // V/m
+            
+            // Calcular dt
+            const now = performance.now();
+            const dt = lastTime ? (now - lastTime) / 1000 : 0.016; // em segundos
+            lastTime = now;
+            
+            // Força do campo elétrico em elétrons (em direção à placa positiva)
+            const fieldForce = electricFieldStrength * 0.0001; // Fator de escala para visualização
+            
+            electrons.forEach(electron => {
+                // Movimento browniano
+                electron.vx += (Math.random() - 0.5) * 0.05;
+                electron.vy += (Math.random() - 0.5) * 0.05;
+                
+                // Força do campo elétrico (elétrons são negativos, então se movem contra o campo)
+                electron.vy -= fieldForce * dt;
+                
+                // Limitar velocidade
+                const speedLimit = 0.5;
+                const speed = Math.sqrt(electron.vx * electron.vx + electron.vy * electron.vy);
+                if (speed > speedLimit) {
+                    electron.vx = (electron.vx / speed) * speedLimit;
+                    electron.vy = (electron.vy / speed) * speedLimit;
+                }
+                
+                // Atualizar posição
+                electron.x += electron.vx * dt * 60;
+                electron.y += electron.vy * dt * 60;
+                
+                // Manter dentro dos limites horizontais
+                if (electron.x < leftLimit) {
+                    electron.x = leftLimit;
+                    electron.vx = Math.abs(electron.vx);
+                }
+                if (electron.x > rightLimit) {
+                    electron.x = rightLimit;
+                    electron.vx = -Math.abs(electron.vx);
+                }
+                
+                // Manter dentro dos limites verticais (entre as placas)
+                if (electron.y < upperLimit) {
+                    electron.y = upperLimit;
+                    electron.vy = Math.abs(electron.vy);
+                    // Efeito de "colisão" com a placa
+                    electron.vx *= 0.8;
+                }
+                if (electron.y > lowerLimit) {
+                    electron.y = lowerLimit;
+                    electron.vy = -Math.abs(electron.vy);
+                    // Efeito de "colisão" com a placa
+                    electron.vx *= 0.8;
+                }
+                
+                // Aplicar nova posição
+                electron.element.style.left = `${electron.x}%`;
+                electron.element.style.top = `${electron.y}%`;
+            });
+            
+            animationId = requestAnimationFrame(animateElectrons);
+        }
+        
+        // Atualizar capacitância com base na separação e área
+        function updateCapacitance() {
+            const separation = parseFloat(separationSlider.value) / 1000; // Converter para metros
+            const area = parseFloat(areaSlider.value) / 1000000; // Converter para m²
+            
+            // C = ε₀ * A / d
+            const capacitance = (EPSILON_0 * area / separation);
+            capacitanceValue.textContent = `${(capacitance * 1e12).toFixed(2)} pF`;
+            
+            // Calcular energia: E = 1/2 * C * V²
+            const energy = (0.5 * capacitance * voltage * voltage) * 1e6; // Converter para µJ
+            energyValue.textContent = `${energy.toFixed(2)} µJ`;
+            
+            // Calcular carga: Q = C * V
+            const charge = (capacitance * voltage) * 1e12; // Converter para pC
+            chargeValue.textContent = `${charge.toFixed(2)} pC`;
+            
+            voltageValue.textContent = `${voltage.toFixed(1)} V`;
+            
+            // Atualizar intensidade do campo elétrico
+            updateElectricFieldIntensity();
+            
+            // Atualizar indicador de distância
+            distanceIndicator.textContent = `${separationSlider.value}.0 mm`;
+        }
+        
+        // Atualizar intensidade do campo elétrico com base na separação
+        function updateElectricFieldIntensity() {
+            const separation = parseFloat(separationSlider.value);
+            const intensity = Math.min(1, 20 / separation); // Intensidade relativa
+            
+            const fieldLines = document.querySelectorAll('.field-line');
+            fieldLines.forEach(line => {
+                line.style.opacity = intensity * 0.7;
+                line.style.background = `linear-gradient(90deg, transparent 0%, rgba(255, 152, 0, ${intensity}) 50%, transparent 100%)`;
+            });
+        }
+        
+        // Atualizar todas as visualizações
+        function updateVisuals() {
+            updateCapacitance();
+            
+            // Mostrar/ocultar elétrons
+            electrons.forEach(electron => {
+                electron.element.style.display = showElectronsCheckbox.checked ? 'block' : 'none';
+            });
+            
+            // Mostrar/ocultar indicador de distância
+            distanceIndicator.style.display = showDistanceCheckbox.checked ? 'block' : 'none';
+        }
+        
+        // Inicializar o simulador
+        window.onload = init;
+    </script>
+</body>
+</html>

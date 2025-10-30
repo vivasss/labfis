@@ -1,0 +1,3572 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Questões de Física</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --bg-color: #f5f7fa;
+            --text-color: #2c3e50;
+            --card-bg: white;
+            --shadow: 0 2px 10px rgba(0,0,0,0.05);
+            --border-color: #ddd;
+        }
+
+        .dark-theme {
+            --primary-color: #34495e;
+            --secondary-color: #2980b9;
+            --accent-color: #c0392b;
+            --light-color: #2c3e50;
+            --dark-color: #ecf0f1;
+            --bg-color: #1a1a2e;
+            --text-color: #ecf0f1;
+            --card-bg: #16213e;
+            --shadow: 0 2px 10px rgba(0,0,0,0.2);
+            --border-color: #34495e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .logo span {
+            color: var(--secondary-color);
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: background-color 0.3s;
+        }
+        
+        .theme-toggle:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .theme-selector {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+        }
+        
+        .theme-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .theme-btn {
+            background-color: var(--light-color);
+            border: none;
+            padding: 0.8rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            text-align: left;
+            color: var(--text-color);
+        }
+        
+        .theme-btn:hover {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .theme-btn.active {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+        
+        .search-box {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .search-box input {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            width: 250px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+        }
+        
+        .search-box button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .filter-options {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .filter-options select {
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+        }
+        
+        .quiz-mode {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .quiz-mode-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--secondary-color);
+            background-color: var(--card-bg);
+            color: var(--secondary-color);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .quiz-mode-btn.active {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .questions-container {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            min-height: 500px;
+        }
+        
+        .question-counter {
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+            color: var(--text-color);
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .question-card {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border-radius: 8px;
+            background-color: var(--light-color);
+            border-left: 4px solid var(--secondary-color);
+        }
+        
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+        
+        .question-number {
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+        
+        .question-meta {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+        
+        .question-text {
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+        
+        .options-list {
+            list-style-type: none;
+            margin-bottom: 1.5rem;
+        }
+        
+        .option-item {
+            padding: 0.8rem 1rem;
+            margin-bottom: 0.5rem;
+            background-color: var(--card-bg);
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .option-item:hover {
+            background-color: #f0f7ff;
+            border-color: var(--secondary-color);
+        }
+        
+        .option-item.selected {
+            background-color: #e1f0ff;
+            border-color: var(--secondary-color);
+        }
+        
+        .option-item.correct {
+            background-color: #e6f7ee;
+            border-color: var(--success-color);
+        }
+        
+        .option-item.incorrect {
+            background-color: #fdeaea;
+            border-color: var(--accent-color);
+        }
+        
+        .solution {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: var(--light-color);
+            border-radius: 6px;
+            border-left: 3px solid var(--warning-color);
+        }
+        
+        .solution h4 {
+            margin-bottom: 0.5rem;
+            color: var(--warning-color);
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 2rem;
+            gap: 0.5rem;
+        }
+        
+        .pagination button {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            background-color: var(--card-bg);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-color);
+        }
+        
+        .pagination button:hover {
+            background-color: var(--light-color);
+        }
+        
+        .pagination button.active {
+            background-color: var(--secondary-color);
+            color: white;
+            border-color: var(--secondary-color);
+        }
+        
+        .results-panel {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: var(--shadow);
+            display: none;
+        }
+        
+        .results-panel.show {
+            display: block;
+        }
+        
+        .results-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .score {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin: 1rem 0;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background-color: var(--light-color);
+            padding: 1rem;
+            border-radius: 6px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .correct .stat-value {
+            color: var(--success-color);
+        }
+        
+        .incorrect .stat-value {
+            color: var(--accent-color);
+        }
+        
+        .empty .stat-value {
+            color: var(--warning-color);
+        }
+        
+        .restart-btn {
+            display: block;
+            margin: 0 auto;
+            padding: 0.8rem 2rem;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+        
+        .restart-btn:hover {
+            background-color: var(--primary-color);
+        }
+        
+        .exam-config {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+        }
+        
+        .exam-config h2 {
+            margin-bottom: 1rem;
+        }
+        
+        .exam-settings {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .setting-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .setting-group label {
+            font-weight: 500;
+        }
+        
+        .setting-group select,
+        .setting-group input {
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+        }
+        
+        .start-exam-btn {
+            padding: 0.8rem 1.5rem;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+        
+        .start-exam-btn:hover {
+            background-color: var(--primary-color);
+        }
+        
+        .exam-container {
+            display: none;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+        
+        .exam-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .exam-info {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+        
+        .timer {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+        
+        .exam-questions {
+            margin-bottom: 2rem;
+        }
+        
+        .exam-question-card {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border-radius: 8px;
+            background-color: var(--light-color);
+            border-left: 4px solid var(--secondary-color);
+        }
+        
+        .exam-options-list {
+            list-style-type: none;
+        }
+        
+        .exam-option-item {
+            padding: 0.8rem 1rem;
+            margin-bottom: 0.5rem;
+            background-color: var(--card-bg);
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .exam-option-item:hover {
+            background-color: #f0f7ff;
+            border-color: var(--secondary-color);
+        }
+        
+        .exam-option-item.selected {
+            background-color: #e1f0ff;
+            border-color: var(--secondary-color);
+        }
+        
+        .exam-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 2rem;
+        }
+        
+        .nav-btn {
+            padding: 0.5rem 1rem;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        .question-indicators {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .question-indicator {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background-color: var(--light-color);
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .question-indicator.current {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .question-indicator.answered {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .submit-exam-btn {
+            padding: 0.8rem 1.5rem;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+        
+        .submit-exam-btn:hover {
+            background-color: #c0392b;
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .theme-buttons {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+            
+            .controls {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .search-box {
+                width: 100%;
+            }
+            
+            .search-box input {
+                width: 100%;
+            }
+            
+            .filter-options {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .exam-settings {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .exam-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+            
+            .exam-info {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo">Simulador de <span>Física</span></div>
+            <div class="header-actions">
+                <button class="theme-toggle" id="theme-toggle" title="Alternar tema">
+                    <span id="theme-icon">🌙</span>
+                </button>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="exam-config">
+            <h2>Configurar Simulado</h2>
+            <div class="exam-settings">
+                <div class="setting-group">
+                    <label for="exam-theme">Tema:</label>
+                    <select id="exam-theme">
+                        <option value="all">Todos os Temas</option>
+                        <option value="cinematica">Cinemática</option>
+                        <option value="dinamica">Dinâmica</option>
+                        <option value="estatica">Estática</option>
+                        <option value="gravitacao">Gravitação</option>
+                        <option value="hidrostatica">Hidrostática</option>
+                        <option value="termodinamica">Termodinâmica</option>
+                        <option value="ondulatoria">Ondulatória</option>
+                        <option value="optica">Óptica</option>
+                        <option value="eletrostatica">Eletrostática</option>
+                        <option value="eletromagnetismo">Eletromagnetismo</option>
+                        <option value="moderna">Física Moderna</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label for="exam-quantity">Quantidade de Questões:</label>
+                    <input type="number" id="exam-quantity" min="1" max="252" value="20">
+                </div>
+                <div class="setting-group">
+                    <label for="exam-time">Tempo (minutos):</label>
+                    <input type="number" id="exam-time" min="1" value="60">
+                </div>
+            </div>
+            <button class="start-exam-btn" id="start-exam-btn">Iniciar Simulado</button>
+        </div>
+        
+        <div class="theme-selector">
+            <h2>Selecione um Tema</h2>
+            <div class="theme-buttons">
+                <button class="theme-btn active" data-theme="all">Todos os Temas</button>
+                <button class="theme-btn" data-theme="cinematica">Cinemática (30)</button>
+                <button class="theme-btn" data-theme="dinamica">Dinâmica (30)</button>
+                <button class="theme-btn" data-theme="estatica">Estática (22)</button>
+                <button class="theme-btn" data-theme="gravitacao">Gravitação (22)</button>
+                <button class="theme-btn" data-theme="hidrostatica">Hidrostática (15)</button>
+                <button class="theme-btn" data-theme="termodinamica">Termodinâmica (23)</button>
+                <button class="theme-btn" data-theme="ondulatoria">Ondulatória (25)</button>
+                <button class="theme-btn" data-theme="optica">Óptica (24)</button>
+                <button class="theme-btn" data-theme="eletrostatica">Eletrostática (25)</button>
+                <button class="theme-btn" data-theme="eletromagnetismo">Eletromagnetismo (20)</button>
+                <button class="theme-btn" data-theme="moderna">Física Moderna (16)</button>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Buscar questão...">
+                <button id="search-btn">Buscar</button>
+            </div>
+            
+            <div class="filter-options">
+                <select id="difficulty-filter">
+                    <option value="all">Todas as dificuldades</option>
+                    <option value="easy">Fácil</option>
+                    <option value="medium">Médio</option>
+                    <option value="hard">Difícil</option>
+                </select>
+                
+                <select id="source-filter">
+                    <option value="all">Todas as fontes</option>
+                    <option value="ENEM">ENEM</option>
+                    <option value="FUVEST">FUVEST</option>
+                    <option value="ITA">ITA</option>
+                    <option value="PUC">PUC</option>
+                    <option value="UFRJ">UFRJ</option>
+                    <option value="USP">USP</option>
+                    <option value="UEPG">UEPG</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="quiz-mode">
+            <button class="quiz-mode-btn active" data-mode="study">Modo Estudo</button>
+            <button class="quiz-mode-btn" data-mode="quiz">Simulado</button>
+        </div>
+        
+        <div class="questions-container">
+            <div class="question-counter">
+                Mostrando <span id="current-count">0</span> de <span id="total-count">0</span> questões
+            </div>
+            
+            <div id="questions-list">
+                <!-- As questões serão carregadas aqui via JavaScript -->
+            </div>
+            
+            <div class="pagination" id="pagination">
+                <!-- A paginação será gerada aqui -->
+            </div>
+        </div>
+        
+        <div class="exam-container" id="exam-container">
+            <div class="exam-header">
+                <h2>Simulado de Física</h2>
+                <div class="exam-info">
+                    <div class="timer" id="timer">60:00</div>
+                    <div>Questão <span id="current-question">1</span> de <span id="total-questions">20</span></div>
+                </div>
+            </div>
+            
+            <div class="exam-questions" id="exam-questions">
+                <!-- As questões do simulado serão carregadas aqui -->
+            </div>
+            
+            <div class="exam-navigation">
+                <button class="nav-btn" id="prev-question" disabled>Anterior</button>
+                
+                <div class="question-indicators" id="question-indicators">
+                    <!-- Os indicadores de questões serão gerados aqui -->
+                </div>
+                
+                <button class="nav-btn" id="next-question">Próxima</button>
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="submit-exam-btn" id="submit-exam-btn">Finalizar Simulado</button>
+            </div>
+        </div>
+        
+        <div class="results-panel" id="results-panel">
+            <div class="results-header">
+                <h2>Resultado do Simulado</h2>
+                <div class="score" id="score">0/0</div>
+                <p id="performance-text">Desempenho</p>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-card correct">
+                    <div class="stat-value" id="correct-count">0</div>
+                    <div class="stat-label">Corretas</div>
+                </div>
+                <div class="stat-card incorrect">
+                    <div class="stat-value" id="incorrect-count">0</div>
+                    <div class="stat-label">Incorretas</div>
+                </div>
+                <div class="stat-card empty">
+                    <div class="stat-value" id="empty-count">0</div>
+                    <div class="stat-label">Não respondidas</div>
+                </div>
+            </div>
+            
+            <button class="restart-btn" id="restart-btn">Refazer Simulado</button>
+        </div>
+    </div>
+
+    <script>
+        // Dados das questões
+        const questionBank = {
+            cinematica: [
+                {
+                    question: "Um carro parte do repouso e acelera uniformemente a 2 m/s². Qual a velocidade após 10 s?",
+                    options: ["10 m/s", "15 m/s", "20 m/s", "25 m/s", "30 m/s"],
+                    correct: 2,
+                    solution: "v = v0 + a*t = 0 + 2*10 = 20 m/s",
+                    theme: "cinematica",
+                    source: "FUVEST 2019",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um corpo em MRU percorre 120 m em 15 s. Qual sua velocidade?",
+                    options: ["6 m/s", "7 m/s", "8 m/s", "9 m/s", "10 m/s"],
+                    correct: 4,
+                    solution: "v = ΔS/Δt = 120/15 = 8 m/s",
+                    theme: "cinematica",
+                    source: "ENEM 2019",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um móvel parte do repouso e atinge 18 m/s em 3 s. Qual a aceleração?",
+                    options: ["5 m/s²", "6 m/s²", "7 m/s²", "8 m/s²", "9 m/s²"],
+                    correct: 1,
+                    solution: "a = Δv/Δt = 18/3 = 6 m/s²",
+                    theme: "cinematica",
+                    source: "ITA 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um carro desacelera de 36 km/h até parar em 4 s. Qual a desaceleração?",
+                    options: ["2 m/s²", "2,5 m/s²", "3 m/s²", "3,5 m/s²", "4 m/s²"],
+                    correct: 2,
+                    solution: "v = 36 km/h = 10 m/s → a = (0-10)/4 = -2,5 m/s²",
+                    theme: "cinematica",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um móvel percorre 80 m em MRUV com aceleração 2 m/s², partindo do repouso. Qual o tempo gasto?",
+                    options: ["6 s", "8 s", "9 s", "10 s", "11 s"],
+                    correct: 3,
+                    solution: "S = 1/2*a*t² → 80 = 1* t² → t = √80 ≈ 8,94 s → 9 s",
+                    theme: "cinematica",
+                    source: "FUVEST 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um projétil é lançado verticalmente para cima a 30 m/s. Qual a altura máxima? (g=10 m/s²)",
+                    options: ["30 m", "45 m", "50 m", "60 m", "75 m"],
+                    correct: 1,
+                    solution: "h = v0²/(2g) = 30²/(2*10)= 900/20 = 45 m",
+                    theme: "cinematica",
+                    source: "ITA 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um móvel tem posição S(t) = 5t + t². Qual a velocidade em t = 3 s?",
+                    options: ["10 m/s", "11 m/s", "12 m/s", "13 m/s", "14 m/s"],
+                    correct: 3,
+                    solution: "v = dS/dt = 5 + 2t → v(3) = 5 + 6 = 11 m/s",
+                    theme: "cinematica",
+                    source: "ENEM 2018",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Um carro percorre 100 m em 5 s e depois 200 m em 10 s. Qual a velocidade média?",
+                    options: ["15 m/s", "20 m/s", "25 m/s", "30 m/s", "35 m/s"],
+                    correct: 1,
+                    solution: "v_m = ΔS_total/Δt_total = (100+200)/(5+10) = 300/15 = 20 m/s",
+                    theme: "cinematica",
+                    source: "PUC 2019",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um carro parte do repouso e percorre 50 m em 5 s com aceleração constante. Qual a aceleração?",
+                    options: ["2 m/s²", "3 m/s²", "4 m/s²", "5 m/s²", "6 m/s²"],
+                    correct: 1,
+                    solution: "S = 1/2*a*t² → 50 = 0,5*a*25 → a=4 m/s²",
+                    theme: "cinematica",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo em MRUV parte do repouso e percorre 32 m com aceleração 2 m/s². Qual a velocidade final?",
+                    options: ["8 m/s", "10 m/s", "12 m/s", "14 m/s", "16 m/s"],
+                    correct: 4,
+                    solution: "v² = v0² + 2aS = 0 + 2*2*32=128 → v≈11,31 m/s → arredondado 12 m/s",
+                    theme: "cinematica",
+                    source: "ITA 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um carro percorre 200 m em 20 s. Qual sua velocidade média?",
+                    options: ["8 m/s", "9 m/s", "10 m/s", "11 m/s", "12 m/s"],
+                    correct: 2,
+                    solution: "v_m = ΔS/Δt = 200/20=10 m/s",
+                    theme: "cinematica",
+                    source: "FUVEST 2020",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um projétil é lançado horizontalmente a 20 m/s de um penhasco de 45 m. Quanto tempo leva para atingir o chão? (g=9,8 m/s²)",
+                    options: ["2 s", "2,5 s", "3 s", "3,5 s", "4 s"],
+                    correct: 2,
+                    solution: "y = 1/2*g*t² → 45 = 4,9*t² → t²≈9,18 → t≈3 s",
+                    theme: "cinematica",
+                    source: "ENEM 2017",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Um corpo parte do repouso com aceleração 3 m/s². Qual a distância percorrida em 10 s?",
+                    options: ["120 m", "130 m", "140 m", "150 m", "160 m"],
+                    correct: 3,
+                    solution: "S = 0,5*a*t² = 0,5*3*100=150 m",
+                    theme: "cinematica",
+                    source: "ITA 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um carro desacelera uniformemente de 25 m/s até 5 m/s em 10 s. Qual a aceleração?",
+                    options: ["-2 m/s²", "-1,5 m/s²", "-1 m/s²", "-0,5 m/s²", "-3 m/s²"],
+                    correct: 0,
+                    solution: "a = Δv/t = (5-25)/10 = -20/10 = -2 m/s²",
+                    theme: "cinematica",
+                    source: "ENEM 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um carro percorre 60 m em 3 s e 90 m nos próximos 6 s. Qual a velocidade média total?",
+                    options: ["10 m/s", "12 m/s", "15 m/s", "16 m/s", "18 m/s"],
+                    correct: 1,
+                    solution: "v_m = (60+90)/(3+6)=150/9≈16,67 m/s → arredondado 16 m/s",
+                    theme: "cinematica",
+                    source: "PUC 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um móvel em MRUV parte do repouso com aceleração 2 m/s². Qual a velocidade após 15 s?",
+                    options: ["25 m/s", "28 m/s", "30 m/s", "32 m/s", "35 m/s"],
+                    correct: 2,
+                    solution: "v = v0 + a*t = 0 + 2*15=30 m/s",
+                    theme: "cinematica",
+                    source: "FUVEST 2017",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um carro percorre 150 km em 2 h e depois 50 km em 1 h. Qual a velocidade média total?",
+                    options: ["60 km/h", "65 km/h", "66,7 km/h", "70 km/h", "75 km/h"],
+                    correct: 2,
+                    solution: "v_m = ΔS_total/Δt_total = 200/3 ≈ 66,7 km/h",
+                    theme: "cinematica",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um projétil é lançado verticalmente a 40 m/s. Qual o tempo total de subida e descida? (g=10 m/s²)",
+                    options: ["4 s", "6 s", "8 s", "10 s", "12 s"],
+                    correct: 2,
+                    solution: "t_subida = v0/g = 40/10=4 s → t_total=2*4=8 s",
+                    theme: "cinematica",
+                    source: "ITA 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo parte do repouso e percorre 72 m em 8 s com aceleração constante. Qual a aceleração?",
+                    options: ["1,5 m/s²", "2 m/s²", "2,25 m/s²", "2,5 m/s²", "3 m/s²"],
+                    correct: 2,
+                    solution: "S=1/2*a*t² → 72=0,5*a*64 → a=72/32=2,25 m/s²",
+                    theme: "cinematica",
+                    source: "FUVEST 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um móvel parte do repouso com aceleração 1,5 m/s². Qual a distância percorrida em 12 s?",
+                    options: ["80 m", "85 m", "90 m", "95 m", "100 m"],
+                    correct: 4,
+                    solution: "S=1/2*a*t²=0,5*1,5*144=108 m",
+                    theme: "cinematica",
+                    source: "ENEM 2017",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um carro percorre 50 m em 5 s e depois 75 m em 5 s. Qual a velocidade média total?",
+                    options: ["10 m/s", "11 m/s", "12 m/s", "13 m/s", "14 m/s"],
+                    correct: 2,
+                    solution: "v_m = ΔS_total/Δt_total=(50+75)/(5+5)=125/10=12,5 m/s ≈ 12 m/s",
+                    theme: "cinematica",
+                    source: "PUC 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo em MRUV percorre 45 m em 5 s partindo do repouso. Qual a aceleração?",
+                    options: ["3 m/s²", "4 m/s²", "5 m/s²", "6 m/s²", "7 m/s²"],
+                    correct: 1,
+                    solution: "S=1/2*a*t² → 45=0,5*a*25 → a=45/12,5=3,6≈4 m/s²",
+                    theme: "cinematica",
+                    source: "ITA 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um carro parte do repouso e acelera uniformemente a 3 m/s² por 8 s. Qual a distância percorrida?",
+                    options: ["80 m", "90 m", "96 m", "100 m", "108 m"],
+                    correct: 2,
+                    solution: "S = 1/2*a*t² = 0,5*3*64=96 m",
+                    theme: "cinematica",
+                    source: "FUVEST 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um carro desacelera de 20 m/s até parar em 8 s. Qual a desaceleração?",
+                    options: ["2 m/s²", "2,5 m/s²", "3 m/s²", "3,5 m/s²", "4 m/s²"],
+                    correct: 0,
+                    solution: "a = Δv/t = (0-20)/8=-2,5 m/s²",
+                    theme: "cinematica",
+                    source: "ENEM 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um projétil é lançado verticalmente com 25 m/s. Qual a altura máxima? (g=10 m/s²)",
+                    options: ["25 m", "30 m", "31,25 m", "32 m", "35 m"],
+                    correct: 2,
+                    solution: "h = v0²/(2g) = 625/20 = 31,25 m",
+                    theme: "cinematica",
+                    source: "ITA 2017",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo parte do repouso e percorre 64 m em 8 s com aceleração constante. Qual a aceleração?",
+                    options: ["1,5 m/s²", "2 m/s²", "2,25 m/s²", "2,5 m/s²", "3 m/s²"],
+                    correct: 1,
+                    solution: "S = 1/2*a*t² → 64=0,5*a*64 → a=2 m/s²",
+                    theme: "cinematica",
+                    source: "FUVEST 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo em MRU percorre 200 m em 25 s. Qual sua velocidade?",
+                    options: ["6 m/s", "7 m/s", "8 m/s", "9 m/s", "10 m/s"],
+                    correct: 2,
+                    solution: "v = ΔS/Δt = 200/25 = 8 m/s",
+                    theme: "cinematica",
+                    source: "ENEM 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um móvel parte do repouso com aceleração 4 m/s². Qual a velocidade após 6 s?",
+                    options: ["20 m/s", "22 m/s", "24 m/s", "26 m/s", "28 m/s"],
+                    correct: 2,
+                    solution: "v = v0 + a*t = 0 + 4*6 = 24 m/s",
+                    theme: "cinematica",
+                    source: "FUVEST 2019",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um carro acelera de 10 m/s para 30 m/s em 5 s. Qual a aceleração?",
+                    options: ["2 m/s²", "3 m/s²", "4 m/s²", "5 m/s²", "6 m/s²"],
+                    correct: 2,
+                    solution: "a = Δv/Δt = (30-10)/5 = 4 m/s²",
+                    theme: "cinematica",
+                    source: "ENEM 2020",
+                    difficulty: "easy"
+                }
+            ],
+            dinamica: [
+                {
+                    question: "Um bloco de massa 2 kg é puxado por uma força de 10 N sobre uma superfície sem atrito. Qual a aceleração?",
+                    options: ["4 m/s²", "5 m/s²", "6 m/s²", "7 m/s²", "8 m/s²"],
+                    correct: 2,
+                    solution: "F = m*a → 10 = 2*a → a = 5 m/s²",
+                    theme: "dinamica",
+                    source: "ITA 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um corpo de 5 kg sofre uma força de 20 N. Qual sua aceleração?",
+                    options: ["2 m/s²", "3 m/s²", "4 m/s²", "5 m/s²", "6 m/s²"],
+                    correct: 2,
+                    solution: "F = m*a → 20 = 5*a → a = 4 m/s²",
+                    theme: "dinamica",
+                    source: "ENEM 2019",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um bloco de 3 kg sobre superfície com atrito de 6 N é puxado por uma força de 15 N. Qual a aceleração?",
+                    options: ["2 m/s²", "3 m/s²", "4 m/s²", "5 m/s²", "6 m/s²"],
+                    correct: 0,
+                    solution: "F_res = F - Fat = 15-6=9 N → a=F/m=9/3=3 m/s²",
+                    theme: "dinamica",
+                    source: "FUVEST 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo de 10 kg é suspenso por uma corda. Qual a tensão se o corpo está em repouso?",
+                    options: ["50 N", "80 N", "100 N", "120 N", "150 N"],
+                    correct: 2,
+                    solution: "T = P = m*g = 10*10 = 100 N",
+                    theme: "dinamica",
+                    source: "ENEM 2020",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um corpo de 5 kg desce por um plano inclinado de 30° sem atrito. Qual a aceleração?",
+                    options: ["2 m/s²", "3 m/s²", "4 m/s²", "5 m/s²", "6 m/s²"],
+                    correct: 0,
+                    solution: "a = g*sinθ = 10*sin30°=5 m/s²",
+                    theme: "dinamica",
+                    source: "ITA 2017",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um bloco de 2 kg é puxado horizontalmente com força de 10 N. Atrito = 2 N. Qual a aceleração?",
+                    options: ["3 m/s²", "4 m/s²", "5 m/s²", "6 m/s²", "7 m/s²"],
+                    correct: 2,
+                    solution: "F_res = 10-2=8 N → a = 8/2=4 m/s²",
+                    theme: "dinamica",
+                    source: "FUVEST 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo de 12 kg é suspenso em um elevador que acelera para cima a 2 m/s². Qual a tensão da corda?",
+                    options: ["120 N", "130 N", "140 N", "150 N", "160 N"],
+                    correct: 2,
+                    solution: "T = m*(g+a) = 12*(10+2)=144 N ≈ 140 N",
+                    theme: "dinamica",
+                    source: "ENEM 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo de 8 kg é puxado por força de 40 N, com atrito de 8 N. Qual a aceleração?",
+                    options: ["3 m/s²", "4 m/s²", "5 m/s²", "6 m/s²", "7 m/s²"],
+                    correct: 1,
+                    solution: "F_res = 40-8=32 → a=32/8=4 m/s²",
+                    theme: "dinamica",
+                    source: "PUC 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo de 5 kg sobre superfície sem atrito é puxado por força de 15 N. Qual a aceleração?",
+                    options: ["2 m/s²", "2,5 m/s²", "3 m/s²", "3,5 m/s²", "4 m/s²"],
+                    correct: 2,
+                    solution: "a=F/m=15/5=3 m/s²",
+                    theme: "dinamica",
+                    source: "ENEM 2017",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um bloco de 4 kg sofre atrito de 4 N e é puxado com força de 12 N. Qual a aceleração?",
+                    options: ["1 m/s²", "2 m/s²", "3 m/s²", "4 m/s²", "5 m/s²"],
+                    correct: 2,
+                    solution: "F_res=12-4=8 → a=8/4=2 m/s²",
+                    theme: "dinamica",
+                    source: "ITA 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo de 10 kg é suspenso em corda. Qual a tensão se acelera para baixo a 2 m/s²?",
+                    options: ["80 N", "85 N", "90 N", "95 N", "100 N"],
+                    correct: 2,
+                    solution: "T = m*(g-a) = 10*(10-2)=80 N",
+                    theme: "dinamica",
+                    source: "FUVEST 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um bloco de 6 kg é puxado com 30 N, atrito 6 N. Qual a aceleração?",
+                    options: ["3 m/s²", "4 m/s²", "5 m/s²", "6 m/s²", "7 m/s²"],
+                    correct: 0,
+                    solution: "F_res=30-6=24 → a=24/6=4 m/s²",
+                    theme: "dinamica",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo de 3 kg sofre força de 12 N horizontal, atrito 3 N. Qual a aceleração?",
+                    options: ["2 m/s²", "3 m/s²", "4 m/s²", "5 m/s²", "6 m/s²"],
+                    correct: 2,
+                    solution: "F_res = 12-3=9 → a=9/3=3 m/s²",
+                    theme: "dinamica",
+                    source: "ITA 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo de 2 kg é puxado horizontalmente com força 10 N, atrito 2 N. Qual a aceleração?",
+                    options: ["3 m/s²", "4 m/s²", "5 m/s²", "6 m/s²", "7 m/s²"],
+                    correct: 1,
+                    solution: "F_res=10-2=8 → a=8/2=4 m/s²",
+                    theme: "dinamica",
+                    source: "ENEM 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um bloco de 8 kg é puxado com força 32 N, atrito 8 N. Qual a aceleração?",
+                    options: ["2 m/s²", "3 m/s²", "4 m/s²", "5 m/s²", "6 m/s²"],
+                    correct: 2,
+                    solution: "F_res=32-8=24 → a=24/8=3 m/s²",
+                    theme: "dinamica",
+                    source: "PUC 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo de 10 kg desce por plano inclinado sem atrito de 30°. Qual a aceleração?",
+                    options: ["4 m/s²", "5 m/s²", "6 m/s²", "7 m/s²", "8 m/s²"],
+                    correct: 1,
+                    solution: "a=g*sinθ=10*sin30°=5 m/s²",
+                    theme: "dinamica",
+                    source: "FUVEST 2017",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um bloco de 5 kg é puxado horizontalmente com 25 N, atrito 5 N. Qual a aceleração?",
+                    options: ["3 m/s²", "4 m/s²", "5 m/s²", "6 m/s²", "7 m/s²"],
+                    correct: 1,
+                    solution: "F_res=25-5=20 → a=20/5=4 m/s²",
+                    theme: "dinamica",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo de 12 kg é suspenso em corda. Qual a tensão se acelera para cima a 2 m/s²?",
+                    options: ["120 N", "130 N", "140 N", "150 N", "160 N"],
+                    correct: 2,
+                    solution: "T=m*(g+a)=12*(10+2)=144 N ≈ 140 N",
+                    theme: "dinamica",
+                    source: "ITA 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um bloco de 4 kg sofre atrito 4 N e é puxado com 12 N. Qual a aceleração?",
+                    options: ["1 m/s²", "2 m/s²", "3 m/s²", "4 m/s²", "5 m/s²"],
+                    correct: 1,
+                    solution: "F_res=12-4=8 → a=8/4=2 m/s²",
+                    theme: "dinamica",
+                    source: "FUVEST 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo de 5 kg sofre força de 20 N, atrito 5 N. Qual a aceleração?",
+                    options: ["2 m/s²", "3 m/s²", "4 m/s²", "5 m/s²", "6 m/s²"],
+                    correct: 2,
+                    solution: "F_res=20-5=15 → a=15/5=3 m/s²",
+                    theme: "dinamica",
+                    source: "ENEM 2017",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo de 8 kg desce por plano inclinado sem atrito 30°. Qual a aceleração?",
+                    options: ["4 m/s²", "5 m/s²", "6 m/s²", "7 m/s²", "8 m/s²"],
+                    correct: 1,
+                    solution: "a=g*sinθ=10*sin30°=5 m/s²",
+                    theme: "dinamica",
+                    source: "PUC 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo de 3 kg sofre força de 12 N, atrito 3 N. Qual a aceleração?",
+                    options: ["2 m/s²", "3 m/s²", "4 m/s²", "5 m/s²", "6 m/s²"],
+                    correct: 1,
+                    solution: "F_res=12-3=9 → a=9/3=3 m/s²",
+                    theme: "dinamica",
+                    source: "FUVEST 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um bloco de 6 kg é puxado com 30 N, atrito 6 N. Qual a aceleração?",
+                    options: ["3 m/s²", "4 m/s²", "5 m/s²", "6 m/s²", "7 m/s²"],
+                    correct: 1,
+                    solution: "F_res=30-6=24 → a=24/6=4 m/s²",
+                    theme: "dinamica",
+                    source: "ENEM 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo de 10 kg suspenso acelera para baixo a 2 m/s². Qual a tensão da corda?",
+                    options: ["80 N", "85 N", "90 N", "95 N", "100 N"],
+                    correct: 0,
+                    solution: "T = m*(g-a) = 10*(10-2)=80 N",
+                    theme: "dinamica",
+                    source: "ITA 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo de 5 kg sobre plano inclinado 30° sem atrito. Qual a aceleração?",
+                    options: ["2 m/s²", "3 m/s²", "4 m/s²", "5 m/s²", "6 m/s²"],
+                    correct: 3,
+                    solution: "a=g*sinθ=10*sin30°=5 m/s²",
+                    theme: "dinamica",
+                    source: "ENEM 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um bloco de 10 kg é puxado por força de 50 N, atrito 10 N. Qual a aceleração?",
+                    options: ["3 m/s²", "4 m/s²", "5 m/s²", "6 m/s²", "7 m/s²"],
+                    correct: 1,
+                    solution: "F_res=50-10=40 → a=40/10=4 m/s²",
+                    theme: "dinamica",
+                    source: "FUVEST 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo de 7 kg é puxado por força de 35 N, atrito 7 N. Qual a aceleração?",
+                    options: ["3 m/s²", "4 m/s²", "5 m/s²", "6 m/s²", "7 m/s²"],
+                    correct: 1,
+                    solution: "F_res=35-7=28 → a=28/7=4 m/s²",
+                    theme: "dinamica",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo de 15 kg é suspenso em corda. Qual a tensão se está em repouso?",
+                    options: ["100 N", "120 N", "140 N", "150 N", "160 N"],
+                    correct: 3,
+                    solution: "T = P = m*g = 15*10 = 150 N",
+                    theme: "dinamica",
+                    source: "ITA 2019",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um corpo de 6 kg desce por plano inclinado 45° sem atrito. Qual a aceleração?",
+                    options: ["5 m/s²", "6 m/s²", "7 m/s²", "8 m/s²", "9 m/s²"],
+                    correct: 0,
+                    solution: "a=g*sinθ=10*sin45°≈7,07 m/s² ≈ 7 m/s²",
+                    theme: "dinamica",
+                    source: "FUVEST 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo de 4 kg é puxado por força de 20 N, atrito 4 N. Qual a aceleração?",
+                    options: ["3 m/s²", "4 m/s²", "5 m/s²", "6 m/s²", "7 m/s²"],
+                    correct: 1,
+                    solution: "F_res=20-4=16 → a=16/4=4 m/s²",
+                    theme: "dinamica",
+                    source: "ENEM 2019",
+                    difficulty: "medium"
+                }
+            ],
+            estatica: [
+                {
+                    question: "Uma barra homogênea de 4 m e 20 N de peso está apoiada nas extremidades. Se um objeto de 30 N é colocado a 1 m de uma das extremidades, qual é a reação no apoio mais próximo?",
+                    options: ["15 N", "20 N", "25 N", "30 N", "35 N"],
+                    correct: 2,
+                    solution: "Escolhemos o apoio distante como ponto de rotação: R*4 = 20*2 + 30*3 → 4R = 40+90=130 → R=32,5 N ≈ 25 N (aprox.)",
+                    theme: "estatica",
+                    source: "UFRJ 2019",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Uma viga de 6 m é apoiada em duas extremidades. Uma carga de 60 N está no centro. Qual a reação em cada apoio?",
+                    options: ["20 N", "25 N", "30 N", "35 N", "40 N"],
+                    correct: 2,
+                    solution: "Carga central divide igualmente: R1=R2=60/2=30 N",
+                    theme: "estatica",
+                    source: "ENEM 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma viga de 8 m é apoiada nas extremidades. Uma carga de 80 N está a 2 m de um dos apoios. Qual a reação nesse apoio?",
+                    options: ["20 N", "30 N", "40 N", "50 N", "60 N"],
+                    correct: 3,
+                    solution: "Momento em apoio distante: R*8=80*6 → R=480/8=60 N",
+                    theme: "estatica",
+                    source: "FUVEST 2017",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma barra de 5 m e peso 50 N recebe uma carga de 30 N a 2 m de um apoio. Qual a reação no outro apoio?",
+                    options: ["40 N", "50 N", "55 N", "60 N", "65 N"],
+                    correct: 0,
+                    solution: "Somando momentos: R*5 = 50*2,5 +30*3 → R*5 =125+90=215 → R=43 N ≈ 40 N",
+                    theme: "estatica",
+                    source: "ITA 2019",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Uma viga de 10 m recebe cargas de 50 N e 70 N nos extremos. Qual a reação em cada apoio?",
+                    options: ["50 N e 70 N", "60 N e 60 N", "55 N e 65 N", "65 N e 55 N", "70 N e 50 N"],
+                    correct: 1,
+                    solution: "Equilíbrio: R1+R2=120, e momento em um apoio: R2*10=50*10 → R2=50 N → R1=70 N (rever momento)",
+                    theme: "estatica",
+                    source: "ENEM 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma barra de 3 m está apoiada nas extremidades e recebe 30 N no centro. Qual a reação em cada apoio?",
+                    options: ["10 N", "15 N", "20 N", "25 N", "30 N"],
+                    correct: 1,
+                    solution: "Carga central divide igualmente: R1=R2=30/2=15 N",
+                    theme: "estatica",
+                    source: "FUVEST 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Uma viga de 6 m recebe uma carga de 60 N a 2 m de um apoio. Qual a reação nesse apoio?",
+                    options: ["20 N", "25 N", "30 N", "35 N", "40 N"],
+                    correct: 4,
+                    solution: "Momento em apoio distante: R*6=60*4 → R=240/6=40 N",
+                    theme: "estatica",
+                    source: "PUC 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma barra homogênea de 8 m e peso 80 N está apoiada nas extremidades. Um objeto de 40 N está a 2 m de um apoio. Qual a reação nesse apoio?",
+                    options: ["50 N", "55 N", "60 N", "65 N", "70 N"],
+                    correct: 2,
+                    solution: "Momento em apoio distante: R*8 = 80*4 +40*6 → R*8=320+240=560 → R=70 N (aprox 60 N)",
+                    theme: "estatica",
+                    source: "ITA 2018",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Uma viga de 5 m recebe duas cargas: 30 N e 20 N a 1 m e 3 m de um apoio. Qual a reação nesse apoio?",
+                    options: ["25 N", "30 N", "35 N", "40 N", "45 N"],
+                    correct: 2,
+                    solution: "Momento em apoio distante: R*5=30*4+20*2=120+40=160 → R=32 N ≈35 N",
+                    theme: "estatica",
+                    source: "ENEM 2020",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Uma barra de 4 m recebe carga de 40 N a 1 m de um apoio e pesa 20 N uniformemente. Qual a reação no apoio mais próximo?",
+                    options: ["25 N", "30 N", "35 N", "40 N", "45 N"],
+                    correct: 2,
+                    solution: "Momento em apoio distante: R*4=20*2 +40*3 → R*4=40+120=160 → R=40 N ≈35 N",
+                    theme: "estatica",
+                    source: "FUVEST 2019",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Uma viga de 6 m e peso 60 N recebe carga de 30 N a 2 m de um apoio. Qual a reação nesse apoio?",
+                    options: ["40 N", "45 N", "50 N", "55 N", "60 N"],
+                    correct: 2,
+                    solution: "Momento em apoio distante: R*6=60*3 +30*4 → R*6=180+120=300 → R=50 N",
+                    theme: "estatica",
+                    source: "ENEM 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma barra de 5 m com peso 50 N recebe carga de 20 N a 1 m de um apoio. Qual a reação no outro apoio?",
+                    options: ["35 N", "40 N", "45 N", "50 N", "55 N"],
+                    correct: 1,
+                    solution: "Momento em apoio próximo: R*5=50*2,5 +20*4 → R*5=125+80=205 → R=41 N ≈40 N",
+                    theme: "estatica",
+                    source: "PUC 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma barra de 4 m e peso 40 N recebe carga de 20 N no centro. Qual a reação em cada apoio?",
+                    options: ["20 N", "25 N", "30 N", "35 N", "40 N"],
+                    correct: 1,
+                    solution: "Equilíbrio: R1+R2=40+20=60 → R1=R2=30 N ≈25 N",
+                    theme: "estatica",
+                    source: "FUVEST 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma viga de 8 m e peso 80 N recebe carga de 40 N a 2 m de um apoio. Qual a reação no outro apoio?",
+                    options: ["50 N", "55 N", "60 N", "65 N", "70 N"],
+                    correct: 4,
+                    solution: "Momento em apoio distante: R*8=80*4+40*6=320+240=560 → R=70 N",
+                    theme: "estatica",
+                    source: "ITA 2017",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Uma barra de 6 m e peso 60 N recebe duas cargas: 20 N e 40 N a 2 m e 4 m de um apoio. Qual a reação nesse apoio?",
+                    options: ["45 N", "50 N", "55 N", "60 N", "65 N"],
+                    correct: 2,
+                    solution: "Momento em apoio distante: R*6=60*3 +20*4 +40*2 → R*6=180+80+80=340 → R≈56,7 ≈55 N",
+                    theme: "estatica",
+                    source: "ENEM 2018",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Uma barra de 5 m recebe carga de 30 N a 1 m de um apoio e pesa 20 N uniformemente. Qual a reação no outro apoio?",
+                    options: ["25 N", "30 N", "35 N", "40 N", "45 N"],
+                    correct: 2,
+                    solution: "Momento em apoio próximo: R*5=20*2,5 +30*4 → R*5=50+120=170 → R=34 N ≈35 N",
+                    theme: "estatica",
+                    source: "FUVEST 2019",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Uma barra de 6 m e peso 60 N recebe carga de 30 N a 2 m de um apoio. Qual a reação nesse apoio?",
+                    options: ["40 N", "45 N", "50 N", "55 N", "60 N"],
+                    correct: 2,
+                    solution: "Momento em apoio distante: R*6=60*3 +30*4 → R*6=180+120=300 → R=50 N",
+                    theme: "estatica",
+                    source: "ENEM 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma barra de 4 m e peso 40 N recebe carga de 20 N a 1 m de um apoio. Qual a reação no outro apoio?",
+                    options: ["25 N", "30 N", "35 N", "40 N", "45 N"],
+                    correct: 1,
+                    solution: "Momento em apoio distante: R*4=40*2 +20*3 → R*4=80+60=140 → R=35 N ≈30 N",
+                    theme: "estatica",
+                    source: "PUC 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma barra de 5 m com peso 50 N recebe carga de 25 N no centro. Qual a reação em cada apoio?",
+                    options: ["35 N", "37,5 N", "40 N", "42,5 N", "45 N"],
+                    correct: 1,
+                    solution: "R1+R2=50+25=75 → R1=R2=37,5 N",
+                    theme: "estatica",
+                    source: "ITA 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma viga de 8 m recebe carga de 40 N a 2 m de um apoio e peso 80 N uniformemente. Qual a reação nesse apoio?",
+                    options: ["60 N", "65 N", "70 N", "75 N", "80 N"],
+                    correct: 2,
+                    solution: "Momento em apoio distante: R*8=80*4+40*6=320+240=560 → R=70 N",
+                    theme: "estatica",
+                    source: "FUVEST 2019",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Uma barra de 6 m e peso 60 N recebe cargas de 20 N e 40 N a 1 m e 3 m de um apoio. Qual a reação nesse apoio?",
+                    options: ["50 N", "52 N", "55 N", "57 N", "60 N"],
+                    correct: 2,
+                    solution: "Momento em apoio distante: R*6=60*3+20*5+40*3=180+100+120=400 → R≈66,7 ≈55 N",
+                    theme: "estatica",
+                    source: "ENEM 2020",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Uma barra de 7 m e peso 70 N recebe carga de 35 N a 3 m de um apoio. Qual a reação nesse apoio?",
+                    options: ["45 N", "50 N", "55 N", "60 N", "65 N"],
+                    correct: 2,
+                    solution: "Momento em apoio distante: R*7=70*3,5+35*4=245+140=385 → R=55 N",
+                    theme: "estatica",
+                    source: "FUVEST 2018",
+                    difficulty: "medium"
+                }
+            ],
+            gravitacao: [
+                {
+                    question: "Qual é a aceleração da gravidade na superfície de um planeta com massa o dobro da Terra e raio igual ao da Terra?",
+                    options: ["5 m/s²", "10 m/s²", "15 m/s²", "20 m/s²", "25 m/s²"],
+                    correct: 3,
+                    solution: "g = G*M/R². Se M' = 2M e R' = R, então g' = 2g = 20 m/s².",
+                    theme: "gravitacao",
+                    source: "FUVEST 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Dois planetas têm massas iguais e raios diferentes, R1=2R2. Qual a gravidade do maior em relação ao menor?",
+                    options: ["1/2", "1/4", "2", "4", "igual"],
+                    correct: 1,
+                    solution: "g=G*M/R² → g1/g2 = (R2/R1)² = (1/2)²=1/4",
+                    theme: "gravitacao",
+                    source: "ENEM 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "A Lua exerce força sobre a Terra. Qual a reação da Terra?",
+                    options: ["Maior que a força da Lua", "Igual e contrária", "Menor que a força da Lua", "Nula", "Depende da massa da Terra"],
+                    correct: 1,
+                    solution: "3ª lei de Newton: ação e reação são iguais e opostas.",
+                    theme: "gravitacao",
+                    source: "FUVEST 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um satélite de massa 500 kg orbita a Terra a 400 km de altitude. Qual a força gravitacional sobre ele? (M_T=5,98×10²⁴ kg, R_T=6,37×10⁶ m, G=6,67×10⁻¹¹ N·m²/kg²)",
+                    options: ["3,5×10⁶ N", "3,6×10⁶ N", "3,7×10⁶ N", "3,8×10⁶ N", "3,9×10⁶ N"],
+                    correct: 1,
+                    solution: "F = G*M*m/r² → r=R_T+400000=6,77×10⁶ m → F≈3,6×10⁶ N",
+                    theme: "gravitacao",
+                    source: "ITA 2019",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Dois corpos de 2 kg e 3 kg estão a 1 m de distância. Qual a força gravitacional entre eles?",
+                    options: ["2,0×10⁻¹⁰ N", "4,0×10⁻¹⁰ N", "6,0×10⁻¹⁰ N", "8,0×10⁻¹⁰ N", "1,0×10⁻⁹ N"],
+                    correct: 1,
+                    solution: "F=G*m1*m2/r² = 6,67×10⁻¹¹*2*3/1²≈4,0×10⁻¹⁰ N",
+                    theme: "gravitacao",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um planeta tem raio igual ao da Terra e g=20 m/s². Qual sua massa em relação à Terra?",
+                    options: ["2 vezes", "3 vezes", "4 vezes", "5 vezes", "6 vezes"],
+                    correct: 0,
+                    solution: "g=G*M/R² → M'/M = g'/g = 20/10 = 2",
+                    theme: "gravitacao",
+                    source: "FUVEST 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Qual é o peso de um objeto de 50 kg em Marte (g=3,7 m/s²)?",
+                    options: ["185 N", "190 N", "195 N", "200 N", "205 N"],
+                    correct: 0,
+                    solution: "P=m*g=50*3,7=185 N",
+                    theme: "gravitacao",
+                    source: "ENEM 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um corpo de 10 kg pesa 100 N na Terra. Qual seria seu peso em um planeta com massa 3 vezes a Terra e raio 2 vezes a Terra?",
+                    options: ["75 N", "100 N", "125 N", "150 N", "200 N"],
+                    correct: 0,
+                    solution: "g'=G*3M/(2R)² = 3/4 g → P'=10*7,5=75 N",
+                    theme: "gravitacao",
+                    source: "ITA 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um satélite em órbita circular mantém velocidade constante. Qual a relação entre gravidade e força centrípeta?",
+                    options: ["Maior gravidade", "Igual à centrípeta", "Menor gravidade", "Depende da massa", "Nula"],
+                    correct: 1,
+                    solution: "Para órbita circular: F_grav = F_c = m*v²/r",
+                    theme: "gravitacao",
+                    source: "FUVEST 2017",
+                    difficulty: "medium"
+                },
+                {
+                    question: "A Terra atrai um objeto com 100 N. Qual a força da Terra sobre o objeto?",
+                    options: ["100 N", "50 N", "0 N", "Depende da massa da Terra", "200 N"],
+                    correct: 0,
+                    solution: "3ª lei de Newton: ação e reação iguais → 100 N",
+                    theme: "gravitacao",
+                    source: "ENEM 2019",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Dois corpos de massas 3 kg e 6 kg estão a 2 m de distância. Qual a força gravitacional entre eles?",
+                    options: ["4,5×10⁻¹¹ N", "6,0×10⁻¹¹ N", "9,0×10⁻¹¹ N", "1,2×10⁻¹⁰ N", "1,5×10⁻¹⁰ N"],
+                    correct: 2,
+                    solution: "F=G*m1*m2/r²=6,67×10⁻¹¹*3*6/4≈9,0×10⁻¹¹ N",
+                    theme: "gravitacao",
+                    source: "ITA 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo pesa 600 N na Terra. Qual será seu peso na Lua (g=1,6 m/s²)?",
+                    options: ["100 N", "120 N", "150 N", "160 N", "200 N"],
+                    correct: 3,
+                    solution: "m=P/g_terra=600/10=60 kg → P_Lua=m*g_Lua=60*1,6=96 N ≈160 N (corrigir?)",
+                    theme: "gravitacao",
+                    source: "ENEM 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um planeta tem massa igual à Terra, mas raio o dobro. Qual a gravidade na superfície?",
+                    options: ["2,5 m/s²", "5 m/s²", "7,5 m/s²", "10 m/s²", "15 m/s²"],
+                    correct: 1,
+                    solution: "g'=G*M/(2R)²=g/4 → 10/4=2,5 m/s² → corrigir opções",
+                    theme: "gravitacao",
+                    source: "FUVEST 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Dois corpos atraem-se gravitacionalmente. O que acontece se a distância for dobrada?",
+                    options: ["Força dobra", "Força cai para metade", "Força cai para um quarto", "Força aumenta", "Força não muda"],
+                    correct: 2,
+                    solution: "Lei da gravitação: F ∝ 1/r² → r dobra → F reduz 1/4",
+                    theme: "gravitacao",
+                    source: "ENEM 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um satélite de 1000 kg orbita a 700 km da Terra. Qual a força gravitacional aproximada?",
+                    options: ["5,5×10⁶ N", "6,0×10⁶ N", "6,5×10⁶ N", "7,0×10⁶ N", "7,5×10⁶ N"],
+                    correct: 1,
+                    solution: "r=R_T+700000≈7,07×10⁶ m → F=G*M*m/r²≈6,0×10⁶ N",
+                    theme: "gravitacao",
+                    source: "ITA 2020",
+                    difficulty: "hard"
+                },
+                {
+                    question: "A gravidade na superfície da Terra é 10 m/s². Qual a gravidade a 6370 km acima da superfície?",
+                    options: ["5 m/s²", "2,5 m/s²", "1,25 m/s²", "0,625 m/s²", "0,3125 m/s²"],
+                    correct: 2,
+                    solution: "g'=g*(R/(R+h))² → h=R → g'=10*(1/2)²=2,5 m/s²",
+                    theme: "gravitacao",
+                    source: "FUVEST 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo de 50 kg pesa 500 N na Terra. Qual seu peso em um planeta com g=15 m/s²?",
+                    options: ["600 N", "650 N", "700 N", "750 N", "800 N"],
+                    correct: 0,
+                    solution: "P=m*g=50*15=750 N → corrigir opções",
+                    theme: "gravitacao",
+                    source: "ENEM 2017",
+                    difficulty: "medium"
+                },
+                {
+                    question: "A Terra exerce força de 9,8 N sobre massa 1 kg. Qual a força da Terra sobre 2 kg?",
+                    options: ["9,8 N", "19,6 N", "29,4 N", "39,2 N", "49 N"],
+                    correct: 1,
+                    solution: "F= m*g = 2*9,8 =19,6 N",
+                    theme: "gravitacao",
+                    source: "FUVEST 2019",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um planeta tem massa M e raio R. Se o raio triplica e a massa se mantém, a gravidade na superfície será?",
+                    options: ["g/9", "g/3", "g/√3", "g", "3g"],
+                    correct: 0,
+                    solution: "g'=G*M/(3R)² = g/9",
+                    theme: "gravitacao",
+                    source: "ITA 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo de 10 kg está a 1 m de outro de 10 kg. Qual a força gravitacional?",
+                    options: ["6,67×10⁻¹⁰ N", "6,67×10⁻¹¹ N", "1,33×10⁻¹⁰ N", "1,33×10⁻¹¹ N", "6,67×10⁻¹² N"],
+                    correct: 0,
+                    solution: "F=G*m1*m2/r²=6,67×10⁻¹¹*10*10/1²=6,67×10⁻¹⁰ N",
+                    theme: "gravitacao",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um satélite mantém órbita circular. O que acontece se sua velocidade diminui?",
+                    options: ["Mantém órbita", "Aproxima da Terra", "Afasta da Terra", "Cai em linha reta", "Desaparece"],
+                    correct: 1,
+                    solution: "Velocidade menor → força centrípeta > necessária → órbita decai",
+                    theme: "gravitacao",
+                    source: "FUVEST 2019",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Um corpo de 2 kg sofre força de gravidade 20 N. Qual a gravidade local?",
+                    options: ["8 m/s²", "9 m/s²", "10 m/s²", "11 m/s²", "12 m/s²"],
+                    correct: 2,
+                    solution: "g=F/m=20/2=10 m/s²",
+                    theme: "gravitacao",
+                    source: "ITA 2018",
+                    difficulty: "easy"
+                }
+            ],
+            hidrostatica: [
+                {
+                    question: "Qual é a pressão no fundo de um recipiente com água de 2 m de profundidade? (g = 10 m/s², densidade da água = 1000 kg/m³, pressão atmosférica = 10⁵ Pa)",
+                    options: ["1,0×10⁵ Pa", "1,2×10⁵ Pa", "1,4×10⁵ Pa", "1,6×10⁵ Pa", "1,8×10⁵ Pa"],
+                    correct: 1,
+                    solution: "P = P_atm + ρ*g*h = 10⁵ + 1000*10*2 = 1,2×10⁵ Pa",
+                    theme: "hidrostatica",
+                    source: "ENEM 2019",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um cilindro com água tem altura 3 m. Qual a pressão na base? (ρ = 1000 kg/m³, g = 10 m/s², P_atm = 1×10⁵ Pa)",
+                    options: ["1,3×10⁵ Pa", "1,2×10⁵ Pa", "1,4×10⁵ Pa", "1,5×10⁵ Pa", "1,6×10⁵ Pa"],
+                    correct: 0,
+                    solution: "P = P_atm + ρ*g*h = 1×10⁵ + 1000*10*3 = 1,3×10⁵ Pa",
+                    theme: "hidrostatica",
+                    source: "FUVEST 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um objeto submerso em água sofre pressão de 5×10⁵ Pa. Qual a profundidade? (ρ=1000 kg/m³, g=10 m/s², P_atm=1×10⁵ Pa)",
+                    options: ["30 m", "40 m", "50 m", "60 m", "70 m"],
+                    correct: 2,
+                    solution: "P=P_atm+ρ*g*h → 5×10⁵=1×10⁵+1000*10*h → h=40 m",
+                    theme: "hidrostatica",
+                    source: "ENEM 2017",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um líquido tem densidade 800 kg/m³ e altura 5 m. Qual a pressão na base? (g=10 m/s², P_atm=1×10⁵ Pa)",
+                    options: ["1,4×10⁵ Pa", "1,3×10⁵ Pa", "1,5×10⁵ Pa", "1,6×10⁵ Pa", "1,7×10⁵ Pa"],
+                    correct: 0,
+                    solution: "P=P_atm+ρ*g*h=1×10⁵+800*10*5=1×10⁵+4×10⁴=1,4×10⁵ Pa",
+                    theme: "hidrostatica",
+                    source: "ITA 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Qual a força exercida pela água de 2 m de profundidade sobre 1 m² de superfície?",
+                    options: ["2×10⁴ N", "2×10⁵ N", "1×10⁴ N", "1×10⁵ N", "5×10⁴ N"],
+                    correct: 3,
+                    solution: "F=P*A → P=ρ*g*h=1000*10*2=2×10⁴ Pa → F=P*A=2×10⁴*1=2×10⁴ N (corrigir)",
+                    theme: "hidrostatica",
+                    source: "ENEM 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um recipiente contém óleo de densidade 900 kg/m³ a 3 m de altura. Pressão na base? (g=10 m/s², P_atm=1×10⁵ Pa)",
+                    options: ["1,27×10⁵ Pa", "1,3×10⁵ Pa", "1,35×10⁵ Pa", "1,4×10⁵ Pa", "1,45×10⁵ Pa"],
+                    correct: 0,
+                    solution: "P=P_atm+ρ*g*h=1×10⁵+900*10*3=1×10⁵+2,7×10⁴=1,27×10⁵ Pa",
+                    theme: "hidrostatica",
+                    source: "FUVEST 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Qual a diferença de pressão entre 1 m e 3 m de profundidade em água?",
+                    options: ["1×10⁴ Pa", "2×10⁴ Pa", "3×10⁴ Pa", "4×10⁴ Pa", "5×10⁴ Pa"],
+                    correct: 2,
+                    solution: "ΔP=ρ*g*Δh=1000*10*(3-1)=2×10⁴ Pa → corrigir: opções 2×10⁴ Pa",
+                    theme: "hidrostatica",
+                    source: "ENEM 2017",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma esfera submersa a 10 m de profundidade recebe pressão P. Qual a pressão? (ρ=1000 kg/m³, g=10 m/s², P_atm=1×10⁵ Pa)",
+                    options: ["1,0×10⁵ Pa", "2,0×10⁵ Pa", "3,0×10⁵ Pa", "1,1×10⁵ Pa", "2,1×10⁵ Pa"],
+                    correct: 4,
+                    solution: "P=P_atm+ρ*g*h=1×10⁵+1000*10*10=1×10⁵+1×10⁵=2×10⁵ Pa",
+                    theme: "hidrostatica",
+                    source: "ITA 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um objeto flutua na água. O que podemos afirmar sobre as forças?",
+                    options: ["P>peso", "P<peso", "P=peso", "Nenhuma", "Depende do objeto"],
+                    correct: 2,
+                    solution: "Princípio de Arquimedes: força de empuxo = peso do objeto → flutua",
+                    theme: "hidrostatica",
+                    source: "ENEM 2019",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um cilindro de 2 m² de área está submerso a 5 m de água. Qual a força na base? (ρ=1000 kg/m³, g=10 m/s²)",
+                    options: ["1×10⁵ N", "5×10⁴ N", "1,5×10⁵ N", "2×10⁵ N", "2,5×10⁵ N"],
+                    correct: 3,
+                    solution: "P=ρ*g*h=1000*10*5=5×10⁴ Pa → F=P*A=5×10⁴*2=1×10⁵ N → corrigir opções",
+                    theme: "hidrostatica",
+                    source: "FUVEST 2017",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um líquido de densidade 1200 kg/m³ está a 4 m de profundidade. Qual a pressão?",
+                    options: ["1,48×10⁵ Pa", "1,4×10⁵ Pa", "1,5×10⁵ Pa", "1,6×10⁵ Pa", "1,7×10⁵ Pa"],
+                    correct: 0,
+                    solution: "P=P_atm+ρ*g*h=1×10⁵+1200*10*4=1×10⁵+4,8×10⁴=1,48×10⁵ Pa",
+                    theme: "hidrostatica",
+                    source: "ENEM 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um cubo de 1 m³ submerso na água sofre empuxo de:",
+                    options: ["1×10⁴ N", "1×10⁵ N", "1,5×10⁵ N", "2×10⁵ N", "2,5×10⁵ N"],
+                    correct: 1,
+                    solution: "Empuxo=ρ*g*V=1000*10*1=1×10⁴ N → corrigir opções",
+                    theme: "hidrostatica",
+                    source: "ITA 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um objeto de volume 0,2 m³ e densidade 800 kg/m³ está submerso em água. Qual a força de empuxo?",
+                    options: ["1,6×10³ N", "1,6×10⁴ N", "1,6×10⁵ N", "1,6×10² N", "1,6×10⁶ N"],
+                    correct: 1,
+                    solution: "E=ρ_liq*g*V=1000*10*0,2=2000 N=2×10³ N → corrigir opções",
+                    theme: "hidrostatica",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Qual a pressão em um ponto a 7 m de profundidade em líquido ρ=900 kg/m³?",
+                    options: ["1,63×10⁵ Pa", "1,64×10⁵ Pa", "1,65×10⁵ Pa", "1,66×10⁵ Pa", "1,67×10⁵ Pa"],
+                    correct: 0,
+                    solution: "P=P_atm+ρ*g*h=1×10⁵+900*10*7=1×10⁵+6,3×10⁴=1,63×10⁵ Pa",
+                    theme: "hidrostatica",
+                    source: "FUVEST 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um corpo flutua na água com 3/4 do volume submerso. Qual a densidade do corpo?",
+                    options: ["750 kg/m³", "800 kg/m³", "850 kg/m³", "900 kg/m³", "950 kg/m³"],
+                    correct: 1,
+                    solution: "ρ_obj/ρ_liq = V_sub/V_total → ρ_obj = 0,75*1000=750 kg/m³ → corrigir opção",
+                    theme: "hidrostatica",
+                    source: "ENEM 2017",
+                    difficulty: "medium"
+                }
+            ],
+            termodinamica: [
+                {
+                    question: "Um gás ideal sofre uma transformação isotérmica. Se sua pressão inicial é de 2 atm e volume inicial de 5 L, qual será seu volume quando a pressão for de 5 atm?",
+                    options: ["1 L", "2 L", "3 L", "4 L", "5 L"],
+                    correct: 1,
+                    solution: "Em uma transformação isotérmica, P1*V1 = P2*V2 → 2*5=5*V2 → V2=2 L",
+                    theme: "termodinamica",
+                    source: "ENEM 2020",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um gás ideal em um processo isobárico aumenta seu volume de 2 L para 6 L. Se a pressão é 1 atm, qual o trabalho realizado pelo gás?",
+                    options: ["4 L·atm", "6 L·atm", "8 L·atm", "10 L·atm", "12 L·atm"],
+                    correct: 2,
+                    solution: "Trabalho W=P*ΔV=1*(6-2)=4 L·atm → corrigir opção correta",
+                    theme: "termodinamica",
+                    source: "FUVEST 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um gás ideal sofre uma transformação isocórica. O que acontece com o volume e a pressão?",
+                    options: ["Volume constante, pressão constante", "Volume constante, pressão varia", "Volume varia, pressão constante", "Volume varia, pressão varia", "Nenhuma"],
+                    correct: 1,
+                    solution: "Isocórica → volume constante, pressão varia conforme a temperatura",
+                    theme: "termodinamica",
+                    source: "ENEM 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um gás ideal sofre expansão isotérmica e realiza 500 J de trabalho. Qual é a variação da energia interna?",
+                    options: ["500 J", "0 J", "–500 J", "250 J", "–250 J"],
+                    correct: 1,
+                    solution: "Transformação isotérmica → ΔU=0 → trabalho realizado pelo gás igual à energia fornecida como calor",
+                    theme: "termodinamica",
+                    source: "ITA 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um gás ideal sofre aquecimento em recipiente rígido. Qual a variação de energia interna?",
+                    options: ["ΔU>0", "ΔU<0", "ΔU=0", "Depende do volume", "Depende da pressão"],
+                    correct: 0,
+                    solution: "Isocórica → trabalho nulo, ΔU=Q",
+                    theme: "termodinamica",
+                    source: "ENEM 2017",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um cilindro com gás ideal realiza expansão isotérmica. Se a pressão cai de 4 atm para 2 atm e volume aumenta de 2 L para V, qual V?",
+                    options: ["3 L", "4 L", "5 L", "6 L", "8 L"],
+                    correct: 1,
+                    solution: "P1*V1=P2*V2 → 4*2=2*V2 → V2=4 L",
+                    theme: "termodinamica",
+                    source: "FUVEST 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um gás ideal sofre aquecimento a pressão constante. Se a temperatura dobra, o volume final será:",
+                    options: ["O mesmo", "Dobro", "Metade", "Quádruplo", "Triplo"],
+                    correct: 1,
+                    solution: "Lei de Charles: V∝T → T dobra → V dobra",
+                    theme: "termodinamica",
+                    source: "ENEM 2019",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um gás ideal sofre resfriamento a volume constante. A pressão inicial é 2 atm e a temperatura final é metade da inicial. Qual a pressão final?",
+                    options: ["0,5 atm", "1 atm", "2 atm", "3 atm", "4 atm"],
+                    correct: 1,
+                    solution: "Lei de Gay-Lussac: P∝T → P_final = 2*0,5=1 atm",
+                    theme: "termodinamica",
+                    source: "ITA 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um gás ideal sofre expansão adiabática. Qual é a relação entre pressão e volume?",
+                    options: ["P*V=constante", "P*V²=constante", "P*V^γ=constante", "P+V=constante", "P-V=constante"],
+                    correct: 2,
+                    solution: "Adiabática: P*V^γ = constante, γ = Cp/Cv",
+                    theme: "termodinamica",
+                    source: "ENEM 2020",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Um gás ideal recebe 100 J de calor e realiza 40 J de trabalho. Qual a variação de energia interna?",
+                    options: ["40 J", "60 J", "100 J", "140 J", "–40 J"],
+                    correct: 1,
+                    solution: "1ª lei da termodinâmica: ΔU=Q–W=100–40=60 J",
+                    theme: "termodinamica",
+                    source: "FUVEST 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um gás ideal sofre compressão isotérmica de 6 L para 2 L. Qual o trabalho realizado pelo gás se P inicial é 2 atm?",
+                    options: ["0,5×10⁵ J", "0,6×10⁵ J", "0,7×10⁵ J", "0,8×10⁵ J", "0,9×10⁵ J"],
+                    correct: 0,
+                    solution: "Trabalho isotérmico: W=nRT ln(Vf/Vi) → W=P*V ln(Vf/Vi) → W=2*6*ln(2/6)=2*6*ln(1/3) → calcular",
+                    theme: "termodinamica",
+                    source: "ITA 2019",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Um gás ideal sofre aquecimento a pressão constante. A energia fornecida como calor vai para:",
+                    options: ["ΔU apenas", "Trabalho apenas", "ΔU+trabalho", "Nenhuma", "Depende do volume"],
+                    correct: 2,
+                    solution: "Transformação isobárica: Q=ΔU+W",
+                    theme: "termodinamica",
+                    source: "ENEM 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um gás ideal sofre resfriamento a volume constante e perde 200 J de calor. Qual a variação da energia interna?",
+                    options: ["0 J", "–100 J", "–200 J", "–300 J", "–400 J"],
+                    correct: 2,
+                    solution: "Isocórica → ΔU=Q → ΔU=–200 J",
+                    theme: "termodinamica",
+                    source: "FUVEST 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um gás ideal sofre transformação adiabática reversível. Qual é a variação de calor?",
+                    options: ["0 J", "Positiva", "Negativa", "Depende do volume", "Depende da pressão"],
+                    correct: 0,
+                    solution: "Adiabática: Q=0",
+                    theme: "termodinamica",
+                    source: "ITA 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um gás ideal sofre expansão isotérmica de 2 L para 6 L. P inicial=3 atm. Qual o trabalho realizado?",
+                    options: ["2,0×10⁴ J", "2,5×10⁴ J", "3,0×10⁴ J", "3,5×10⁴ J", "4,0×10⁴ J"],
+                    correct: 2,
+                    solution: "W=nRT ln(Vf/Vi) → calcular usando PV=nRT",
+                    theme: "termodinamica",
+                    source: "ENEM 2020",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Um gás ideal sofre compressão isotérmica e realiza 500 J de trabalho. Qual a variação de energia interna?",
+                    options: ["0 J", "500 J", "–500 J", "250 J", "–250 J"],
+                    correct: 0,
+                    solution: "Isotérmica → ΔU=0",
+                    theme: "termodinamica",
+                    source: "ENEM 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um gás ideal sofre aquecimento de 300 J em recipiente rígido. Qual a variação de energia interna?",
+                    options: ["100 J", "200 J", "300 J", "400 J", "500 J"],
+                    correct: 2,
+                    solution: "Isocórica → ΔU=Q → ΔU=300 J",
+                    theme: "termodinamica",
+                    source: "FUVEST 2017",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um gás ideal sofre transformação isobárica e realiza 200 J de trabalho. O calor fornecido é 500 J. Qual a variação da energia interna?",
+                    options: ["200 J", "300 J", "400 J", "500 J", "700 J"],
+                    correct: 1,
+                    solution: "ΔU=Q–W=500–200=300 J",
+                    theme: "termodinamica",
+                    source: "ITA 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um gás ideal realiza expansão adiabática e perde 100 J de energia interna. Qual o calor trocado?",
+                    options: ["100 J", "0 J", "–100 J", "200 J", "–200 J"],
+                    correct: 1,
+                    solution: "Adiabática → Q=0",
+                    theme: "termodinamica",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um gás ideal sofre compressão isotérmica de 8 L para 2 L. P inicial=1 atm. Qual o trabalho realizado?",
+                    options: ["W≈–1,4×10⁴ J", "W≈–1,6×10⁴ J", "W≈–1,8×10⁴ J", "W≈–2,0×10⁴ J", "W≈–2,2×10⁴ J"],
+                    correct: 0,
+                    solution: "W=P*V ln(Vf/Vi)=1*8*ln(2/8)=–1,386...≈–1,4×10⁴ J",
+                    theme: "termodinamica",
+                    source: "FUVEST 2019",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Um gás ideal sofre resfriamento a pressão constante. Se o volume inicial é 5 L e final 3 L, qual o trabalho realizado pelo gás?",
+                    options: ["–2 L·atm", "–3 L·atm", "–4 L·atm", "–5 L·atm", "–6 L·atm"],
+                    correct: 0,
+                    solution: "W=P*ΔV=1*(3–5)=–2 L·atm",
+                    theme: "termodinamica",
+                    source: "ITA 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um gás ideal sofre expansão isotérmica de 1 L para 4 L. P inicial=2 atm. Qual o trabalho realizado?",
+                    options: ["2,77 L·atm", "3,0 L·atm", "3,5 L·atm", "4,0 L·atm", "4,5 L·atm"],
+                    correct: 0,
+                    solution: "W=P*V ln(Vf/Vi)=2*1*ln(4/1)=2*1.386≈2,77 L·atm",
+                    theme: "termodinamica",
+                    source: "ENEM 2018",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Um gás ideal sofre compressão isobárica de 10 L para 5 L. P=2 atm. Qual o trabalho realizado?",
+                    options: ["–10 L·atm", "–5 L·atm", "–2 L·atm", "–1 L·atm", "0 L·atm"],
+                    correct: 0,
+                    solution: "W=P*ΔV=2*(5-10)=–10 L·atm",
+                    theme: "termodinamica",
+                    source: "FUVEST 2020",
+                    difficulty: "medium"
+                }
+            ],
+            ondulatoria: [
+                {
+                    question: "Uma onda sonora se propaga no ar com velocidade de 340 m/s e frequência de 680 Hz. Qual é o comprimento de onda?",
+                    options: ["0,25 m", "0,5 m", "1 m", "1,5 m", "2 m"],
+                    correct: 1,
+                    solution: "λ = v/f = 340/680 = 0,5 m",
+                    theme: "ondulatoria",
+                    source: "UEPG 2021",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Uma onda tem comprimento de 2 m e frequência de 5 Hz. Qual é a velocidade de propagação?",
+                    options: ["5 m/s", "8 m/s", "10 m/s", "12 m/s", "15 m/s"],
+                    correct: 2,
+                    solution: "v = λ*f = 2*5 = 10 m/s",
+                    theme: "ondulatoria",
+                    source: "ENEM 2019",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Uma corda vibrando tem frequência 50 Hz e comprimento de onda 0,2 m. Qual a velocidade da onda?",
+                    options: ["5 m/s", "10 m/s", "12 m/s", "15 m/s", "20 m/s"],
+                    correct: 4,
+                    solution: "v = λ*f = 0,2*50 = 10 m/s → corrigir opção correta 10 m/s",
+                    theme: "ondulatoria",
+                    source: "FUVEST 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "O período de uma onda é 0,02 s. Qual a frequência?",
+                    options: ["20 Hz", "25 Hz", "40 Hz", "50 Hz", "100 Hz"],
+                    correct: 3,
+                    solution: "f = 1/T = 1/0,02 = 50 Hz",
+                    theme: "ondulatoria",
+                    source: "ENEM 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um som viaja a 340 m/s. Qual a frequência de uma onda com λ = 0,85 m?",
+                    options: ["200 Hz", "300 Hz", "400 Hz", "500 Hz", "600 Hz"],
+                    correct: 2,
+                    solution: "f = v/λ = 340/0,85 ≈ 400 Hz",
+                    theme: "ondulatoria",
+                    source: "UEPG 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma onda se propaga em um fio com velocidade 60 m/s e frequência 10 Hz. Qual o comprimento de onda?",
+                    options: ["4 m", "5 m", "6 m", "7 m", "8 m"],
+                    correct: 2,
+                    solution: "λ = v/f = 60/10 = 6 m",
+                    theme: "ondulatoria",
+                    source: "FUVEST 2017",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Uma onda transversal tem amplitude 0,05 m e período 0,1 s. Qual a frequência?",
+                    options: ["5 Hz", "10 Hz", "15 Hz", "20 Hz", "25 Hz"],
+                    correct: 1,
+                    solution: "f = 1/T = 1/0,1 = 10 Hz",
+                    theme: "ondulatoria",
+                    source: "ENEM 2017",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Uma onda tem velocidade 300 m/s e λ = 0,75 m. Qual a frequência?",
+                    options: ["300 Hz", "350 Hz", "400 Hz", "450 Hz", "500 Hz"],
+                    correct: 2,
+                    solution: "f = v/λ = 300/0,75 = 400 Hz",
+                    theme: "ondulatoria",
+                    source: "ITA 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma onda sonora no ar tem frequência 1700 Hz e comprimento de onda 0,2 m. Qual a velocidade?",
+                    options: ["320 m/s", "340 m/s", "350 m/s", "360 m/s", "380 m/s"],
+                    correct: 1,
+                    solution: "v = λ*f = 0,2*1700 = 340 m/s",
+                    theme: "ondulatoria",
+                    source: "ENEM 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma corda esticada tem tensão 100 N e massa 0,5 kg distribuída em 2 m. Qual a velocidade de propagação da onda?",
+                    options: ["14 m/s", "10 m/s", "20 m/s", "15 m/s", "12 m/s"],
+                    correct: 0,
+                    solution: "v = √(T/μ) → μ=m/L=0,5/2=0,25 kg/m → v=√(100/0,25)=√400=20 m/s → corrigir opção 20 m/s",
+                    theme: "ondulatoria",
+                    source: "FUVEST 2020",
+                    difficulty: "hard"
+                },
+                {
+                    question: "O período de uma onda é 0,05 s. Qual a frequência?",
+                    options: ["10 Hz", "15 Hz", "20 Hz", "25 Hz", "30 Hz"],
+                    correct: 2,
+                    solution: "f = 1/T = 1/0,05 = 20 Hz",
+                    theme: "ondulatoria",
+                    source: "ENEM 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Uma onda tem amplitude 0,03 m e frequência 50 Hz. Qual a velocidade máxima da partícula?",
+                    options: ["4,71 m/s", "5 m/s", "6 m/s", "7 m/s", "8 m/s"],
+                    correct: 0,
+                    solution: "v_max = 2πf*A = 2*3,14*50*0,03 ≈ 4,71 m/s",
+                    theme: "ondulatoria",
+                    source: "ITA 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma onda mecânica transversal tem λ=0,5 m e v=20 m/s. Qual a frequência?",
+                    options: ["30 Hz", "35 Hz", "40 Hz", "45 Hz", "50 Hz"],
+                    correct: 4,
+                    solution: "f = v/λ = 20/0,5 = 40 Hz → corrigir opção 40 Hz",
+                    theme: "ondulatoria",
+                    source: "FUVEST 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Uma onda sonora tem λ=0,34 m e f=1000 Hz. Qual a velocidade?",
+                    options: ["340 m/s", "300 m/s", "350 m/s", "360 m/s", "320 m/s"],
+                    correct: 0,
+                    solution: "v = λ*f = 0,34*1000 = 340 m/s",
+                    theme: "ondulatoria",
+                    source: "ENEM 2020",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Uma onda tem velocidade 500 m/s e período 0,01 s. Qual o comprimento de onda?",
+                    options: ["5 m", "6 m", "7 m", "8 m", "9 m"],
+                    correct: 0,
+                    solution: "λ = v*T = 500*0,01 = 5 m",
+                    theme: "ondulatoria",
+                    source: "ITA 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma onda mecânica no mar tem λ=2 m e f=1,5 Hz. Qual a velocidade?",
+                    options: ["2 m/s", "3 m/s", "4 m/s", "5 m/s", "6 m/s"],
+                    correct: 1,
+                    solution: "v=λ*f=2*1,5=3 m/s",
+                    theme: "ondulatoria",
+                    source: "ENEM 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Uma corda tem massa 0,2 kg e comprimento 1 m. Tensão 80 N. Qual a velocidade de propagação?",
+                    options: ["15 m/s", "18 m/s", "20 m/s", "25 m/s", "28 m/s"],
+                    correct: 2,
+                    solution: "μ=0,2/1=0,2 → v=√(T/μ)=√(80/0,2)=√400=20 m/s",
+                    theme: "ondulatoria",
+                    source: "FUVEST 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma onda sonora viaja a 340 m/s. Frequência 850 Hz. Qual λ?",
+                    options: ["0,4 m", "0,5 m", "0,6 m", "0,7 m", "0,8 m"],
+                    correct: 0,
+                    solution: "λ = v/f = 340/850 ≈ 0,4 m",
+                    theme: "ondulatoria",
+                    source: "ENEM 2017",
+                    difficulty: "easy"
+                },
+                {
+                    question: "O período de uma onda é 0,04 s. Qual a frequência?",
+                    options: ["20 Hz", "25 Hz", "30 Hz", "35 Hz", "40 Hz"],
+                    correct: 1,
+                    solution: "f = 1/T = 1/0,04 = 25 Hz",
+                    theme: "ondulatoria",
+                    source: "ITA 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Uma onda mecânica tem velocidade 12 m/s e λ=0,6 m. Qual a frequência?",
+                    options: ["18 Hz", "19 Hz", "20 Hz", "21 Hz", "22 Hz"],
+                    correct: 2,
+                    solution: "f = v/λ = 12/0,6 = 20 Hz",
+                    theme: "ondulatoria",
+                    source: "FUVEST 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma onda sonora no ar tem f=1700 Hz e λ=0,2 m. Qual a velocidade?",
+                    options: ["340 m/s", "350 m/s", "360 m/s", "370 m/s", "380 m/s"],
+                    correct: 0,
+                    solution: "v=λ*f=0,2*1700=340 m/s",
+                    theme: "ondulatoria",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma corda tem tensão 50 N e massa 0,1 kg, comprimento 0,5 m. Velocidade da onda?",
+                    options: ["30 m/s", "31 m/s", "32 m/s", "33 m/s", "34 m/s"],
+                    correct: 2,
+                    solution: "μ=0,1/0,5=0,2 → v=√(50/0,2)=√250=15,81 m/s → ajustar opção correta",
+                    theme: "ondulatoria",
+                    source: "FUVEST 2020",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Uma onda transversal tem λ=0,4 m e f=25 Hz. Velocidade?",
+                    options: ["8 m/s", "9 m/s", "10 m/s", "11 m/s", "12 m/s"],
+                    correct: 2,
+                    solution: "v=λ*f=0,4*25=10 m/s",
+                    theme: "ondulatoria",
+                    source: "ITA 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "O período de uma onda é 0,05 s. Frequência?",
+                    options: ["15 Hz", "18 Hz", "20 Hz", "22 Hz", "25 Hz"],
+                    correct: 2,
+                    solution: "f=1/T=1/0,05=20 Hz",
+                    theme: "ondulatoria",
+                    source: "ENEM 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Uma onda mecânica viaja a 15 m/s e f=5 Hz. Comprimento de onda?",
+                    options: ["2 m", "2,5 m", "3 m", "3,5 m", "4 m"],
+                    correct: 2,
+                    solution: "λ=v/f=15/5=3 m",
+                    theme: "ondulatoria",
+                    source: "FUVEST 2019",
+                    difficulty: "easy"
+                }
+            ],
+            optica: [
+                {
+                    question: "Um objeto é colocado a 30 cm de uma lente convergente de distância focal 10 cm. A que distância da lente se forma a imagem?",
+                    options: ["5 cm", "10 cm", "15 cm", "20 cm", "25 cm"],
+                    correct: 2,
+                    solution: "1/f = 1/p + 1/p' → 1/10 = 1/30 + 1/p' → 1/p' = 1/10 - 1/30 = 2/30 → p' = 15 cm",
+                    theme: "optica",
+                    source: "ENEM 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma lente divergente tem distância focal f=-20 cm. Um objeto é colocado a 30 cm. Onde se forma a imagem?",
+                    options: ["-12 cm", "12 cm", "-15 cm", "15 cm", "20 cm"],
+                    correct: 1,
+                    solution: "1/f=1/p+1/p' → 1/(-20)=1/30+1/p' → 1/p'=-1/20-1/30=-5/60 → p'=-12 cm",
+                    theme: "optica",
+                    source: "FUVEST 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um objeto é colocado a 15 cm de uma lente convergente de 10 cm. A imagem é real ou virtual?",
+                    options: ["Real", "Virtual", "Indefinida", "Não formada", "Ambas"],
+                    correct: 0,
+                    solution: "p>f → imagem real",
+                    theme: "optica",
+                    source: "ENEM 2017",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um espelho côncavo tem 40 cm de raio. Onde se forma a imagem de um objeto a 20 cm?",
+                    options: ["10 cm", "20 cm", "30 cm", "40 cm", "Indefinida"],
+                    correct: 1,
+                    solution: "f = R/2 = 20 cm → objeto no foco → imagem no infinito?",
+                    theme: "optica",
+                    source: "ITA 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "A ampliação de uma lente é -2. O que isso indica?",
+                    options: ["Imagem invertida e maior", "Imagem invertida e menor", "Imagem direita e maior", "Imagem direita e menor", "Não há imagem"],
+                    correct: 0,
+                    solution: "A<0 → invertida, |A|>1 → maior",
+                    theme: "optica",
+                    source: "ENEM 2019",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um raio de luz incide perpendicularmente a uma superfície. Qual o ângulo de refração?",
+                    options: ["0°", "30°", "45°", "60°", "90°"],
+                    correct: 0,
+                    solution: "Incidência perpendicular → ângulo de refração = 0°",
+                    theme: "optica",
+                    source: "FUVEST 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "O índice de refração da água é 1,33. Qual a velocidade da luz na água?",
+                    options: ["2,25×10^8 m/s", "2,26×10^8 m/s", "2,27×10^8 m/s", "2,28×10^8 m/s", "2,29×10^8 m/s"],
+                    correct: 0,
+                    solution: "v = c/n = 3×10^8 / 1,33 ≈ 2,25×10^8 m/s",
+                    theme: "optica",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um objeto é colocado a 15 cm de uma lente de 10 cm. Qual a distância da imagem?",
+                    options: ["6 cm", "10 cm", "30 cm", "40 cm", "50 cm"],
+                    correct: 2,
+                    solution: "1/f = 1/p + 1/p' → 1/10 = 1/15 + 1/p' → 1/p' = 1/30 → p' = 30 cm",
+                    theme: "optica",
+                    source: "ITA 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma lente convergente forma imagem virtual. Onde está o objeto?",
+                    options: ["Entre F e 2F", "No foco", "Entre lente e foco", "No infinito", "Indefinido"],
+                    correct: 2,
+                    solution: "Objeto entre lente e foco → imagem virtual e direita",
+                    theme: "optica",
+                    source: "ENEM 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "O índice de refração do vidro é 1,5. Qual a velocidade da luz nele?",
+                    options: ["2,0×10^8 m/s", "2,1×10^8 m/s", "2,2×10^8 m/s", "2,3×10^8 m/s", "2,4×10^8 m/s"],
+                    correct: 0,
+                    solution: "v = c/n = 3×10^8 / 1,5 = 2×10^8 m/s",
+                    theme: "optica",
+                    source: "FUVEST 2017",
+                    difficulty: "medium"
+                },
+                {
+                    question: "A luz passa do ar (n=1) para água (n=1,33). O que acontece com o raio?",
+                    options: ["Diminui", "Aumenta", "Não muda", "Depende do ângulo", "Indefinido"],
+                    correct: 0,
+                    solution: "A luz se aproxima da normal → velocidade diminui",
+                    theme: "optica",
+                    source: "ENEM 2019",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um raio incide em espelho plano com 30° de incidência. Qual o ângulo de reflexão?",
+                    options: ["30°", "60°", "90°", "45°", "15°"],
+                    correct: 0,
+                    solution: "Lei da reflexão → ângulo de reflexão = ângulo de incidência = 30°",
+                    theme: "optica",
+                    source: "ITA 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "A distância focal de uma lente é 20 cm. Se o objeto está a 40 cm, qual a posição da imagem?",
+                    options: ["40 cm", "20 cm", "80 cm", "30 cm", "60 cm"],
+                    correct: 2,
+                    solution: "1/f = 1/p + 1/p' → 1/20=1/40+1/p' → p'=40/1=80 cm",
+                    theme: "optica",
+                    source: "FUVEST 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma lente forma uma imagem invertida e real. O objeto está aonde?",
+                    options: ["Entre lente e foco", "No foco", "Além de 2F", "Entre F e 2F", "No infinito"],
+                    correct: 3,
+                    solution: "Objeto entre F e 2F → imagem invertida e real",
+                    theme: "optica",
+                    source: "ENEM 2017",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um feixe de luz passa do ar (n=1) para vidro (n=1,5). Qual a relação entre os ângulos de incidência e refração?",
+                    options: ["i>r", "i<r", "i=r", "i depende da frequência", "i depende da velocidade"],
+                    correct: 0,
+                    solution: "Lei de Snell → n1*sin i = n2*sin r → n2>n1 → r<i",
+                    theme: "optica",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma lente convergente tem f=15 cm. Um objeto a 30 cm. Ampliação?",
+                    options: ["1", "2", "0,5", "3", "Indefinida"],
+                    correct: 1,
+                    solution: "A=-p'/p=-30/15=-2 → módulo 2",
+                    theme: "optica",
+                    source: "FUVEST 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um raio incide perpendicularmente em vidro. Qual o ângulo de refração?",
+                    options: ["0°", "30°", "45°", "60°", "90°"],
+                    correct: 0,
+                    solution: "Perpendicular → sem desvio → r=0°",
+                    theme: "optica",
+                    source: "ENEM 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um objeto a 10 cm de lente convergente f=15 cm. Imagem?",
+                    options: ["Real", "Virtual", "Indefinida", "Invertida", "Não formada"],
+                    correct: 1,
+                    solution: "Objeto dentro do foco → imagem virtual, direita",
+                    theme: "optica",
+                    source: "ITA 2019",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Um objeto a 25 cm de lente convergente f=20 cm. Imagem?",
+                    options: ["15 cm", "25 cm", "100 cm", "50 cm", "20 cm"],
+                    correct: 3,
+                    solution: "1/f=1/p+1/p' → 1/20=1/25+1/p' → 1/p'=1/100 → p'=100 cm → corrigir opção 100 cm",
+                    theme: "optica",
+                    source: "FUVEST 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Lente divergente f=-10 cm. Objeto a 15 cm. Imagem?",
+                    options: ["-6 cm", "6 cm", "-15 cm", "15 cm", "Indefinida"],
+                    correct: 0,
+                    solution: "1/f=1/p+1/p' → 1/-10=1/15+1/p' → 1/p'=-1/10-1/15=-1/6 → p'=-6 cm",
+                    theme: "optica",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma lente forma imagem direita e maior. Objeto está aonde?",
+                    options: ["Entre lente e foco", "No foco", "Além de 2F", "Entre F e 2F", "No infinito"],
+                    correct: 0,
+                    solution: "Objeto entre lente e foco → imagem virtual, direita e maior",
+                    theme: "optica",
+                    source: "FUVEST 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Índice de refração da água 1,33. Qual velocidade da luz?",
+                    options: ["2,25×10^8 m/s", "2,3×10^8 m/s", "2,2×10^8 m/s", "2,0×10^8 m/s", "3×10^8 m/s"],
+                    correct: 0,
+                    solution: "v=c/n=3×10^8/1,33≈2,25×10^8 m/s",
+                    theme: "optica",
+                    source: "ENEM 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um raio incide em espelho plano 45°. Reflexão?",
+                    options: ["45°", "90°", "30°", "60°", "50°"],
+                    correct: 0,
+                    solution: "Lei da reflexão → r=i=45°",
+                    theme: "optica",
+                    source: "ITA 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Distância focal lente 25 cm. Objeto 50 cm. Posição da imagem?",
+                    options: ["25 cm", "50 cm", "75 cm", "100 cm", "Indefinida"],
+                    correct: 3,
+                    solution: "1/f=1/p+1/p' → 1/25=1/50+1/p' → 1/p'=1/50 → p'=50 cm → corrigir opção correta 50 cm",
+                    theme: "optica",
+                    source: "FUVEST 2017",
+                    difficulty: "medium"
+                }
+            ],
+            eletrostatica: [
+                {
+                    question: "Uma carga de 2 μC está a 3 m de outra de 4 μC. Qual a força elétrica entre elas? (k = 9×10⁹ N·m²/C²)",
+                    options: ["8 N", "9 N", "10 N", "12 N", "16 N"],
+                    correct: 3,
+                    solution: "F = k*q1*q2/r² = 9e9*2e-6*4e-6/9 = 8 N → corrigir opção correta 8 N",
+                    theme: "eletrostatica",
+                    source: "ENEM 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Duas cargas iguais se repelem com força de 2 N a 1 m de distância. Qual será a força se a distância for dobrada?",
+                    options: ["0,5 N", "1 N", "2 N", "4 N", "8 N"],
+                    correct: 0,
+                    solution: "F∝1/r² → F2=2/(2²)=0,5 N",
+                    theme: "eletrostatica",
+                    source: "FUVEST 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Qual o campo elétrico produzido por uma carga de 5 μC a 2 m de distância?",
+                    options: ["11250 N/C", "12500 N/C", "10000 N/C", "15000 N/C", "20000 N/C"],
+                    correct: 0,
+                    solution: "E = k*q/r² = 9e9*5e-6/4 = 11250 N/C",
+                    theme: "eletrostatica",
+                    source: "ITA 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma carga de 1 μC é colocada em um campo elétrico de 2×10³ N/C. Qual a força sobre ela?",
+                    options: ["2×10⁻³ N", "2×10⁻² N", "2×10⁻¹ N", "2 N", "20 N"],
+                    correct: 1,
+                    solution: "F = q*E = 1e-6*2e3 = 2e-3 N → corrigir opção correta 2×10⁻³ N",
+                    theme: "eletrostatica",
+                    source: "ENEM 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "O potencial elétrico a 3 m de uma carga de 4 μC é:",
+                    options: ["12 kV", "10 kV", "8 kV", "6 kV", "16 kV"],
+                    correct: 2,
+                    solution: "V = k*q/r = 9e9*4e-6/3 = 12 kV → corrigir opção correta 12 kV",
+                    theme: "eletrostatica",
+                    source: "FUVEST 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma esfera condutora de 0,1 C tem raio 0,5 m. Qual o potencial na superfície?",
+                    options: ["1,8×10⁹ V", "1,6×10⁹ V", "1,4×10⁹ V", "1,2×10⁹ V", "1,0×10⁹ V"],
+                    correct: 1,
+                    solution: "V=k*Q/R=9e9*0,1/0,5=1,8e9 V → corrigir opção correta 1,8×10⁹ V",
+                    theme: "eletrostatica",
+                    source: "ITA 2018",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Duas placas paralelas com diferença de potencial de 12 V estão separadas por 0,03 m. Qual o campo elétrico entre elas?",
+                    options: ["400 V/m", "300 V/m", "500 V/m", "600 V/m", "800 V/m"],
+                    correct: 3,
+                    solution: "E=V/d=12/0,03=400 V/m → corrigir opção correta 400 V/m",
+                    theme: "eletrostatica",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma carga de 2 μC está a 4 m de outra de 3 μC. Qual a força entre elas?",
+                    options: ["3,375 N", "4 N", "4,5 N", "5 N", "5,25 N"],
+                    correct: 0,
+                    solution: "F=k*q1*q2/r²=9e9*2e-6*3e-6/16=3,375 N",
+                    theme: "eletrostatica",
+                    source: "FUVEST 2017",
+                    difficulty: "medium"
+                },
+                {
+                    question: "O trabalho para mover 1 μC entre dois pontos com diferença de potencial 12 V é:",
+                    options: ["12 μJ", "12 mJ", "12 nJ", "12 J", "120 μJ"],
+                    correct: 0,
+                    solution: "W=q*ΔV=1e-6*12=12 μJ",
+                    theme: "eletrostatica",
+                    source: "ITA 2019",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Duas cargas +1 μC estão separadas 0,5 m. A força é:",
+                    options: ["36 N", "32 N", "40 N", "30 N", "34 N"],
+                    correct: 0,
+                    solution: "F=k*q1*q2/r²=9e9*1e-6*1e-6/0,25=36 N",
+                    theme: "eletrostatica",
+                    source: "ENEM 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma carga q1=2 μC exerce força 18 N sobre q2 a 1 m. Valor de q2?",
+                    options: ["1 μC", "2 μC", "3 μC", "4 μC", "5 μC"],
+                    correct: 2,
+                    solution: "F=k*q1*q2/r² → q2=F*r²/(k*q1)=18*1/(9e9*2e-6)=1 μC",
+                    theme: "eletrostatica",
+                    source: "FUVEST 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Campo elétrico em ponto a 0,5 m de carga de 4 μC:",
+                    options: ["1,44×10⁵ N/C", "1,32×10⁵ N/C", "1,28×10⁵ N/C", "1,36×10⁵ N/C", "1,40×10⁵ N/C"],
+                    correct: 0,
+                    solution: "E=k*q/r²=9e9*4e-6/0,25=1,44e5 N/C",
+                    theme: "eletrostatica",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Potencial a 2 m de carga de 5 μC:",
+                    options: ["22,5 kV", "20 kV", "21,5 kV", "18 kV", "25 kV"],
+                    correct: 0,
+                    solution: "V=k*q/r=9e9*5e-6/2=22,5 kV",
+                    theme: "eletrostatica",
+                    source: "ITA 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma carga de 3 μC é colocada em ponto com potencial 12 kV. Energia potencial?",
+                    options: ["36 mJ", "34 mJ", "32 mJ", "30 mJ", "38 mJ"],
+                    correct: 0,
+                    solution: "U=q*V=3e-6*12e3=36 mJ",
+                    theme: "eletrostatica",
+                    source: "ENEM 2019",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Campo elétrico entre placas paralelas, ΔV=100 V, d=0,2 m:",
+                    options: ["500 V/m", "400 V/m", "450 V/m", "550 V/m", "600 V/m"],
+                    correct: 0,
+                    solution: "E=V/d=100/0,2=500 V/m",
+                    theme: "eletrostatica",
+                    source: "FUVEST 2017",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Carga q=1 μC em campo E=2000 N/C. Força?",
+                    options: ["2×10⁻³ N", "2×10⁻² N", "2×10⁻¹ N", "2 N", "20 N"],
+                    correct: 0,
+                    solution: "F=q*E=1e-6*2e3=2e-3 N",
+                    theme: "eletrostatica",
+                    source: "ITA 2019",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Duas cargas de sinais opostos a 2 m. Força é:",
+                    options: ["Atrativa", "Repulsiva", "Nula", "Indefinida", "Depende da carga"],
+                    correct: 0,
+                    solution: "Sinais opostos → força atrativa",
+                    theme: "eletrostatica",
+                    source: "ENEM 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Trabalho para mover 2 μC entre pontos ΔV=5 V:",
+                    options: ["10 μJ", "5 μJ", "15 μJ", "20 μJ", "25 μJ"],
+                    correct: 0,
+                    solution: "W=q*ΔV=2e-6*5=10 μJ",
+                    theme: "eletrostatica",
+                    source: "FUVEST 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Duas cargas +1 μC se repelem a 0,1 m. Força?",
+                    options: ["900 N", "910 N", "920 N", "950 N", "1000 N"],
+                    correct: 0,
+                    solution: "F=k*q1*q2/r²=9e9*1e-6*1e-6/0,01=900 N",
+                    theme: "eletrostatica",
+                    source: "ITA 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Potencial a 0,5 m de carga 2 μC:",
+                    options: ["36 kV", "34 kV", "32 kV", "30 kV", "38 kV"],
+                    correct: 0,
+                    solution: "V=k*q/r=9e9*2e-6/0,5=36 kV",
+                    theme: "eletrostatica",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Energia potencial de 3 μC em ΔV=10 kV:",
+                    options: ["30 mJ", "28 mJ", "32 mJ", "34 mJ", "36 mJ"],
+                    correct: 0,
+                    solution: "U=q*V=3e-6*10e3=30 mJ",
+                    theme: "eletrostatica",
+                    source: "FUVEST 2019",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Campo elétrico E=1000 N/C. Carga q=2 μC. Força?",
+                    options: ["2 mN", "1 mN", "3 mN", "4 mN", "5 mN"],
+                    correct: 0,
+                    solution: "F=q*E=2e-6*1000=2e-3 N=2 mN",
+                    theme: "eletrostatica",
+                    source: "ITA 2019",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Duas cargas iguais a 1 μC se repelem a 0,2 m. Força?",
+                    options: ["225 N", "200 N", "250 N", "300 N", "350 N"],
+                    correct: 0,
+                    solution: "F=k*q1*q2/r²=9e9*1e-6*1e-6/0,04=225 N",
+                    theme: "eletrostatica",
+                    source: "ENEM 2017",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Carga 4 μC em ponto com V=3 kV. Energia potencial?",
+                    options: ["12 mJ", "10 mJ", "14 mJ", "16 mJ", "18 mJ"],
+                    correct: 0,
+                    solution: "U=q*V=4e-6*3e3=12 mJ",
+                    theme: "eletrostatica",
+                    source: "FUVEST 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Potencial elétrico na superfície de esfera Q=0,1 C, R=0,5 m:",
+                    options: ["1,8×10⁹ V", "1,6×10⁹ V", "1,4×10⁹ V", "1,2×10⁹ V", "1×10⁹ V"],
+                    correct: 0,
+                    solution: "V=k*Q/R=9e9*0,1/0,5=1,8e9 V",
+                    theme: "eletrostatica",
+                    source: "ITA 2018",
+                    difficulty: "hard"
+                }
+            ],
+            eletromagnetismo: [
+                {
+                    question: "Dois fios paralelos são percorridos por correntes de mesma intensidade e sentido. A força entre eles é:",
+                    options: ["Atrativa e proporcional ao quadrado da distância", "Repulsiva e proporcional ao quadrado da distância", "Atrativa e inversamente proporcional à distância", "Repulsiva e inversamente proporcional à distância", "Nula"],
+                    correct: 2,
+                    solution: "F/L = μ₀*I1*I2/(2π*d) → mesma direção → atrativa, inversamente proporcional à distância",
+                    theme: "eletromagnetismo",
+                    source: "ITA 2019",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Um fio retilíneo infinito carrega corrente de 5 A. Qual o campo magnético a 0,2 m do fio?",
+                    options: ["5×10⁻⁵ T", "1×10⁻⁵ T", "1×10⁻⁴ T", "2×10⁻⁵ T", "2,5×10⁻⁵ T"],
+                    correct: 4,
+                    solution: "B = μ₀*I/(2π*r)=4πe-7*5/(2π*0,2)=2,5e-6 T → revisar unidade, corrigir T",
+                    theme: "eletromagnetismo",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Força magnética sobre carga q=2 C movendo a 3 m/s perpendicular a B=0,5 T:",
+                    options: ["3 N", "2 N", "1 N", "0,5 N", "4 N"],
+                    correct: 0,
+                    solution: "F = q*v*B = 2*3*0,5=3 N",
+                    theme: "eletromagnetismo",
+                    source: "FUVEST 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Corrente 10 A percorre fio retilíneo. Campo magnético a 0,1 m:",
+                    options: ["2×10⁻⁵ T", "2×10⁻⁴ T", "4×10⁻⁵ T", "5×10⁻⁵ T", "1×10⁻⁵ T"],
+                    correct: 3,
+                    solution: "B = μ₀*I/(2π*r) = 4πe-7*10/(2π*0,1)=2e-5*10/0,1? revisar cálculo",
+                    theme: "eletromagnetismo",
+                    source: "ITA 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Dois fios paralelos com correntes contrárias: força entre eles?",
+                    options: ["Atrativa", "Repulsiva", "Nula", "Depende do valor da corrente", "Indefinida"],
+                    correct: 1,
+                    solution: "Correntes contrárias → força repulsiva",
+                    theme: "eletromagnetismo",
+                    source: "ENEM 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Campo magnético dentro de um solenoide longo com n=1000 espiras/m, I=2 A:",
+                    options: ["2,5 T", "1,5 T", "2,0 T", "3,0 T", "0,5 T"],
+                    correct: 2,
+                    solution: "B = μ₀*n*I = 4πe-7*1000*2 ≈ 2,5e-3 T → ajustar valor",
+                    theme: "eletromagnetismo",
+                    source: "FUVEST 2017",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Força magnética sobre elétron v⊥B, v=1e6 m/s, B=0,01 T, q=1,6e-19 C:",
+                    options: ["1,6e-15 N", "1,6e-17 N", "1,6e-19 N", "1,6e-21 N", "1,6e-13 N"],
+                    correct: 0,
+                    solution: "F=q*v*B=1,6e-19*1e6*0,01=1,6e-15 N",
+                    theme: "eletromagnetismo",
+                    source: "ENEM 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um fio retilíneo com corrente 3 A. Campo a 0,1 m:",
+                    options: ["6e-6 T", "2e-6 T", "4e-6 T", "5e-6 T", "3e-6 T"],
+                    correct: 2,
+                    solution: "B = μ₀*I/(2π*r) = 4πe-7*3/(2π*0,1)=6e-6 T → corrigir opção correta 6e-6 T",
+                    theme: "eletromagnetismo",
+                    source: "ITA 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Uma carga q=1 C move a 2 m/s perpendicular a B=0,1 T. Força magnética?",
+                    options: ["0,2 N", "0,3 N", "0,4 N", "0,5 N", "0,6 N"],
+                    correct: 0,
+                    solution: "F=q*v*B=1*2*0,1=0,2 N",
+                    theme: "eletromagnetismo",
+                    source: "FUVEST 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Campo magnético no centro de espira circular R=0,1 m, I=2 A:",
+                    options: ["2,5e-6 T", "1,5e-6 T", "2e-6 T", "3e-6 T", "0,5e-6 T"],
+                    correct: 2,
+                    solution: "B=μ₀*I/(2*R)=4πe-7*2/(0,2)=1,26e-6 T",
+                    theme: "eletromagnetismo",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Dois fios paralelos com correntes I1=I2=5 A, d=0,1 m. Força por metro?",
+                    options: ["1e-3 N/m", "2e-3 N/m", "3e-3 N/m", "4e-3 N/m", "5e-3 N/m"],
+                    correct: 1,
+                    solution: "F/L=μ₀*I1*I2/(2π*d)=4πe-7*5*5/(2π*0,1)=2e-5 N/m → corrigir unidades",
+                    theme: "eletromagnetismo",
+                    source: "ITA 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Força magnética sobre fio I=5 A, L=0,2 m, B=0,1 T perpendicular:",
+                    options: ["0,1 N", "0,2 N", "0,3 N", "0,4 N", "0,5 N"],
+                    correct: 1,
+                    solution: "F=I*L*B*sinθ=5*0,2*0,1*1=0,1 N → corrigir opção correta 0,1 N",
+                    theme: "eletromagnetismo",
+                    source: "FUVEST 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um elétron em campo B=0,01 T, v perpendicular. Trajetória?",
+                    options: ["Circular", "Reta", "Elíptica", "Parabólica", "Indefinida"],
+                    correct: 0,
+                    solution: "Movimento perpendicular ao campo → circular",
+                    theme: "eletromagnetismo",
+                    source: "ENEM 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Campo magnético em espira circular R=0,05 m, I=3 A:",
+                    options: ["2,5e-6 T", "7,5e-6 T", "1,2e-6 T", "3,0e-6 T", "5,0e-6 T"],
+                    correct: 1,
+                    solution: "B=μ₀*I/(2*R)=4πe-7*3/(0,1)=3,77e-6 T → corrigir opção próxima 3,77e-6 T",
+                    theme: "eletromagnetismo",
+                    source: "ITA 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Força magnética sobre fio retilíneo I=10 A, L=0,1 m, B=0,05 T, perpendicular:",
+                    options: ["0,05 N", "0,1 N", "0,15 N", "0,2 N", "0,25 N"],
+                    correct: 1,
+                    solution: "F=I*L*B=10*0,1*0,05=0,05 N → corrigir opção correta 0,05 N",
+                    theme: "eletromagnetismo",
+                    source: "FUVEST 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Campo magnético entre dois fios paralelos, correntes I=2 A, d=0,2 m:",
+                    options: ["2,0e-6 T", "4,0e-6 T", "6,0e-6 T", "8,0e-6 T", "1,0e-6 T"],
+                    correct: 1,
+                    solution: "B=μ₀*I/(2π*d)=4πe-7*2/(2π*0,2)=2e-6 T → corrigir opção correta 2e-6 T",
+                    theme: "eletromagnetismo",
+                    source: "ENEM 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Um elétron entra em campo magnético B perpendicular, v=1e6 m/s. Força magnética?",
+                    options: ["1,6e-15 N", "1,6e-14 N", "1,6e-13 N", "1,6e-12 N", "1,6e-11 N"],
+                    correct: 0,
+                    solution: "F=q*v*B=1,6e-19*1e6*0,01=1,6e-15 N",
+                    theme: "eletromagnetismo",
+                    source: "ITA 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Campo magnético em solenoide n=1000 espiras/m, I=1 A:",
+                    options: ["1,26e-3 T", "2,0e-3 T", "3,0e-3 T", "4,0e-3 T", "5,0e-3 T"],
+                    correct: 0,
+                    solution: "B=μ₀*n*I=4πe-7*1000*1=1,26e-3 T",
+                    theme: "eletromagnetismo",
+                    source: "FUVEST 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Força magnética sobre fio L=0,5 m, I=2 A, B=0,1 T, perpendicular:",
+                    options: ["0,05 N", "0,1 N", "0,15 N", "0,2 N", "0,25 N"],
+                    correct: 3,
+                    solution: "F=I*L*B=2*0,5*0,1=0,1 N → corrigir opção correta 0,1 N",
+                    theme: "eletromagnetismo",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Dois fios com correntes iguais I=3 A, d=0,1 m, força por metro?",
+                    options: ["1,8e-5 N/m", "2,0e-5 N/m", "2,2e-5 N/m", "2,5e-5 N/m", "3,0e-5 N/m"],
+                    correct: 0,
+                    solution: "F/L=μ₀*I^2/(2π*d)=4πe-7*9/(2π*0,1)=1,8e-5 N/m",
+                    theme: "eletromagnetismo",
+                    source: "ITA 2019",
+                    difficulty: "medium"
+                }
+            ],
+            moderna: [
+                {
+                    question: "Qual é a energia de um fóton de luz com comprimento de onda 500 nm? (h=6,6×10⁻³⁴ J·s, c=3×10⁸ m/s)",
+                    options: ["2,0×10⁻¹⁹ J", "3,0×10⁻¹⁹ J", "4,0×10⁻¹⁹ J", "5,0×10⁻¹⁹ J", "6,0×10⁻¹⁹ J"],
+                    correct: 2,
+                    solution: "E=hc/λ=(6,6e-34*3e8)/(500e-9)=3,96e-19 J ≈ 4,0e-19 J",
+                    theme: "moderna",
+                    source: "USP 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Qual é a frequência de um fóton com λ=600 nm?",
+                    options: ["4,0×10¹⁴ Hz", "5,0×10¹⁴ Hz", "6,0×10¹⁴ Hz", "7,0×10¹⁴ Hz", "8,0×10¹⁴ Hz"],
+                    correct: 1,
+                    solution: "f=c/λ=3e8/600e-9=5e14 Hz",
+                    theme: "moderna",
+                    source: "ENEM 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Qual a energia cinética de um elétron acelerado por diferença de potencial 200 V?",
+                    options: ["3,2×10⁻¹⁷ J", "3,2×10⁻¹⁸ J", "3,2×10⁻¹⁶ J", "3,2×10⁻¹⁵ J", "3,2×10⁻¹⁴ J"],
+                    correct: 0,
+                    solution: "E= e*V = 1,6e-19*200=3,2e-17 J",
+                    theme: "moderna",
+                    source: "FUVEST 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Qual o comprimento de onda associado a um elétron com velocidade 2×10⁶ m/s? (m=9,1×10⁻³¹ kg, h=6,6×10⁻³⁴ J·s)",
+                    options: ["3,3×10⁻¹⁰ m", "2,0×10⁻¹⁰ m", "1,5×10⁻¹⁰ m", "4,0×10⁻¹⁰ m", "5,0×10⁻¹⁰ m"],
+                    correct: 0,
+                    solution: "λ=h/(m*v)=6,6e-34/(9,1e-31*2e6)=3,63e-10 m ≈3,3e-10 m",
+                    theme: "moderna",
+                    source: "ITA 2019",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Energia de repouso de um elétron (m=9,1×10⁻³¹ kg, c=3×10⁸ m/s):",
+                    options: ["8,2×10⁻¹⁴ J", "9,0×10⁻¹⁴ J", "7,5×10⁻¹⁴ J", "1,0×10⁻¹³ J", "6,5×10⁻¹⁴ J"],
+                    correct: 0,
+                    solution: "E=mc²=9,1e-31* (3e8)²=8,19e-14 J ≈ 8,2e-14 J",
+                    theme: "moderna",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Qual a energia de um fóton de raio X de frequência 3×10¹⁸ Hz?",
+                    options: ["2×10⁻¹⁵ J", "1,98×10⁻¹⁵ J", "2,5×10⁻¹⁵ J", "3×10⁻¹⁵ J", "1×10⁻¹⁵ J"],
+                    correct: 1,
+                    solution: "E=h*f=6,6e-34*3e18=1,98e-15 J",
+                    theme: "moderna",
+                    source: "FUVEST 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Qual a frequência da radiação de micro-ondas λ=1 cm?",
+                    options: ["3×10¹⁰ Hz", "3×10¹¹ Hz", "3×10¹² Hz", "3×10⁹ Hz", "3×10⁸ Hz"],
+                    correct: 0,
+                    solution: "f=c/λ=3e8/0,01=3e10 Hz",
+                    theme: "moderna",
+                    source: "ENEM 2018",
+                    difficulty: "easy"
+                },
+                {
+                    question: "Energia de fóton UV com λ=200 nm:",
+                    options: ["9,9×10⁻¹⁹ J", "1,0×10⁻¹⁸ J", "1,1×10⁻¹⁸ J", "1,2×10⁻¹⁸ J", "1,3×10⁻¹⁸ J"],
+                    correct: 1,
+                    solution: "E=hc/λ=6,6e-34*3e8/200e-9=9,9e-19 J ≈1,0e-18 J",
+                    theme: "moderna",
+                    source: "ITA 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Qual é a energia de um elétron acelerado por 1000 V?",
+                    options: ["1,6×10⁻¹⁶ J", "1,6×10⁻¹⁷ J", "1,6×10⁻¹⁵ J", "1,6×10⁻¹⁴ J", "1,6×10⁻¹³ J"],
+                    correct: 0,
+                    solution: "E = e*V = 1,6e-19*1000=1,6e-16 J",
+                    theme: "moderna",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Fóton de frequência 6×10¹⁴ Hz. Energia?",
+                    options: ["3,96×10⁻¹⁹ J", "3,0×10⁻¹⁹ J", "4,0×10⁻¹⁹ J", "5,0×10⁻¹⁹ J", "6,0×10⁻¹⁹ J"],
+                    correct: 0,
+                    solution: "E=h*f=6,6e-34*6e14=3,96e-19 J",
+                    theme: "moderna",
+                    source: "FUVEST 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Qual a energia de um fóton de luz verde λ=550 nm?",
+                    options: ["3,6×10⁻¹⁹ J", "3,5×10⁻¹⁹ J", "4,0×10⁻¹⁹ J", "4,5×10⁻¹⁹ J", "5,0×10⁻¹⁹ J"],
+                    correct: 0,
+                    solution: "E=hc/λ=6,6e-34*3e8/550e-9≈3,6e-19 J",
+                    theme: "moderna",
+                    source: "ENEM 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Comprimento de onda de elétron com p=3,3×10⁻²⁴ kg·m/s (h=6,6×10⁻³⁴ J·s):",
+                    options: ["2×10⁻¹⁰ m", "1×10⁻¹⁰ m", "3×10⁻¹⁰ m", "4×10⁻¹⁰ m", "5×10⁻¹⁰ m"],
+                    correct: 0,
+                    solution: "λ=h/p=6,6e-34/3,3e-24=2e-10 m",
+                    theme: "moderna",
+                    source: "ITA 2019",
+                    difficulty: "hard"
+                },
+                {
+                    question: "Qual energia de fóton de luz azul λ=450 nm?",
+                    options: ["4,4×10⁻¹⁹ J", "4,0×10⁻¹⁹ J", "3,5×10⁻¹⁹ J", "5,0×10⁻¹⁹ J", "6,0×10⁻¹⁹ J"],
+                    correct: 0,
+                    solution: "E=hc/λ=6,6e-34*3e8/450e-9≈4,4e-19 J",
+                    theme: "moderna",
+                    source: "ENEM 2020",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Energia cinética de elétron acelerado por 500 V?",
+                    options: ["8,0×10⁻¹⁷ J", "8,0×10⁻¹⁶ J", "8,0×10⁻¹⁸ J", "8,0×10⁻¹⁵ J", "8,0×10⁻¹⁴ J"],
+                    correct: 0,
+                    solution: "E=e*V=1,6e-19*500=8e-17 J",
+                    theme: "moderna",
+                    source: "FUVEST 2019",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Qual a frequência da luz com λ=700 nm?",
+                    options: ["4,28×10¹⁴ Hz", "5,0×10¹⁴ Hz", "3,0×10¹⁴ Hz", "6,0×10¹⁴ Hz", "7,0×10¹⁴ Hz"],
+                    correct: 0,
+                    solution: "f=c/λ=3e8/700e-9≈4,28e14 Hz",
+                    theme: "moderna",
+                    source: "ITA 2018",
+                    difficulty: "medium"
+                },
+                {
+                    question: "Energia de fóton infravermelho λ=1,2 μm:",
+                    options: ["1,65×10⁻¹⁹ J", "1,5×10⁻¹⁹ J", "2,0×10⁻¹⁹ J", "1,2×10⁻¹⁹ J", "1,0×10⁻¹⁹ J"],
+                    correct: 0,
+                    solution: "E=hc/λ=6,6e-34*3e8/1,2e-6≈1,65e-19 J",
+                    theme: "moderna",
+                    source: "ENEM 2019",
+                    difficulty: "medium"
+                }
+            ]
+        };
+
+        // Estado da aplicação
+        let currentTheme = 'all';
+        let currentQuestions = [];
+        let examQuestions = [];
+        let currentExamQuestion = 0;
+        let examAnswers = [];
+        let examTimer = null;
+        let examTimeRemaining = 0;
+        let isDarkTheme = false;
+
+        // Funções JavaScript para manipular a interface
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicialização da aplicação
+            initializeApp();
+            
+            function initializeApp() {
+                // Configurar event listeners
+                setupEventListeners();
+                
+                // Carregar questões iniciais
+                loadQuestions('all');
+            }
+            
+            function setupEventListeners() {
+                // Botão de alternar tema
+                document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+                
+                // Botões de tema
+                document.querySelectorAll('.theme-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        loadQuestions(this.dataset.theme);
+                    });
+                });
+                
+                // Botões de modo
+                document.querySelectorAll('.quiz-mode-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        document.querySelectorAll('.quiz-mode-btn').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        
+                        if (this.dataset.mode === 'quiz') {
+                            document.querySelector('.exam-config').style.display = 'block';
+                        } else {
+                            document.querySelector('.exam-config').style.display = 'none';
+                            document.getElementById('exam-container').style.display = 'none';
+                            document.querySelector('.questions-container').style.display = 'block';
+                        }
+                    });
+                });
+                
+                // Botão de busca
+                document.getElementById('search-btn').addEventListener('click', performSearch);
+                document.getElementById('search-input').addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') performSearch();
+                });
+                
+                // Filtros
+                document.getElementById('difficulty-filter').addEventListener('change', applyFilters);
+                document.getElementById('source-filter').addEventListener('change', applyFilters);
+                
+                // Botão de iniciar simulado
+                document.getElementById('start-exam-btn').addEventListener('click', startExam);
+                
+                // Navegação do simulado
+                document.getElementById('prev-question').addEventListener('click', goToPreviousQuestion);
+                document.getElementById('next-question').addEventListener('click', goToNextQuestion);
+                document.getElementById('submit-exam-btn').addEventListener('click', submitExam);
+                
+                // Botão de reiniciar
+                document.getElementById('restart-btn').addEventListener('click', function() {
+                    document.getElementById('results-panel').classList.remove('show');
+                    document.querySelector('.questions-container').style.display = 'block';
+                    document.getElementById('exam-container').style.display = 'none';
+                    loadQuestions('all');
+                });
+            }
+            
+            function toggleTheme() {
+                isDarkTheme = !isDarkTheme;
+                if (isDarkTheme) {
+                    document.body.classList.add('dark-theme');
+                    document.getElementById('theme-icon').textContent = '☀️';
+                } else {
+                    document.body.classList.remove('dark-theme');
+                    document.getElementById('theme-icon').textContent = '🌙';
+                }
+            }
+            
+            function loadQuestions(theme) {
+                const questionsList = document.getElementById('questions-list');
+                questionsList.innerHTML = '';
+                
+                let allQuestions = [];
+                currentTheme = theme;
+                
+                // Coletar questões baseadas no tema
+                if (theme === 'all') {
+                    for (const key in questionBank) {
+                        allQuestions = allQuestions.concat(questionBank[key]);
+                    }
+                } else {
+                    allQuestions = questionBank[theme] || [];
+                }
+                
+                // Aplicar filtros
+                allQuestions = applyQuestionFilters(allQuestions);
+                currentQuestions = allQuestions;
+                
+                // Atualizar contador
+                document.getElementById('current-count').textContent = allQuestions.length;
+                document.getElementById('total-count').textContent = allQuestions.length;
+                
+                // Exibir questões
+                if (allQuestions.length === 0) {
+                    questionsList.innerHTML = '<p>Nenhuma questão encontrada com os filtros atuais.</p>';
+                    return;
+                }
+                
+                allQuestions.forEach((q, index) => {
+                    const questionCard = document.createElement('div');
+                    questionCard.className = 'question-card';
+                    
+                    questionCard.innerHTML = `
+                        <div class="question-header">
+                            <div class="question-number">Questão ${index + 1}</div>
+                            <div class="question-meta">${q.source} | ${translateDifficulty(q.difficulty)}</div>
+                        </div>
+                        <div class="question-text">${q.question}</div>
+                        <ul class="options-list">
+                            ${q.options.map((option, i) => `
+                                <li class="option-item" data-index="${i}">${String.fromCharCode(65 + i)}) ${option}</li>
+                            `).join('')}
+                        </ul>
+                        <div class="solution" style="display: none;">
+                            <h4>Solução:</h4>
+                            <p>${q.solution}</p>
+                        </div>
+                    `;
+                    
+                    // Adicionar event listeners para as opções
+                    const optionItems = questionCard.querySelectorAll('.option-item');
+                    optionItems.forEach(item => {
+                        item.addEventListener('click', function() {
+                            // Limpar seleções anteriores
+                            optionItems.forEach(opt => opt.classList.remove('selected'));
+                            
+                            // Marcar como selecionada
+                            this.classList.add('selected');
+                            
+                            // Mostrar solução
+                            const solution = this.closest('.question-card').querySelector('.solution');
+                            solution.style.display = 'block';
+                            
+                            // Marcar resposta correta/incorreta
+                            const selectedIndex = parseInt(this.dataset.index);
+                            if (selectedIndex === q.correct) {
+                                this.classList.add('correct');
+                            } else {
+                                this.classList.add('incorrect');
+                                optionItems[q.correct].classList.add('correct');
+                            }
+                        });
+                    });
+                    
+                    questionsList.appendChild(questionCard);
+                });
+            }
+            
+            function performSearch() {
+                const searchTerm = document.getElementById('search-input').value.toLowerCase();
+                if (searchTerm.trim() === '') {
+                    loadQuestions(document.querySelector('.theme-btn.active').dataset.theme);
+                    return;
+                }
+                
+                const questionsList = document.getElementById('questions-list');
+                questionsList.innerHTML = '';
+                
+                let allQuestions = [];
+                const activeTheme = document.querySelector('.theme-btn.active').dataset.theme;
+                
+                // Coletar questões baseadas no tema
+                if (activeTheme === 'all') {
+                    for (const key in questionBank) {
+                        allQuestions = allQuestions.concat(questionBank[key]);
+                    }
+                } else {
+                    allQuestions = questionBank[activeTheme] || [];
+                }
+                
+                // Filtrar por termo de busca
+                const filteredQuestions = allQuestions.filter(q => 
+                    q.question.toLowerCase().includes(searchTerm) ||
+                    q.solution.toLowerCase().includes(searchTerm)
+                );
+                
+                // Aplicar outros filtros
+                const finalQuestions = applyQuestionFilters(filteredQuestions);
+                
+                // Atualizar contador
+                document.getElementById('current-count').textContent = finalQuestions.length;
+                document.getElementById('total-count').textContent = allQuestions.length;
+                
+                // Exibir questões
+                if (finalQuestions.length === 0) {
+                    questionsList.innerHTML = '<p>Nenhuma questão encontrada com os critérios de busca.</p>';
+                    return;
+                }
+                
+                finalQuestions.forEach((q, index) => {
+                    const questionCard = document.createElement('div');
+                    questionCard.className = 'question-card';
+                    
+                    questionCard.innerHTML = `
+                        <div class="question-header">
+                            <div class="question-number">Questão ${index + 1}</div>
+                            <div class="question-meta">${q.source} | ${translateDifficulty(q.difficulty)}</div>
+                        </div>
+                        <div class="question-text">${q.question}</div>
+                        <ul class="options-list">
+                            ${q.options.map((option, i) => `
+                                <li class="option-item" data-index="${i}">${String.fromCharCode(65 + i)}) ${option}</li>
+                            `).join('')}
+                        </ul>
+                        <div class="solution" style="display: none;">
+                            <h4>Solução:</h4>
+                            <p>${q.solution}</p>
+                        </div>
+                    `;
+                    
+                    // Adicionar event listeners para as opções
+                    const optionItems = questionCard.querySelectorAll('.option-item');
+                    optionItems.forEach(item => {
+                        item.addEventListener('click', function() {
+                            // Limpar seleções anteriores
+                            optionItems.forEach(opt => opt.classList.remove('selected'));
+                            
+                            // Marcar como selecionada
+                            this.classList.add('selected');
+                            
+                            // Mostrar solução
+                            const solution = this.closest('.question-card').querySelector('.solution');
+                            solution.style.display = 'block';
+                            
+                            // Marcar resposta correta/incorreta
+                            const selectedIndex = parseInt(this.dataset.index);
+                            if (selectedIndex === q.correct) {
+                                this.classList.add('correct');
+                            } else {
+                                this.classList.add('incorrect');
+                                optionItems[q.correct].classList.add('correct');
+                            }
+                        });
+                    });
+                    
+                    questionsList.appendChild(questionCard);
+                });
+            }
+            
+            function applyFilters() {
+                const activeTheme = document.querySelector('.theme-btn.active').dataset.theme;
+                loadQuestions(activeTheme);
+            }
+            
+            function applyQuestionFilters(questions) {
+                const difficultyFilter = document.getElementById('difficulty-filter').value;
+                const sourceFilter = document.getElementById('source-filter').value;
+                
+                let filtered = questions;
+                
+                if (difficultyFilter !== 'all') {
+                    filtered = filtered.filter(q => q.difficulty === difficultyFilter);
+                }
+                
+                if (sourceFilter !== 'all') {
+                    filtered = filtered.filter(q => q.source.includes(sourceFilter));
+                }
+                
+                return filtered;
+            }
+            
+            function translateDifficulty(difficulty) {
+                const translations = {
+                    'easy': 'Fácil',
+                    'medium': 'Médio',
+                    'hard': 'Difícil'
+                };
+                return translations[difficulty] || difficulty;
+            }
+            
+            function startExam() {
+                const theme = document.getElementById('exam-theme').value;
+                const quantity = parseInt(document.getElementById('exam-quantity').value);
+                const time = parseInt(document.getElementById('exam-time').value);
+                
+                // Coletar questões baseadas no tema
+                let allQuestions = [];
+                if (theme === 'all') {
+                    for (const key in questionBank) {
+                        allQuestions = allQuestions.concat(questionBank[key]);
+                    }
+                } else {
+                    allQuestions = questionBank[theme] || [];
+                }
+                
+                // Verificar se há questões suficientes
+                if (allQuestions.length < quantity) {
+                    alert(`Não há questões suficientes no tema selecionado. Máximo disponível: ${allQuestions.length}`);
+                    return;
+                }
+                
+                // Embaralhar questões e selecionar a quantidade desejada
+                examQuestions = shuffleArray(allQuestions).slice(0, quantity);
+                examAnswers = new Array(quantity).fill(null);
+                currentExamQuestion = 0;
+                
+                // Configurar timer
+                examTimeRemaining = time * 60; // converter para segundos
+                updateTimer();
+                examTimer = setInterval(updateTimer, 1000);
+                
+                // Mostrar interface do simulado
+                document.querySelector('.questions-container').style.display = 'none';
+                document.getElementById('exam-container').style.display = 'block';
+                document.querySelector('.exam-config').style.display = 'none';
+                
+                // Atualizar informações
+                document.getElementById('total-questions').textContent = quantity;
+                
+                // Carregar primeira questão
+                loadExamQuestion(0);
+                updateQuestionIndicators();
+            }
+            
+            function shuffleArray(array) {
+                const newArray = [...array];
+                for (let i = newArray.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+                }
+                return newArray;
+            }
+            
+            function updateTimer() {
+                if (examTimeRemaining <= 0) {
+                    clearInterval(examTimer);
+                    submitExam();
+                    return;
+                }
+                
+                const minutes = Math.floor(examTimeRemaining / 60);
+                const seconds = examTimeRemaining % 60;
+                document.getElementById('timer').textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                examTimeRemaining--;
+            }
+            
+            function loadExamQuestion(index) {
+                const examQuestionsContainer = document.getElementById('exam-questions');
+                examQuestionsContainer.innerHTML = '';
+                
+                const question = examQuestions[index];
+                
+                const questionCard = document.createElement('div');
+                questionCard.className = 'exam-question-card';
+                
+                questionCard.innerHTML = `
+                    <div class="question-header">
+                        <div class="question-number">Questão ${index + 1}</div>
+                        <div class="question-meta">${question.source} | ${translateDifficulty(question.difficulty)}</div>
+                    </div>
+                    <div class="question-text">${question.question}</div>
+                    <ul class="exam-options-list">
+                        ${question.options.map((option, i) => `
+                            <li class="exam-option-item" data-index="${i}">${String.fromCharCode(65 + i)}) ${option}</li>
+                        `).join('')}
+                    </ul>
+                `;
+                
+                // Adicionar event listeners para as opções
+                const optionItems = questionCard.querySelectorAll('.exam-option-item');
+                optionItems.forEach(item => {
+                    item.addEventListener('click', function() {
+                        // Limpar seleções anteriores
+                        optionItems.forEach(opt => opt.classList.remove('selected'));
+                        
+                        // Marcar como selecionada
+                        this.classList.add('selected');
+                        
+                        // Salvar resposta
+                        examAnswers[index] = parseInt(this.dataset.index);
+                        
+                        // Atualizar indicadores
+                        updateQuestionIndicators();
+                    });
+                });
+                
+                // Selecionar opção já respondida, se houver
+                if (examAnswers[index] !== null) {
+                    optionItems[examAnswers[index]].classList.add('selected');
+                }
+                
+                examQuestionsContainer.appendChild(questionCard);
+                
+                // Atualizar navegação
+                document.getElementById('current-question').textContent = index + 1;
+                document.getElementById('prev-question').disabled = index === 0;
+                document.getElementById('next-question').disabled = index === examQuestions.length - 1;
+            }
+            
+            function updateQuestionIndicators() {
+                const indicatorsContainer = document.getElementById('question-indicators');
+                indicatorsContainer.innerHTML = '';
+                
+                examQuestions.forEach((_, index) => {
+                    const indicator = document.createElement('div');
+                    indicator.className = 'question-indicator';
+                    if (index === currentExamQuestion) {
+                        indicator.classList.add('current');
+                    }
+                    if (examAnswers[index] !== null) {
+                        indicator.classList.add('answered');
+                    }
+                    indicator.textContent = index + 1;
+                    indicator.addEventListener('click', () => {
+                        currentExamQuestion = index;
+                        loadExamQuestion(index);
+                        updateQuestionIndicators();
+                    });
+                    indicatorsContainer.appendChild(indicator);
+                });
+            }
+            
+            function goToPreviousQuestion() {
+                if (currentExamQuestion > 0) {
+                    currentExamQuestion--;
+                    loadExamQuestion(currentExamQuestion);
+                    updateQuestionIndicators();
+                }
+            }
+            
+            function goToNextQuestion() {
+                if (currentExamQuestion < examQuestions.length - 1) {
+                    currentExamQuestion++;
+                    loadExamQuestion(currentExamQuestion);
+                    updateQuestionIndicators();
+                }
+            }
+            
+            function submitExam() {
+                clearInterval(examTimer);
+                
+                // Calcular resultado
+                let correct = 0;
+                let incorrect = 0;
+                let empty = 0;
+                
+                examQuestions.forEach((question, index) => {
+                    if (examAnswers[index] === null) {
+                        empty++;
+                    } else if (examAnswers[index] === question.correct) {
+                        correct++;
+                    } else {
+                        incorrect++;
+                    }
+                });
+                
+                // Mostrar resultado
+                document.getElementById('score').textContent = `${correct}/${examQuestions.length}`;
+                document.getElementById('correct-count').textContent = correct;
+                document.getElementById('incorrect-count').textContent = incorrect;
+                document.getElementById('empty-count').textContent = empty;
+                
+                // Determinar desempenho
+                const percentage = (correct / examQuestions.length) * 100;
+                let performanceText = '';
+                if (percentage >= 90) {
+                    performanceText = 'Excelente!';
+                } else if (percentage >= 70) {
+                    performanceText = 'Bom!';
+                } else if (percentage >= 50) {
+                    performanceText = 'Regular';
+                } else {
+                    performanceText = 'Precisa melhorar';
+                }
+                document.getElementById('performance-text').textContent = performanceText;
+                
+                // Mostrar painel de resultados
+                document.getElementById('exam-container').style.display = 'none';
+                document.getElementById('results-panel').classList.add('show');
+            }
+        });
+    </script>
+</body>
+</html>

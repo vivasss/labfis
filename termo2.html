@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2ª Lei da Termodinâmica - Entropia</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #071028;
+            --card: #0f1724;
+            --muted: #94a3b8;
+            --primary: #8a2be2;
+            --accent: #00bfff;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --hot: #ff0080;
+            --cold: #00ffff;
+            color-scheme: dark;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: system-ui, 'Segoe UI', Roboto, Arial;
+            background: linear-gradient(180deg, #071028 0%, #071021 60%);
+            color: #e6eef8;
+            min-height: 100vh;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+
+        header {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        h1 {
+            font-size: 18px;
+            margin: 0;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGlow 3s infinite alternate;
+        }
+
+        .tab-container {
+            display: flex;
+            background: var(--card);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .tab {
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            font-weight: 700;
+            box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
+        }
+
+        .tab::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        .tab.active::after {
+            width: 100%;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 18px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 18px;
+            height: calc(100vh - 134px);
+            padding: 0 18px 18px;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        .simulation-container {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .simulation-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(138, 43, 226, 0.05) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+            pointer-events: none;
+        }
+
+        .simulation-area {
+            height: 400px;
+            background: rgba(10, 10, 30, 0.7);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border: 2px solid rgba(0, 255, 255, 0.5);
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .hot-object, .cold-object {
+            position: absolute;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+            transition: all 0.5s ease;
+            box-shadow: 0 0 30px currentColor;
+            z-index: 20;
+            animation: float 4s infinite alternate;
+        }
+
+        .hot-object {
+            background: radial-gradient(circle, var(--hot), #ff4500);
+            width: clamp(100px, 20vw, 150px);
+            height: clamp(100px, 20vw, 150px);
+            top: 50%;
+            left: 30%;
+            transform: translate(-50%, -50%);
+            border: 2px solid rgba(255, 0, 128, 0.7);
+        }
+
+        .cold-object {
+            background: radial-gradient(circle, var(--cold), #0080ff);
+            width: clamp(100px, 20vw, 150px);
+            height: clamp(100px, 20vw, 150px);
+            top: 50%;
+            left: 70%;
+            transform: translate(-50%, -50%);
+            border: 2px solid rgba(0, 255, 255, 0.7);
+        }
+
+        .heat-flow {
+            position: absolute;
+            top: 50%;
+            left: 30%;
+            width: 40%;
+            height: 6px;
+            background: linear-gradient(90deg, var(--hot), var(--cold));
+            transform: translateY(-50%);
+            border-radius: 3px;
+            box-shadow: 0 0 15px rgba(255, 0, 128, 0.7);
+            z-index: 5;
+        }
+
+        .temperature-flow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .flow-particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--hot);
+            opacity: 0;
+            z-index: 15;
+            animation: flowParticle 2s linear infinite;
+        }
+
+        .arrow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            color: var(--cold);
+            text-shadow: 0 0 10px var(--cold);
+            animation: blink 2s infinite;
+            z-index: 15;
+        }
+
+        .info-panel {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .info-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            border-left: 3px solid var(--primary);
+            position: relative;
+            overflow: hidden;
+            animation: cardSlideIn 0.5s ease-out;
+        }
+
+        .info-card:nth-child(2) {
+            border-left-color: var(--hot);
+            animation-delay: 0.1s;
+        }
+
+        .info-card:nth-child(3) {
+            border-left-color: var(--cold);
+            animation-delay: 0.2s;
+        }
+
+        .info-card:nth-child(4) {
+            border-left-color: var(--success);
+            animation-delay: 0.3s;
+        }
+
+        .info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .info-card:hover::before {
+            left: 100%;
+        }
+
+        .info-card .label {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .info-card .value {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .controls {
+            background: var(--card);
+            padding: 16px;
+            border-radius: 12px;
+            height: 100%;
+            overflow-y: auto;
+            animation: slideInRight 0.6s ease-out;
+        }
+
+        .controls::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .controls::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        .controls::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 3px;
+        }
+
+        .group {
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .group:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .group:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+
+        .group:nth-child(4) {
+            animation-delay: 0.3s;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        button {
+            background: linear-gradient(90deg, var(--primary), #6a0dad);
+            border: 0;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: linear-gradient(90deg, #444, #666);
+        }
+
+        button.secondary:hover {
+            box-shadow: 0 5px 15px rgba(102, 102, 102, 0.4);
+        }
+
+        .muted {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .chart-panel {
+            background: var(--card);
+            border-radius: 10px;
+            padding: 12px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .chart-panel:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .chart-container {
+            height: 240px;
+            width: 100%;
+        }
+
+        .explanation-container {
+            padding: 18px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .explanation-content {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            margin-bottom: 18px;
+        }
+
+        .explanation-content h2 {
+            margin-bottom: 15px;
+            color: var(--accent);
+            font-size: 1.5rem;
+        }
+
+        .explanation-content h3 {
+            margin: 20px 0 10px;
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        .explanation-content p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .explanation-content ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .explanation-content li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .highlight {
+            background: linear-gradient(90deg, transparent, rgba(138, 43, 226, 0.1), transparent);
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .formula {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+            text-align: center;
+            border-left: 3px solid var(--accent);
+        }
+
+        .example {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 3px solid var(--success);
+        }
+
+        .concept-card {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 3px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .concept-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .entropy-meter {
+            width: 100%;
+            height: 30px;
+            background: rgba(20, 20, 30, 0.8);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid rgba(100, 100, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 150, 255, 0.2);
+            position: relative;
+            margin: 10px 0;
+        }
+
+        .entropy-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--hot), var(--cold));
+            border-radius: 15px;
+            transition: width 1s ease;
+            box-shadow: 0 0 10px rgba(255, 0, 128, 0.7);
+        }
+
+        .entropy-value {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .status {
+            text-align: center;
+            font-style: italic;
+            color: var(--accent);
+            text-shadow: 0 0 5px var(--accent);
+            margin: 10px 0;
+        }
+
+        .energy-flow {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(20, 20, 40, 0.7);
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .energy-item {
+            text-align: center;
+        }
+
+        .energy-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent);
+            margin: 10px 0;
+            text-shadow: 0 0 10px rgba(0, 191, 255, 0.5);
+        }
+
+        .energy-label {
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+
+        .arrow {
+            font-size: 2rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            text-shadow: 0 0 10px rgba(138, 43, 226, 0.5);
+        }
+
+        .touch-controls {
+            display: none;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .touch-controls {
+                display: flex;
+            }
+        }
+
+        .touch-btn {
+            padding: 10px 15px;
+            background: var(--primary);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(138, 43, 226, 0.5);
+        }
+
+        .touch-btn:active {
+            transform: scale(0.95);
+        }
+
+        @keyframes moveParticle {
+            0% {
+                transform: translate(0, 0);
+                opacity: 0;
+            }
+            50% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty));
+                opacity: 0;
+            }
+        }
+
+        /* Animações personalizadas */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes canvasAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes cardSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes textGlow {
+            0% {
+                text-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+            }
+            100% {
+                text-shadow: 0 0 15px rgba(0, 191, 255, 0.8), 0 0 20px rgba(138, 43, 226, 0.6);
+            }
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes float {
+            0% { 
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% { 
+                transform: translate(-50%, -55%) scale(1.05);
+            }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes flowParticle {
+            0% {
+                left: 30%;
+                opacity: 0;
+                transform: translateY(-50%) scale(0.5);
+            }
+            10% {
+                opacity: 1;
+                transform: translateY(-50%) scale(1);
+            }
+            90% {
+                opacity: 0.7;
+            }
+            100% {
+                left: 70%;
+                opacity: 0;
+                transform: translateY(-50%) scale(0.5);
+            }
+        }
+
+        /* Botão de ajuda flutuante */
+        .help-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            transition: all 0.3s ease;
+            border: none;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .help-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(138, 43, 226, 0.5);
+        }
+
+        .help-button:active {
+            transform: scale(0.95);
+        }
+
+        /* Painel de ajuda */
+        .help-panel {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 320px;
+            max-height: 70vh;
+            background: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            overflow-y: auto;
+            transform: translateY(20px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .help-panel.active {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .help-panel h2 {
+            margin-bottom: 15px;
+            color: var(--accent);
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .help-panel h3 {
+            margin: 15px 0 8px;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .help-panel p {
+            margin-bottom: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .help-panel ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .help-panel li {
+            margin-bottom: 6px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .help-panel .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 20px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .help-panel .close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        footer {
+            padding: 12px 20px;
+            font-size: 13px;
+            color: var(--muted);
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            animation: fadeIn 1s ease-out;
+        }
+
+        .footer-name {
+            font-weight: bold;
+            color: var(--accent);
+            margin-top: 5px;
+        }
+
+        /* Botões responsivos */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .button-group button {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .control-buttons button {
+            flex: 1;
+            min-width: 100px;
+        }
+
+        /* Responsividade */
+        @media (max-width: 1024px) {
+            main {
+                grid-template-columns: 1fr;
+                height: auto;
+                padding-bottom: 18px;
+            }
+            
+            .simulation-area {
+                height: 420px;
+            }
+            
+            .info-panel {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .help-panel {
+                width: 280px;
+                right: 10px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .info-panel {
+                grid-template-columns: 1fr;
+            }
+            
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .tab-container {
+                width: 100%;
+            }
+            
+            .tab {
+                flex: 1;
+                text-align: center;
+                padding: 12px 8px;
+            }
+            
+            .simulation-container {
+                padding: 8px;
+            }
+            
+            .simulation-area {
+                height: 60vh;
+                min-height: 400px;
+            }
+            
+            .controls {
+                padding: 12px;
+            }
+            
+            button {
+                padding: 12px 16px;
+                font-size: 16px;
+            }
+            
+            .help-button {
+                width: 50px;
+                height: 50px;
+                bottom: 15px;
+                right: 15px;
+                font-size: 20px;
+            }
+            
+            .help-panel {
+                width: calc(100% - 30px);
+                right: 15px;
+                bottom: 75px;
+            }
+            
+            .energy-flow {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .arrow {
+                transform: rotate(90deg);
+            }
+            
+            .button-group, .control-buttons {
+                flex-direction: column;
+            }
+            
+            .button-group button, .control-buttons button {
+                min-width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .simulation-area {
+                height: 50vh;
+                min-height: 350px;
+            }
+            
+            .hot-object, .cold-object {
+                width: 80px;
+                height: 80px;
+                font-size: 0.8rem;
+            }
+            
+            .hot-object {
+                left: 25%;
+            }
+            
+            .cold-object {
+                left: 75%;
+            }
+            
+            .heat-flow {
+                left: 25%;
+                width: 50%;
+            }
+            
+            .button-group, .control-buttons {
+                gap: 8px;
+            }
+            
+            button {
+                padding: 10px 12px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>2ª Lei da Termodinâmica — Entropia</h1>
+        <div class="tab-container">
+            <div class="tab active" data-tab="simulation">Simulação</div>
+            <div class="tab" data-tab="charts">Gráficos</div>
+            <div class="tab" data-tab="explanation">Explicação</div>
+        </div>
+    </header>
+
+    <div class="tab-content active" id="simulation-tab">
+        <main>
+            <div class="simulation-container">
+                <h2 style="margin-bottom: 15px; color: var(--accent);">Transferência de Calor e Entropia</h2>
+                <div class="simulation-area" id="simulation-area">
+                    <div class="hot-object" id="hotObject">
+                        <div>QUENTE</div>
+                        <div>🔥</div>
+                        <div id="hotTemp">100°C</div>
+                    </div>
+                    <div class="cold-object" id="coldObject">
+                        <div>FRIO</div>
+                        <div>❄️</div>
+                        <div id="coldTemp">0°C</div>
+                    </div>
+                    
+                    <div class="heat-flow"></div>
+                    <div class="temperature-flow" id="temperatureFlow"></div>
+                    <div class="arrow">→</div>
+                </div>
+
+                <div class="info-panel">
+                    <div class="info-card">
+                        <div class="label">Temperatura Quente</div>
+                        <div class="value" id="displayHotTemp">100°C</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="label">Temperatura Fria</div>
+                        <div class="value" id="displayColdTemp">0°C</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="label">Diferença de Temperatura</div>
+                        <div class="value" id="tempDiff">100°C</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="label">Estado do Sistema</div>
+                        <div class="value" id="systemState">Ativo</div>
+                    </div>
+                </div>
+
+                <div class="status" id="status">Sistema em processo de equalização térmica...</div>
+                
+                <div class="entropy-meter">
+                    <div class="entropy-bar" id="entropyBar"></div>
+                    <div class="entropy-value" id="entropyValue">0 unidades</div>
+                </div>
+
+                <div class="touch-controls">
+                    <button class="touch-btn" id="increaseHeatBtn">Aumentar Calor</button>
+                    <button class="touch-btn" id="addColdBtn">Adicionar Frio</button>
+                </div>
+
+                <div class="control-buttons">
+                    <button id="startBtn">Iniciar</button>
+                    <button id="pauseBtn" class="secondary">Pausar</button>
+                    <button id="resetBtn" class="secondary">Resetar</button>
+                </div>
+            </div>
+
+            <aside class="controls">
+                <div class="group">
+                    <label><strong>Controles do Sistema</strong></label>
+                </div>
+
+                <div class="group">
+                    <label><strong>Ajuste de Temperatura</strong></label>
+                    <button onclick="increaseHeat()">Aumentar Calor 🔥</button>
+                    <button onclick="decreaseHeat()">Diminuir Calor ❄️</button>
+                    <button onclick="addCold()">Adicionar Frio 🌬️</button>
+                </div>
+
+                <div class="group">
+                    <label><strong>Informações do Sistema</strong></label>
+                    <div class="value-display">Entropia: <span id="entropyDisplay">0</span> unidades</div>
+                    <div class="value-display">Tempo: <span id="timeDisplay">0</span> s</div>
+                </div>
+
+                <div class="energy-flow">
+                    <div class="energy-item">
+                        <div class="energy-label">Corpo Quente</div>
+                        <div class="energy-value" id="hotTempFlow">100°C</div>
+                    </div>
+                    <div class="arrow"><i class="fas fa-arrow-right"></i></div>
+                    <div class="energy-item">
+                        <div class="energy-label">Transferência</div>
+                        <div class="energy-value" id="heatFlow">Ativa</div>
+                    </div>
+                    <div class="arrow"><i class="fas fa-arrow-right"></i></div>
+                    <div class="energy-item">
+                        <div class="energy-label">Corpo Frio</div>
+                        <div class="energy-value" id="coldTempFlow">0°C</div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button id="reset-btn"><i class="fas fa-redo"></i> Reiniciar Sistema</button>
+                    <button id="demo-btn"><i class="fas fa-play"></i> Demo Automático</button>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <div class="tab-content" id="charts-tab">
+        <div class="charts-container" style="padding:12px 18px;">
+            <div class="chart-panel">
+                <h3 style="margin:0 0 8px 0">Temperaturas do Sistema</h3>
+                <div class="chart-container"><canvas id="tempChart"></canvas></div>
+            </div>
+
+            <div class="chart-panel" style="margin-top:10px">
+                <h3 style="margin:0 0 8px 0">Entropia do Sistema</h3>
+                <div class="chart-container"><canvas id="entropyChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="explanation-tab">
+        <div class="explanation-container">
+            <div class="explanation-content">
+                <h2>Como Usar o Simulador</h2>
+                <p>Este simulador permite explorar diferentes aspectos da Segunda Lei da Termodinâmica de forma interativa:</p>
+                
+                <div class="concept-card">
+                    <h3>Transferência de Calor</h3>
+                    <p>Observe como o calor flui espontaneamente do corpo mais quente para o corpo mais frio. Use os controles para ajustar as temperaturas.</p>
+                </div>
+                
+                <div class="concept-card">
+                    <h3>Entropia</h3>
+                    <p>Acompanhe o aumento da entropia (medida de desordem) do sistema ao longo do tempo. Note que mesmo após o equilíbrio térmico, a entropia continua aumentando.</p>
+                </div>
+                
+                <p>Experimente diferentes configurações e observe como o sistema se comporta!</p>
+            </div>
+
+            <div class="explanation-content">
+                <h2>O que é a Segunda Lei da Termodinâmica?</h2>
+                <p>A Segunda Lei da Termodinâmica estabelece que o calor flui espontaneamente de um corpo mais quente para um corpo mais frio, e nunca no sentido contrário, a menos que trabalho seja realizado sobre o sistema.</p>
+                
+                <div class="formula">
+                  ΔS ≥ 0
+                </div>
+                
+                <p>Onde:</p>
+                <ul>
+                  <li><span class="highlight">ΔS</span> = Variação da entropia do sistema</li>
+                  <li><span class="highlight">≥ 0</span> = A entropia de um sistema isolado nunca diminui</li>
+                </ul>
+                
+                <p>Esta lei também nos diz que processos naturais são irreversíveis e que a energia tende a se dispersar, aumentando a desordem do sistema.</p>
+            </div>
+
+            <div class="explanation-content">
+                <h2>Entropia e Desordem</h2>
+                
+                <p>A entropia é uma medida da desordem ou aleatoriedade de um sistema. De acordo com a Segunda Lei:</p>
+                
+                <ul>
+                  <li><span class="highlight">Sistemas isolados</span> tendem naturalmente à desordem máxima</li>
+                  <li><span class="highlight">Processos irreversíveis</span> aumentam a entropia total do universo</li>
+                  <li><span class="highlight">Equilíbrio térmico</span> representa o estado de máxima entropia para o sistema</li>
+                </ul>
+                
+                <div class="example">
+                    <h3>Exemplo Prático</h3>
+                    <p>Quando uma xícara de café quente é deixada em uma sala, ela esfria até atingir a temperatura ambiente. O calor flui do café (mais quente) para o ambiente (mais frio), aumentando a entropia total do sistema.</p>
+                </div>
+            </div>
+
+            <div class="explanation-content">
+                <h2>Implicações da Segunda Lei</h2>
+                
+                <div class="processes" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 20px;">
+                    <div class="concept-card">
+                        <h3>Máquinas Térmicas</h3>
+                        <p>Nenhuma máquina térmica pode ser 100% eficiente - sempre há perda de energia na forma de calor dissipado.</p>
+                    </div>
+                    <div class="concept-card">
+                        <h3>Setas do Tempo</h3>
+                        <p>A Segunda Lei define a direção do tempo - processos naturais evoluem no sentido de aumentar a entropia.</p>
+                    </div>
+                    <div class="concept-card">
+                        <h3>Limitações Energéticas</h3>
+                        <p>Existe um limite para a quantidade de trabalho útil que pode ser extraído de qualquer sistema energético.</p>
+                    </div>
+                    <div class="concept-card">
+                        <h3>Estado de Equilíbrio</h3>
+                        <p>Sistemas isolados evoluem naturalmente para um estado de equilíbrio onde a entropia é máxima.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botão de ajuda flutuante -->
+    <button class="help-button" id="helpButton">?</button>
+
+    <!-- Painel de ajuda -->
+    <div class="help-panel" id="helpPanel">
+        <button class="close-btn" id="closeHelp">&times;</button>
+        <h2>💡 Como Usar o Simulador</h2>
+        
+        <h3>Controles Interativos</h3>
+        <p>Você pode interagir diretamente com o sistema:</p>
+        <ul>
+            <li><strong>Ajuste as temperaturas</strong> usando os botões de controle</li>
+            <li><strong>Observe o fluxo de calor</strong> do corpo quente para o corpo frio</li>
+            <li><strong>Monitore a entropia</strong> que sempre aumenta com o tempo</li>
+        </ul>
+        
+        <h3>Segunda Lei da Termodinâmica</h3>
+        <p><strong>Princípio fundamental:</strong> O calor flui espontaneamente do corpo mais quente para o mais frio, aumentando a entropia do sistema.</p>
+        
+        <h3>Parâmetros Ajustáveis</h3>
+        <ul>
+            <li><strong>Temperatura Quente:</strong> Controla a temperatura do corpo quente</li>
+            <li><strong>Temperatura Fria:</strong> Controla a temperatura do corpo frio</li>
+            <li><strong>Entropia:</strong> Mede a desordem do sistema, que sempre aumenta</li>
+        </ul>
+        
+        <h3>Fórmula Importante</h3>
+        <div class="formula">ΔS ≥ 0</div>
+        <p>Segunda Lei da Termodinâmica, onde ΔS é a variação de entropia, que é sempre maior ou igual a zero para sistemas isolados.</p>
+        
+        <p style="margin-top: 15px; font-style: italic; text-align: center;">
+            Explore diferentes configurações e observe como o calor flui e a entropia aumenta!
+        </p>
+    </div>
+
+    <footer>
+        Simulador da Segunda Lei da Termodinâmica — HTML5 & Canvas & Chart.js
+        <div class="footer-name">Josué Jr</div>
+    </footer>
+
+    <script>
+        // Variáveis da simulação
+        let hotTemperature = 100;
+        let coldTemperature = 0;
+        let entropy = 0;
+        let simulationRunning = true;
+        let equilibriumCounter = 0;
+        let timeCounter = 0;
+        let isDemoRunning = false;
+        let demoInterval;
+        
+        // Chart data buffers
+        const chartData = { time: [], hotTemp: [], coldTemp: [], entropy: [] };
+        const maxDataPoints = 200;
+        let chartTime = 0;
+        
+        // Charts variables
+        let tempChart, entropyChart;
+
+        // Tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const id = tab.getAttribute('data-tab');
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(id + '-tab').classList.add('active');
+                
+                // Animate content when switching to explanation tab
+                if (id === 'explanation') {
+                    document.querySelectorAll('.explanation-content').forEach((content, index) => {
+                        content.style.animation = `slideUp 0.6s ease-out ${index * 0.1}s both`;
+                    });
+                }
+            });
+        });
+
+        // Help panel functionality
+        document.getElementById('helpButton').addEventListener('click', () => {
+            document.getElementById('helpPanel').classList.toggle('active');
+        });
+
+        document.getElementById('closeHelp').addEventListener('click', () => {
+            document.getElementById('helpPanel').classList.remove('active');
+        });
+
+        // Close help panel when clicking outside
+        document.addEventListener('click', (e) => {
+            const helpPanel = document.getElementById('helpPanel');
+            const helpButton = document.getElementById('helpButton');
+            if (!helpPanel.contains(e.target) && e.target !== helpButton) {
+                helpPanel.classList.remove('active');
+            }
+        });
+
+        // Charts initialization
+        function initCharts() {
+            const tempCtx = document.getElementById('tempChart').getContext('2d');
+            tempChart = new Chart(tempCtx, {
+                type: 'line',
+                data: {
+                    labels: chartData.time,
+                    datasets: [
+                        { label: 'Temperatura Quente (°C)', data: chartData.hotTemp, borderColor: '#ff0080', backgroundColor: 'transparent', tension: .3 },
+                        { label: 'Temperatura Fria (°C)', data: chartData.coldTemp, borderColor: '#00ffff', backgroundColor: 'transparent', tension: .3 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { color: '#cbd5e1' }, title: { display: true, text: 'Tempo (s)', color: '#9ca3af' } },
+                        y: { ticks: { color: '#cbd5e1' }, title: { display: true, text: 'Temperatura (°C)', color: '#9ca3af' } }
+                    },
+                    plugins: { legend: { labels: { color: '#e6eef8' } } }
+                }
+            });
+
+            const entropyCtx = document.getElementById('entropyChart').getContext('2d');
+            entropyChart = new Chart(entropyCtx, {
+                type: 'line',
+                data: {
+                    labels: chartData.time,
+                    datasets: [
+                        { label: 'Entropia (unidades)', data: chartData.entropy, borderColor: '#8a2be2', backgroundColor: 'transparent', tension: .3 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { color: '#cbd5e1' }, title: { display: true, text: 'Tempo (s)', color: '#9ca3af' } },
+                        y: { ticks: { color: '#cbd5e1' }, title: { display: true, text: 'Entropia', color: '#9ca3af' } }
+                    },
+                    plugins: { legend: { labels: { color: '#e6eef8' } } }
+                }
+            });
+        }
+
+        // Criar partículas de fluxo de temperatura
+        function createTemperatureFlow() {
+            const container = document.getElementById('temperatureFlow');
+            container.innerHTML = '';
+            
+            const diff = hotTemperature - coldTemperature;
+            const particleCount = Math.min(30, Math.floor(diff / 5));
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('flow-particle');
+                
+                // Posição vertical aleatória
+                const topOffset = (Math.random() * 60 - 30);
+                particle.style.top = `calc(50% + ${topOffset}px)`;
+                
+                // Cor baseada na temperatura
+                const colorValue = Math.floor(255 * (coldTemperature / 100));
+                particle.style.backgroundColor = `rgb(255, ${colorValue}, ${colorValue})`;
+                
+                // Animação com atraso aleatório
+                const delay = Math.random() * 2;
+                const duration = 2 + Math.random() * 2;
+                particle.style.animation = `flowParticle ${duration}s linear ${delay}s infinite`;
+                
+                container.appendChild(particle);
+            }
+        }
+        
+        function updateTemperatures() {
+            document.getElementById('hotTemp').textContent = `${Math.round(hotTemperature)}°C`;
+            document.getElementById('coldTemp').textContent = `${Math.round(coldTemperature)}°C`;
+            document.getElementById('displayHotTemp').textContent = `${Math.round(hotTemperature)}°C`;
+            document.getElementById('displayColdTemp').textContent = `${Math.round(coldTemperature)}°C`;
+            document.getElementById('tempDiff').textContent = `${Math.round(hotTemperature - coldTemperature)}°C`;
+            document.getElementById('hotTempFlow').textContent = `${Math.round(hotTemperature)}°C`;
+            document.getElementById('coldTempFlow').textContent = `${Math.round(coldTemperature)}°C`;
+            
+            // Atualizar tamanhos dos objetos baseado na temperatura
+            const hotObject = document.getElementById('hotObject');
+            const coldObject = document.getElementById('coldObject');
+            
+            const baseSize = window.innerWidth < 480 ? 80 : (window.innerWidth < 768 ? 90 : 120);
+            const hotSize = baseSize + (hotTemperature / 5);
+            const coldSize = baseSize + ((100 - coldTemperature) / 10);
+            
+            hotObject.style.width = `${hotSize}px`;
+            hotObject.style.height = `${hotSize}px`;
+            coldObject.style.width = `${coldSize}px`;
+            coldObject.style.height = `${coldSize}px`;
+            
+            // Atualizar status
+            const status = document.getElementById('status');
+            const systemState = document.getElementById('systemState');
+            const heatFlow = document.getElementById('heatFlow');
+            const diff = Math.abs(hotTemperature - coldTemperature);
+            
+            if (diff < 1) {
+                status.textContent = "Sistema em EQUILÍBRIO TÉRMICO! (Entropia continua aumentando)";
+                systemState.textContent = "Equilíbrio";
+                heatFlow.textContent = "Mínima";
+                equilibriumCounter++;
+            } else if (diff < 10) {
+                status.textContent = "Sistema quase em equilíbrio térmico...";
+                systemState.textContent = "Quase Equilíbrio";
+                heatFlow.textContent = "Baixa";
+                equilibriumCounter = 0;
+            } else if (diff < 30) {
+                status.textContent = "Sistema em processo de equalização térmica...";
+                systemState.textContent = "Equalizando";
+                heatFlow.textContent = "Média";
+                equilibriumCounter = 0;
+            } else {
+                status.textContent = "Transferência de calor ativa - equalização em andamento...";
+                systemState.textContent = "Ativo";
+                heatFlow.textContent = "Alta";
+                equilibriumCounter = 0;
+            }
+            
+            // Atualizar fluxo de temperatura
+            createTemperatureFlow();
+        }
+        
+        function updateEntropy() {
+            // A entropia SEMPRE aumenta com o tempo, mesmo após o equilíbrio térmico
+            // Baseado na Segunda Lei da Termodinâmica
+            
+            // Fatores que contribuem para o aumento da entropia:
+            // 1. Diferença de temperatura (maior diferença = maior aumento)
+            const diff = Math.abs(hotTemperature - coldTemperature);
+            const diffFactor = diff * 0.001;
+            
+            // 2. Tempo (a entropia sempre aumenta com o tempo)
+            timeCounter += 0.1;
+            const timeFactor = 0.01 + (timeCounter * 0.0001);
+            
+            // 3. Flutuações térmicas (mesmo no equilíbrio)
+            const fluctuationFactor = 0.005;
+            
+            // Cálculo total do aumento de entropia
+            entropy += diffFactor + timeFactor + fluctuationFactor;
+            
+            // Atualizar a barra de entropia (módulo 100 para visualização)
+            const entropyBar = document.getElementById('entropyBar');
+            const entropyValue = document.getElementById('entropyValue');
+            const entropyDisplay = document.getElementById('entropyDisplay');
+            const timeDisplay = document.getElementById('timeDisplay');
+            const displayEntropy = entropy % 100;
+            
+            entropyBar.style.width = `${displayEntropy}%`;
+            entropyValue.textContent = `${Math.floor(entropy)} unidades`;
+            entropyDisplay.textContent = Math.floor(entropy);
+            timeDisplay.textContent = Math.floor(timeCounter);
+            
+            // Muda a cor da barra conforme a entropia aumenta
+            if (displayEntropy < 30) {
+                entropyBar.style.background = 'linear-gradient(90deg, var(--hot), var(--cold))';
+            } else if (displayEntropy < 70) {
+                entropyBar.style.background = 'linear-gradient(90deg, var(--warning), var(--hot))';
+            } else {
+                entropyBar.style.background = 'linear-gradient(90deg, var(--warning), var(--primary))';
+            }
+        }
+        
+        function equalizeTemperatures() {
+            if (!simulationRunning) return;
+            
+            // Calcular a taxa de transferência de calor (proporcional à diferença de temperatura)
+            const diff = hotTemperature - coldTemperature;
+            const transferRate = diff * 0.01;
+            
+            // Aplicar a transferência de calor
+            if (diff > 0.1) {
+                hotTemperature -= transferRate;
+                coldTemperature += transferRate;
+            }
+            
+            updateTemperatures();
+            updateEntropy();
+        }
+        
+        function increaseHeat() {
+            hotTemperature += 20;
+            if (hotTemperature > 200) hotTemperature = 200;
+            updateTemperatures();
+        }
+        
+        function decreaseHeat() {
+            hotTemperature -= 20;
+            if (hotTemperature < coldTemperature) hotTemperature = coldTemperature + 1;
+            updateTemperatures();
+        }
+        
+        function addCold() {
+            coldTemperature -= 20;
+            if (coldTemperature < 0) coldTemperature = 0;
+            updateTemperatures();
+        }
+        
+        function resetSimulation() {
+            hotTemperature = 100;
+            coldTemperature = 0;
+            entropy = 0;
+            equilibriumCounter = 0;
+            timeCounter = 0;
+            
+            const entropyBar = document.getElementById('entropyBar');
+            entropyBar.style.width = '0%';
+            entropyBar.style.background = 'linear-gradient(90deg, var(--hot), var(--cold))';
+            
+            const entropyValue = document.getElementById('entropyValue');
+            entropyValue.textContent = '0 unidades';
+            
+            updateTemperatures();
+            
+            // Parar demo se estiver rodando
+            if (isDemoRunning) {
+                clearInterval(demoInterval);
+                isDemoRunning = false;
+                document.getElementById('demo-btn').innerHTML = '<i class="fas fa-play"></i> Demo Automático';
+            }
+            
+            // Limpar gráficos
+            clearChartBuffers();
+        }
+        
+        // Limpar buffers de gráficos
+        function clearChartBuffers() {
+            chartData.time.length = 0;
+            chartData.hotTemp.length = 0;
+            chartData.coldTemp.length = 0;
+            chartData.entropy.length = 0;
+            chartTime = 0;
+            
+            if (tempChart) tempChart.update();
+            if (entropyChart) entropyChart.update();
+        }
+        
+        // Atualizar buffers de gráficos
+        function pushChartData() {
+            if (chartData.time.length >= maxDataPoints) {
+                chartData.time.shift();
+                chartData.hotTemp.shift();
+                chartData.coldTemp.shift();
+                chartData.entropy.shift();
+            }
+            
+            chartData.time.push(chartTime.toFixed(2));
+            chartData.hotTemp.push(hotTemperature);
+            chartData.coldTemp.push(coldTemperature);
+            chartData.entropy.push(entropy);
+            
+            if (tempChart) tempChart.update();
+            if (entropyChart) entropyChart.update();
+        }
+        
+        // Alternar demo automático
+        function toggleDemo() {
+            if (isDemoRunning) {
+                clearInterval(demoInterval);
+                isDemoRunning = false;
+                document.getElementById('demo-btn').innerHTML = '<i class="fas fa-play"></i> Demo Automático';
+            } else {
+                isDemoRunning = true;
+                document.getElementById('demo-btn').innerHTML = '<i class="fas fa-stop"></i> Parar Demo';
+                
+                let demoStep = 0;
+                demoInterval = setInterval(function() {
+                    // Ciclo de demonstração
+                    if (demoStep < 50) {
+                        // Aumentar temperatura quente
+                        increaseHeat();
+                    } else if (demoStep < 100) {
+                        // Diminuir temperatura quente
+                        decreaseHeat();
+                    } else if (demoStep < 150) {
+                        // Adicionar frio
+                        addCold();
+                    } else {
+                        demoStep = -1; // Reiniciar ciclo
+                    }
+                    
+                    demoStep++;
+                    chartTime += 0.1;
+                    pushChartData();
+                }, 100);
+            }
+        }
+        
+        // Configurar event listeners
+        function setupEventListeners() {
+            // Botões de controle
+            document.getElementById('increaseHeatBtn').addEventListener('click', increaseHeat);
+            document.getElementById('addColdBtn').addEventListener('click', addCold);
+            
+            document.getElementById('startBtn').addEventListener('click', function() {
+                simulationRunning = true;
+            });
+            
+            document.getElementById('pauseBtn').addEventListener('click', function() {
+                simulationRunning = false;
+            });
+            
+            document.getElementById('resetBtn').addEventListener('click', resetSimulation);
+            document.getElementById('reset-btn').addEventListener('click', resetSimulation);
+            document.getElementById('demo-btn').addEventListener('click', toggleDemo);
+        }
+        
+        // Inicializar a simulação
+        function initSimulation() {
+            initCharts();
+            setupEventListeners();
+            updateTemperatures();
+            
+            // Executar a equalização a cada 100ms
+            setInterval(equalizeTemperatures, 100);
+            
+            // Atualizar fluxo de temperatura periodicamente
+            setInterval(createTemperatureFlow, 3000);
+            
+            // Iniciar loop de atualização do gráfico
+            setInterval(function() {
+                if (!isDemoRunning) {
+                    chartTime += 0.1;
+                    pushChartData();
+                }
+            }, 1000);
+            
+            // Ajustar layout em redimensionamento
+            window.addEventListener('resize', updateTemperatures);
+        }
+        
+        // Inicializar a simulação quando a página carregar
+        window.addEventListener('load', initSimulation);
+    </script>
+</body>
+</html>
