@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
   <title>Simulador de Quarks & Glúons — Josué JR</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -828,6 +828,7 @@
           <select id="mode">
             <option value="demo">Demo (Trio de Quarks)</option>
             <option value="free">Múons Livres</option>
+            <option value="hadron">Hádron (Confinamento)</option>
           </select>
         </div>
 
@@ -845,6 +846,13 @@
               <label class="small">Elasticidade</label>
               <input id="eRange" type="range" min="0" max="100" value="85">
               <span id="elasticityDisplay">0,85</span>
+            </div>
+          </div>
+          <div class="row">
+            <div style="flex:1">
+              <label class="small">Força Forte</label>
+              <input id="strongForceRange" type="range" min="0" max="100" value="70">
+              <span id="strongForceDisplay">0,70</span>
             </div>
           </div>
         </div>
@@ -904,6 +912,7 @@
           <ul>
             <li><strong>Demo (Trio):</strong> Três quarks conectados por molas, simulando um próton</li>
             <li><strong>Múons Livres:</strong> Múltiplos múons que interagem com quarks</li>
+            <li><strong>Hádron:</strong> Simulação do confinamento de quarks em um hádron</li>
           </ul>
         </div>
         
@@ -934,7 +943,7 @@
         <h2>Princípios da Cromodinâmica Quântica</h2>
         
         <div class="formula">
-          F = k × (r - r₀)
+          F = k × (r - r₀) + α/r²
         </div>
         
         <p>Onde:</p>
@@ -943,6 +952,7 @@
           <li><span class="highlight">k</span> é a constante de confinamento</li>
           <li><span class="highlight">r</span> é a distância atual entre quarks</li>
           <li><span class="highlight">r₀</span> é a distância de equilíbrio</li>
+          <li><span class="highlight">α</span> é a constante de acoplamento forte</li>
         </ul>
         
         <p>Esta fórmula representa a força restauradora que mantém os quarks confinados. À medida que a distância aumenta, a força torna-se mais forte, impedindo que os quarks se separem.</p>
@@ -983,7 +993,7 @@
       <li><strong>Clique em qualquer lugar:</strong> Cria um novo múon</li>
       <li><strong>Arraste um múon:</strong> Move o múon para onde quiser</li>
       <li><strong>Clique em um quark:</strong> Força a emissão de um glúon</li>
-      <li><strong>Os quarks estão fixos:</strong> Eles não podem ser movidos</li>
+      <li><strong>Os quarks são fixos:</strong> Eles não podem ser movidos</li>
     </ul>
     
     <h3>Modos de Simulação</h3>
@@ -991,6 +1001,7 @@
     <ul>
       <li><strong>Demo (Trio):</strong> Três quarks conectados simulando um próton</li>
       <li><strong>Múons Livres:</strong> Múltiplos múons interagindo</li>
+      <li><strong>Hádron:</strong> Simulação do confinamento de quarks</li>
     </ul>
     
     <h3>Parâmetros Físicos</h3>
@@ -998,6 +1009,7 @@
     <ul>
       <li><strong>Confinamento:</strong> Controla a força que mantém quarks unidos</li>
       <li><strong>Elasticidade:</strong> Define como as partículas ricocheteiam nas bordas</li>
+      <li><strong>Força Forte:</strong> Intensidade da interação entre quarks</li>
       <li><strong>Múons Livres:</strong> Quando ativado, múons se movem livremente</li>
     </ul>
     
@@ -1030,6 +1042,7 @@
     const mode = document.getElementById('mode');
     const kRange = document.getElementById('kRange');
     const eRange = document.getElementById('eRange');
+    const strongForceRange = document.getElementById('strongForceRange');
     const showTrails = document.getElementById('showTrails');
     const showSprings = document.getElementById('showSprings');
     const showLabels = document.getElementById('showLabels');
@@ -1051,6 +1064,7 @@
     const interactionsCount = document.getElementById('interactionsCount');
     const confinementDisplay = document.getElementById('confinementDisplay');
     const elasticityDisplay = document.getElementById('elasticityDisplay');
+    const strongForceDisplay = document.getElementById('strongForceDisplay');
     const simulationSpeedDisplay = document.getElementById('simulationSpeedDisplay');
 
     // Help elements
@@ -1068,6 +1082,7 @@
     let params = {
       k: 0.45,
       e: 0.85,
+      strongForce: 0.7,
       simulationSpeed: 5,
       showTrails: true,
       showSprings: true,
@@ -1081,6 +1096,7 @@
     const FIXED_MS = 16;
     const SUBSTEPS = 6;
     const GLUON_DELAY_MS = 400;
+    const STRONG_FORCE_CONSTANT = 0.5; // Constante para a força forte
 
     // Particle system
     let particles = [], springs = [], gluons = [];
@@ -1090,7 +1106,8 @@
     // Resize canvas properly for high-dpi
     function resizeCanvas(){
       const ratio = devicePixelRatio || 1;
-      const cssW = window.innerWidth;
+      const container = canvas.parentElement;
+      const cssW = container.clientWidth;
       const cssH = Math.max(200, window.innerHeight - 140);
       
       canvas.style.width = cssW + 'px';
@@ -1248,6 +1265,7 @@
       // Update parameters from controls
       params.k = parseInt(kRange.value) / 100;
       params.e = parseInt(eRange.value) / 100;
+      params.strongForce = parseInt(strongForceRange.value) / 100;
       params.simulationSpeed = parseInt(simulationSpeed.value);
       params.showTrails = showTrails.checked;
       params.showSprings = showSprings.checked;
@@ -1259,6 +1277,7 @@
       // Update display values
       confinementDisplay.textContent = params.k.toFixed(2);
       elasticityDisplay.textContent = params.e.toFixed(2);
+      strongForceDisplay.textContent = params.strongForce.toFixed(2);
       
       // Update simulation speed display
       const speedLabels = ['Muito Lento', 'Lento', 'Normal', 'Rápido', 'Muito Rápido'];
@@ -1270,7 +1289,7 @@
 
     // Attach input listeners
     [
-      mode, kRange, eRange, showTrails, showSprings, showLabels, showGrid, 
+      mode, kRange, eRange, strongForceRange, showTrails, showSprings, showLabels, showGrid, 
       simulationSpeed, freeMuons, autoGluon, touchHintToggle
     ].forEach(el => el.addEventListener('input', () => { 
       updateParams(); 
@@ -1302,8 +1321,15 @@
         this.clickRadius = opts.clickRadius || this.r + 15;
         this.dragging = false;
         this.creationAnimation = 0;
+        // Propriedades para quarks
+        this.colorCharge = opts.colorCharge || 0; // Carga de cor (0, 1, 2 para R, G, B)
+        this.colorChargeStr = ['R', 'G', 'B'][this.colorCharge] || '';
       }
-      applyForce(fx,fy){ if(this.fixed || this.dragging) return; this.vx += fx/this.mass; this.vy += fy/this.mass; }
+      applyForce(fx,fy){ 
+        if(this.fixed || this.dragging) return; 
+        this.vx += fx/this.mass; 
+        this.vy += fy/this.mass; 
+      }
       
       updateEntrance(now) {
         if (this.entranceProgress < 1) {
@@ -1346,6 +1372,23 @@
         ctx.strokeStyle = this.color.replace(')', ', 0.3)').replace('rgb', 'rgba');
         ctx.lineWidth = 2;
         ctx.stroke();
+      }
+      
+      // Troca de cor quando recebe um glúon
+      receiveGluon(gluon) {
+        if (this.type === 'quark') {
+          // Troca a carga de cor
+          this.colorCharge = (this.colorCharge + 1) % 3;
+          this.colorChargeStr = ['R', 'G', 'B'][this.colorCharge];
+          
+          // Atualiza a cor visual
+          const colors = ['#ff4d4d', '#6bff7a', '#6fb8ff'];
+          this.color = colors[this.colorCharge];
+          
+          // Efeito visual
+          this.energyHighlight = Math.min(1, this.energyHighlight + 0.4);
+          this.pulseEffect = 1;
+        }
       }
     }
 
@@ -1424,7 +1467,7 @@
     }
 
     function createTrio(cx,cy){
-      const cols = [{label:'u',color:'#ff4d4d'},{label:'d',color:'#6bff7a'},{label:'s',color:'#6fb8ff'}];
+      const cols = [{label:'u',color:'#ff4d4d',colorCharge:0},{label:'d',color:'#6bff7a',colorCharge:1},{label:'s',color:'#6fb8ff',colorCharge:2}];
       const R = Math.min(35, canvas.width * 0.08, canvas.height * 0.08);
       const created = [];
       
@@ -1432,17 +1475,18 @@
         const a = Math.PI*2*i/3;
         const x = cx + Math.cos(a)*R;
         const y = cy + Math.sin(a)*R;
-        // Quarks agora são fixos e têm área de clique maior
+        // Quarks sempre fixos
         const q = new Particle(x,y,{
           r:10,
           mass:1.4,
           color:cols[i].color,
           type:'quark',
           label:cols[i].label,
-          fixed: true, // Quarks fixos
-          clickRadius: 25 // Área de clique maior
+          fixed: true, // Quarks sempre fixos
+          clickRadius: 25, // Área de clique maior
+          colorCharge: cols[i].colorCharge
         });
-        // Removemos a velocidade inicial
+        // Sem velocidade inicial para quarks
         q.vx = 0;
         q.vy = 0;
         created.push(q); 
@@ -1455,6 +1499,49 @@
       // Conectar todos os quarks com molas
       for(let i=0;i<3;i++){
         for(let j=i+1;j<3;j++){
+          springs.push({a:created[i],b:created[j],rest:rest,k:kVal});
+        }
+      }
+    }
+
+    function createHadron(cx,cy){
+      // Criação de um hádron com confinamento mais realista
+      const numQuarks = 3;
+      const R = Math.min(40, canvas.width * 0.1, canvas.height * 0.1);
+      const created = [];
+      
+      for(let i=0;i<numQuarks;i++){
+        const a = Math.PI*2*i/numQuarks;
+        const x = cx + Math.cos(a)*R;
+        const y = cy + Math.sin(a)*R;
+        const colors = ['#ff4d4d', '#6bff7a', '#6fb8ff'];
+        const labels = ['u', 'd', 's'];
+        
+        const q = new Particle(x,y,{
+          r:10,
+          mass:1.4,
+          color:colors[i],
+          type:'quark',
+          label:labels[i],
+          fixed: true, // Quarks sempre fixos
+          clickRadius: 25,
+          colorCharge: i
+        });
+        
+        // Sem velocidade inicial para quarks
+        q.vx = 0;
+        q.vy = 0;
+        
+        created.push(q); 
+        particles.push(q);
+      }
+      
+      // Conectar todos os quarks com molas mais fortes
+      const rest = Math.round(Math.sqrt(3) * R * 0.6);
+      const kVal = Math.max(0.1, params.k * 1.5); // Confinamento mais forte
+      
+      for(let i=0;i<numQuarks;i++){
+        for(let j=i+1;j<numQuarks;j++){
           springs.push({a:created[i],b:created[j],rest:rest,k:kVal});
         }
       }
@@ -1473,8 +1560,11 @@
       if(mode.value === 'demo'){ 
         createTrio(cx,cy); 
       }
+      else if(mode.value === 'hadron') {
+        createHadron(cx,cy);
+      }
       else { // Múons livres
-        // No modo livre, os quarks também são fixos
+        // No modo livre, os quarks também são sempre fixos
         const numQuarks = 5;
         const spacing = canvas.width / (numQuarks + 2);
         for(let i=0;i<numQuarks;i++){ 
@@ -1486,10 +1576,13 @@
             color:'#6fb8ff',
             type:'quark',
             label:'s',
-            fixed: true, // Quarks fixos
-            clickRadius: 20 // Área de clique maior
+            fixed: true, // Quarks sempre fixos
+            clickRadius: 20,
+            colorCharge: i % 3
           });
-          q.vx = 0; // Sem velocidade
+          // Sem velocidade inicial para quarks
+          q.vx = 0;
+          q.vy = 0;
           particles.push(q); 
         } 
       }
@@ -1524,11 +1617,12 @@
     function emitGluon(emitter){
       const quarks = particles.filter(p => p.type === 'quark' && p !== emitter);
       if(quarks.length === 0) return;
+      
+      // Escolher um alvo aleatório
       const target = quarks[Math.floor(Math.random()*quarks.length)];
+      
+      // Criar glúon
       const g = new Gluon(emitter.x, emitter.y, target, {from:emitter.color,to:target.color}, emitter);
-      const dx = target.x - emitter.x, dy = target.y - emitter.y;
-      const dist = safeHypot(dx,dy);
-      const nx = dx/dist, ny = dy/dist;
       gluons.push(g);
       interactionCounter++;
     }
@@ -1642,6 +1736,37 @@
       if(p.y + p.r > h){ p.y = h - p.r; p.vy = -Math.abs(p.vy) * e; }
     }
 
+    // Função para calcular a força forte entre quarks
+    function calculateStrongForce(p1, p2) {
+      const dx = p2.x - p1.x;
+      const dy = p2.y - p1.y;
+      const dist = safeHypot(dx, dy);
+      
+      // Força forte: aumenta com a distância (confinamento)
+      // F = k * (r - r0) + α/r^2
+      const k = params.k * 10; // Constante de confinamento
+      const alpha = STRONG_FORCE_CONSTANT * params.strongForce; // Constante de acoplamento forte
+      const r0 = 30; // Distância de equilíbrio
+      
+      // Componente linear (confina os quarks)
+      const linearForce = k * (dist - r0);
+      
+      // Componente inverso do quadrado (força de Coulomb-like)
+      const coulombForce = alpha / (dist * dist);
+      
+      // Força total
+      const totalForce = linearForce + coulombForce;
+      
+      // Direção da força
+      const nx = dx / dist;
+      const ny = dy / dist;
+      
+      return {
+        fx: totalForce * nx,
+        fy: totalForce * ny
+      };
+    }
+
     function physicsStep(dt, now){
       const globalDamping = 0.992;
       const maxVel = 50;
@@ -1659,7 +1784,7 @@
       }
       for(const g of gluons) g.addToTrail();
 
-      // Springs - apenas para partículas não fixas
+      // Springs - apenas para partículas não fixas (só múons)
       for(const s of springs){
         // Se ambos os quarks são fixos, não aplicamos força
         if (s.a.fixed && s.b.fixed) continue;
@@ -1681,6 +1806,21 @@
         const fdx = -damp * proj * nx, fdy = -damp * proj * ny;
         if (!s.a.fixed && !s.a.dragging) s.a.applyForce(fdx, fdy);
         if (!s.b.fixed && !s.b.dragging) s.b.applyForce(-fdx, -fdy);
+      }
+
+      // Força forte entre quarks (apenas visual, não move os quarks)
+      for(let i=0;i<particles.length;i++){
+        for(let j=i+1;j<particles.length;j++){
+          const a = particles[i], b = particles[j];
+          
+          // Aplicar força forte apenas entre quarks (apenas para efeitos visuais)
+          if (a.type === 'quark' && b.type === 'quark') {
+            const force = calculateStrongForce(a, b);
+            
+            // Não aplicamos força nos quarks fixos, apenas calculamos para efeitos visuais
+            // Os quarks permanecem parados
+          }
+        }
       }
 
       // Pairwise interactions
@@ -1739,7 +1879,7 @@
         }
       }
 
-      // Integrate - apenas partículas não fixas e não sendo arrastadas
+      // Integrate - apenas partículas não fixas (só múons) e não sendo arrastadas
       for(const p of particles){
         if(!p.fixed && !p.dragging){
           p.vx = Math.max(-maxVel, Math.min(maxVel, p.vx));
@@ -1760,15 +1900,12 @@
         if(!g.alive){
           const emitter = g.emitter, target = g.target;
           if(emitter && target && emitter.type === 'quark' && target.type === 'quark'){
-            const tmp = emitter.color;
-            emitter.color = target.color;
-            target.color = tmp;
-            const dx = target.x - emitter.x, dy = target.y - emitter.y;
-            const d = safeHypot(dx,dy) || 0.0001; const nx = dx/d, ny = dy/d;
+            // O quark alvo recebe o glúon e troca de cor
+            target.receiveGluon(g);
+            
+            // Efeito visual no emissor
             emitter.energyHighlight = Math.min(1, emitter.energyHighlight + 0.4);
-            target.energyHighlight = Math.min(1, target.energyHighlight + 0.6);
             emitter.pulseEffect = 1;
-            target.pulseEffect = 1;
           }
           gluons.splice(i,1);
         }
@@ -1785,7 +1922,7 @@
         });
       }
 
-      // Bounds - apenas para partículas não fixas e não sendo arrastadas
+      // Bounds - apenas para partículas não fixas (só múons) e não sendo arrastadas
       for(const p of particles) {
         if (!p.fixed && !p.dragging) {
           worldBounds(p);
@@ -1940,6 +2077,17 @@
             ctx.stroke();
             ctx.setLineDash([]);
           }
+          
+          // Indicador visual para quarks fixos
+          if (p.type === 'quark' && p.fixed) {
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([2, 3]);
+            ctx.arc(p.x, p.y, currentRadius + 5, 0, Math.PI*2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
         }
         
         // Draw label
@@ -1949,6 +2097,15 @@
           ctx.textAlign = 'center'; 
           ctx.textBaseline = 'middle';
           ctx.fillText(p.label, p.x, p.y);
+        }
+        
+        // Draw color charge for quarks
+        if(p.type === 'quark' && p.entranceProgress > 0.7 && params.showLabels && p.creationAnimation >= 1){
+          ctx.font = '10px system-ui,Segoe UI,Roboto,Arial';
+          ctx.fillStyle = '#ffffff'; 
+          ctx.textAlign = 'center'; 
+          ctx.textBaseline = 'bottom';
+          ctx.fillText(p.colorChargeStr, p.x, p.y - p.r - 5);
         }
       }
 
