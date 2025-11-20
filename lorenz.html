@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fator de Lorentz — Interativo com objeto</title>
+<style>
+  :root {
+    --bg: #071028;
+    --card: #0f1724;
+    --muted: #94a3b8;
+    --primary: #8a2be2;
+    --accent: #00bfff;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --text: #e6eef8;
+    color-scheme: dark;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    transition: all 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: system-ui, 'Segoe UI', Roboto, Arial;
+    background: linear-gradient(180deg, #071028 0%, #071021 60%);
+    color: #e6eef8;
+    min-height: 100vh;
+    overflow-x: hidden;
+    touch-action: manipulation;
+    padding-bottom: 20px;
+  }
+
+  header {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    animation: fadeIn 0.8s ease-out;
+  }
+
+  h1 {
+    font-size: 18px;
+    margin: 0;
+    background: linear-gradient(to right, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: textGlow 3s infinite alternate;
+  }
+
+  .tab-container {
+    display: flex;
+    background: var(--card);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 10px 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .tab {
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .tab:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+  }
+
+  .tab.active {
+    background: var(--primary);
+    font-weight: 700;
+    box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
+  }
+
+  .tab::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 3px;
+    background: var(--accent);
+    transition: width 0.3s ease;
+  }
+
+  .tab.active::after {
+    width: 100%;
+  }
+
+  .tab-content {
+    display: none;
+    padding: 18px;
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  main {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 18px;
+    height: calc(100vh - 134px);
+    padding: 0 18px 18px;
+    animation: slideUp 0.6s ease-out;
+  }
+
+  .simulation-container {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  .simulation-container::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(138, 43, 226, 0.05) 0%, transparent 70%);
+    animation: rotate 20s linear infinite;
+    pointer-events: none;
+  }
+
+  .canvas-container {
+    width: 100%;
+    height: 300px;
+    border-radius: 8px;
+    background: transparent;
+    display: block;
+    animation: canvasAppear 1s ease-out;
+    touch-action: none;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #plot {
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    display: block;
+  }
+
+  .info-panel {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .info-card {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    border-left: 3px solid var(--primary);
+    position: relative;
+    overflow: hidden;
+    animation: cardSlideIn 0.5s ease-out;
+  }
+
+  .info-card:nth-child(2) {
+    border-left-color: var(--accent);
+    animation-delay: 0.1s;
+  }
+
+  .info-card:nth-child(3) {
+    border-left-color: var(--success);
+    animation-delay: 0.2s;
+  }
+
+  .info-card:nth-child(4) {
+    border-left-color: var(--warning);
+    animation-delay: 0.3s;
+  }
+
+  .info-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s ease;
+  }
+
+  .info-card:hover::before {
+    left: 100%;
+  }
+
+  .info-card .label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .info-card .value {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .controls {
+    background: var(--card);
+    padding: 16px;
+    border-radius: 12px;
+    height: 100%;
+    overflow-y: auto;
+    animation: slideInRight 0.6s ease-out;
+  }
+
+  .controls::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .controls::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+
+  .controls::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 3px;
+  }
+
+  .group {
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  .group:nth-child(2) {
+    animation-delay: 0.1s;
+  }
+
+  .group:nth-child(3) {
+    animation-delay: 0.2s;
+  }
+
+  .group:nth-child(4) {
+    animation-delay: 0.3s;
+  }
+
+  label {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  input[type='range'] {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    outline: none;
+    -webkit-appearance: none;
+  }
+
+  input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--primary);
+    cursor: pointer;
+    box-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+    transition: all 0.2s ease;
+  }
+
+  input[type='range']::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 10px rgba(138, 43, 226, 0.8);
+  }
+
+  input[type='number'],
+  input[type='text'],
+  select {
+    width: 100%;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.02);
+    color: inherit;
+    margin-bottom: 8px;
+    transition: all 0.3s ease;
+  }
+
+  input[type='number']:focus,
+  input[type='text']:focus,
+  select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2);
+  }
+
+  .row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  button {
+    background: linear-gradient(90deg, var(--primary), #6a0dad);
+    border: 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+  }
+
+  button:active {
+    transform: translateY(0);
+  }
+
+  button.secondary {
+    background: linear-gradient(90deg, #444, #666);
+  }
+
+  button.secondary:hover {
+    box-shadow: 0 5px 15px rgba(102, 102, 102, 0.4);
+  }
+
+  .danger {
+    background: linear-gradient(90deg, #b91c1c, #dc2626);
+  }
+
+  .danger:hover {
+    box-shadow: 0 5px 15px rgba(220, 38, 38, 0.4);
+  }
+
+  .muted {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .charts-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .chart-panel {
+    background: var(--card);
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 0.6s ease-out;
+  }
+
+  .chart-panel:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .chart-container {
+    height: 240px;
+    width: 100%;
+  }
+
+  .explanation-container {
+    padding: 18px;
+    animation: fadeIn 0.8s ease-out;
+  }
+
+  .explanation-content {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    margin-bottom: 18px;
+  }
+
+  .explanation-content h2 {
+    margin-bottom: 15px;
+    color: var(--accent);
+    font-size: 1.5rem;
+  }
+
+  .explanation-content h3 {
+    margin: 20px 0 10px;
+    color: var(--primary);
+    font-size: 1.2rem;
+  }
+
+  .explanation-content p {
+    margin-bottom: 15px;
+    line-height: 1.6;
+  }
+
+  .explanation-content ul {
+    margin-left: 20px;
+    margin-bottom: 15px;
+  }
+
+  .explanation-content li {
+    margin-bottom: 8px;
+    line-height: 1.5;
+  }
+
+  .highlight {
+    background: linear-gradient(90deg, transparent, rgba(138, 43, 226, 0.1), transparent);
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+
+  .formula {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 12px;
+    border-radius: 8px;
+    margin: 15px 0;
+    font-family: monospace;
+    text-align: center;
+    border-left: 3px solid var(--accent);
+  }
+
+  .example {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    border-left: 3px solid var(--success);
+  }
+
+  .concept-card {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    border-left: 3px solid var(--primary);
+    transition: all 0.3s ease;
+  }
+
+  .concept-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  }
+
+  .touch-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.7);
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    max-width: 80%;
+    z-index: 5;
+    animation: pulse 2s infinite;
+  }
+
+  /* Botão de ajuda flutuante */
+  .help-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    transition: all 0.3s ease;
+    border: none;
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+  }
+
+  .help-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(138, 43, 226, 0.5);
+  }
+
+  .help-button:active {
+    transform: scale(0.95);
+  }
+
+  /* Painel de ajuda */
+  .help-panel {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 320px;
+    max-height: 70vh;
+    background: var(--card);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    overflow-y: auto;
+    transform: translateY(20px);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+  }
+
+  .help-panel.active {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .help-panel h2 {
+    margin-bottom: 15px;
+    color: var(--accent);
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .help-panel h3 {
+    margin: 15px 0 8px;
+    color: var(--primary);
+    font-size: 1.1rem;
+  }
+
+  .help-panel p {
+    margin-bottom: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .help-panel ul {
+    margin-left: 20px;
+    margin-bottom: 15px;
+  }
+
+  .help-panel li {
+    margin-bottom: 6px;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .help-panel .close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 20px;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+  }
+
+  .help-panel .close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+  }
+
+  footer {
+    padding: 12px 20px;
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    animation: fadeIn 1s ease-out;
+  }
+
+  /* Animações personalizadas */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes canvasAppear {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes cardSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes textGlow {
+    0% {
+      text-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+    }
+    100% {
+      text-shadow: 0 0 15px rgba(0, 191, 255, 0.8), 0 0 20px rgba(138, 43, 226, 0.6);
+    }
+  }
+
+  @keyframes rotate {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes pulse {
+    0% {
+      opacity: 0.7;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0.7;
+    }
+  }
+
+  /* Estilos específicos para o simulador do Fator de Lorentz */
+  .object-scene {
+    width: 100%;
+    height: 300px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  #objectCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .legend {
+    display: flex;
+    gap: 12px;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+
+  .hint {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 6px;
+  }
+
+  .btns {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .metric {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    border-radius: 8px;
+    border-left: 3px solid var(--primary);
+  }
+
+  .metric .val {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-top: 6px;
+    color: var(--accent);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .field {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.02);
+  }
+
+  .title {
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+  }
+
+  /* Responsividade */
+  @media (max-width: 1024px) {
+    main {
+      grid-template-columns: 1fr;
+      height: auto;
+      padding-bottom: 18px;
+    }
+    
+    .canvas-container {
+      height: 300px;
+    }
+    
+    .info-panel {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .help-panel {
+      width: 280px;
+      right: 10px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .info-panel {
+      grid-template-columns: 1fr;
+    }
+    
+    header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .tab-container {
+      width: 100%;
+    }
+    
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 12px 8px;
+    }
+    
+    .simulation-container {
+      padding: 8px;
+    }
+    
+    .canvas-container {
+      height: 300px;
+    }
+    
+    .object-scene {
+      height: 250px;
+    }
+    
+    .controls {
+      padding: 12px;
+    }
+    
+    button {
+      padding: 12px 16px;
+      font-size: 16px;
+    }
+    
+    .help-button {
+      width: 50px;
+      height: 50px;
+      bottom: 15px;
+      right: 15px;
+      font-size: 20px;
+    }
+    
+    .help-panel {
+      width: calc(100% - 30px);
+      right: 15px;
+      bottom: 75px;
+    }
+    
+    .metrics {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .canvas-container {
+      height: 250px;
+    }
+    
+    .object-scene {
+      height: 200px;
+    }
+    
+    .touch-hint {
+      font-size: 14px;
+      padding: 12px;
+    }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Fator de Lorentz γ — com objeto contraindo/dilatando</h1>
+    <div class="tab-container">
+      <div class="tab active" data-tab="simulation">Simulação</div>
+      <div class="tab" data-tab="explanation">Explicação</div>
+    </div>
+  </header>
+
+  <div class="tab-content active" id="simulation-tab">
+    <main>
+      <div class="simulation-container">
+        <div class="canvas-container">
+          <canvas id="plot"></canvas>
+          <div class="hint">Toque e arraste para explorar diferentes valores de β</div>
+        </div>
+        
+        <div class="object-scene">
+          <canvas id="objectCanvas"></canvas>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-card">
+            <div class="label">Fator de Lorentz γ</div>
+            <div class="value" id="gOut">1.000000</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Velocidade</div>
+            <div class="value" id="vOut">0.500 c</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Tempo dilatado (s)</div>
+            <div class="value" id="tOut">1.000</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Comprimento observado (m)</div>
+            <div class="value" id="LOut">2.000</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; display:flex; gap:10px;">
+          <button id="reset" class="danger">Resetar</button>
+          <button id="copy">Copiar estado</button>
+        </div>
+      </div>
+
+      <aside class="controls">
+        <div class="group">
+          <label><strong>Parâmetros de Velocidade</strong></label>
+          <div class="field">
+            <label>β = v / c</label>
+            <input id="betaNum" type="number" min="0" max="0.999999" step="0.001" value="0.500">
+            <input id="betaRange" type="range" min="0" max="0.999" step="0.001" value="0.500">
+            <div class="muted">β deve estar em [0,1). Valores próximos de 1 aumentam γ bruscamente.</div>
+          </div>
+
+          <div class="field">
+            <label>Velocidade v (m/s)</label>
+            <input id="vText" type="text" placeholder="Ex.: 1.0e8">
+            <div class="btns">
+              <button id="setHalf" class="secondary">v = 0.5 c</button>
+              <button id="setNine" class="secondary">v = 0.9 c</button>
+              <button id="clearV" class="danger">Limpar v</button>
+            </div>
+            <div class="muted">Preencha v para calcular β automaticamente (c = 299 792 458 m/s).</div>
+          </div>
+        </div>
+
+        <div class="group">
+          <label><strong>Parâmetros do Sistema</strong></label>
+          <div class="grid">
+            <div class="field">
+              <label>Tempo próprio t₀ (s)</label>
+              <input id="t0" type="number" min="0" step="0.001" value="1.000">
+            </div>
+            <div class="field">
+              <label>Comprimento próprio L₀ (m)</label>
+              <input id="L0" type="number" min="0" step="0.001" value="2.000">
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <label><strong>Visualização</strong></label>
+          <div class="field">
+            <label><input id="showGrid" type="checkbox" checked> Mostrar grade</label>
+            <label><input id="animate" type="checkbox" checked> Animar movimento</label>
+          </div>
+          
+          <div class="muted" style="margin-top:12px">Visualização com tamanho fixo</div>
+          <div class="muted">O objeto tem comprimento próprio fixo de 100px</div>
+          <div class="legend">
+            <span><span style="display:inline-block;width:12px;height:12px;background:#34d1ea;margin-right:6px;border-radius:2px"></span> L₀ (próprio)</span>
+            <span><span style="display:inline-block;width:12px;height:12px;background:#a78bfa;margin-right:6px;border-radius:2px"></span> L observado</span>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div class="tab-content" id="explanation-tab">
+    <div class="explanation-container">
+      <div class="explanation-content">
+        <h2>O que é o Fator de Lorentz?</h2>
+        <p>O Fator de Lorentz (γ) é um conceito fundamental na teoria da relatividade especial de Einstein. Ele descreve como o tempo, o comprimento e a massa mudam para um objeto em movimento relativo a um observador.</p>
+        
+        <div class="concept-card">
+          <h3>Fórmula do Fator de Lorentz</h3>
+          <div class="formula">γ = 1 / √(1 - v²/c²)</div>
+          <p>Onde:</p>
+          <ul>
+            <li><span class="highlight">γ</span> é o Fator de Lorentz</li>
+            <li><span class="highlight">v</span> é a velocidade do objeto</li>
+            <li><span class="highlight">c</span> é a velocidade da luz no vácuo (299 792 458 m/s)</li>
+          </ul>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Dilatação do Tempo</h3>
+          <p>O tempo medido em um referencial em movimento passa mais devagar do que em um referencial em repouso:</p>
+          <div class="formula">t = γ · t₀</div>
+          <p>Onde t₀ é o tempo próprio (medido no referencial em repouso) e t é o tempo medido pelo observador.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Contração do Comprimento</h3>
+          <p>O comprimento de um objeto em movimento na direção de seu movimento parece mais curto para um observador em repouso:</p>
+          <div class="formula">L = L₀ / γ</div>
+          <p>Onde L₀ é o comprimento próprio (medido no referencial em repouso) e L é o comprimento observado.</p>
+        </div>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Como Usar o Simulador</h2>
+        <p>Este simulador permite explorar visualmente os efeitos da relatividade especial:</p>
+        
+        <div class="concept-card">
+          <h3>Controles de Velocidade</h3>
+          <p>Ajuste a velocidade usando:</p>
+          <ul>
+            <li>O campo numérico β (v/c)</li>
+            <li>O controle deslizante</li>
+            <li>O campo de velocidade v (em m/s)</li>
+            <li>Os botões de velocidade predefinida (0.5c e 0.9c)</li>
+          </ul>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Visualização</h3>
+          <p>Observe como:</p>
+          <ul>
+            <li>O objeto (representado pelos retângulos) se contrai à medida que a velocidade aumenta</li>
+            <li>O gráfico mostra como γ varia com β</li>
+            <li>Os valores de tempo e comprimento se modificam</li>
+          </ul>
+        </div>
+        
+        <p>Experimente diferentes velocidades e observe os efeitos extremos quando β se aproxima de 1!</p>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Exemplos Práticos</h2>
+        
+        <div class="example">
+          <h3>Velocidades Baixas</h3>
+          <p>Para velocidades do dia a dia, como um carro a 100 km/h (27.8 m/s):</p>
+          <p>β = 27.8 / 299792458 ≈ 9.26×10⁻⁸</p>
+          <p>γ ≈ 1 + 4.29×10⁻¹⁵ (praticamente 1)</p>
+          <p>Nestas velocidades, os efeitos relativísticos são imperceptíveis.</p>
+        </div>
+        
+        <div class="example">
+          <h3>Velocidades Altas</h3>
+          <p>Para partículas no LHC (Large Hadron Collider) a 0.999999991 c:</p>
+          <p>β = 0.999999991</p>
+          <p>γ ≈ 7450</p>
+          <p>Nestas velocidades, o tempo para as partículas passa 7450 vezes mais devagar, e seu comprimento na direção do movimento é reduzido pelo mesmo fator.</p>
+        </div>
+        
+        <div class="example">
+          <h3>Viagem Interestelar</h3>
+          <p>Se uma nave viajasse a 0.99c para uma estrela a 100 anos-luz de distância:</p>
+          <p>γ ≈ 7.09</p>
+          <p>Para os tripulantes, a viagem duraria apenas 100/7.09 ≈ 14.1 anos, devido à dilatação temporal.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botão de ajuda flutuante -->
+  <button class="help-button" id="helpButton">?</button>
+
+  <!-- Painel de ajuda -->
+  <div class="help-panel" id="helpPanel">
+    <button class="close-btn" id="closeHelp">&times;</button>
+    <h2>💡 Como Usar o Simulador</h2>
+    
+    <h3>Controles de Velocidade</h3>
+    <p>Você pode ajustar a velocidade de várias formas:</p>
+    <ul>
+      <li><strong>Campo β:</strong> Digite diretamente o valor de β (v/c)</li>
+      <li><strong>Controle deslizante:</strong> Arraste para ajustar β visualmente</li>
+      <li><strong>Campo v:</strong> Digite a velocidade em m/s</li>
+      <li><strong>Botões:</strong> Use os botões para velocidades predefinidas</li>
+    </ul>
+    
+    <h3>Visualização</h3>
+    <p>O simulador mostra dois elementos principais:</p>
+    <ul>
+      <li><strong>Gráfico:</strong> Mostra como γ varia com β</li>
+      <li><strong>Cena do objeto:</strong> Mostra a contração do comprimento</li>
+    </ul>
+    
+    <h3>Efeitos Relativísticos</h3>
+    <p>Observe como mudam:</p>
+    <ul>
+      <li><strong>Fator de Lorentz (γ):</strong> Aumenta rapidamente quando β se aproxima de 1</li>
+      <li><strong>Tempo dilatado:</strong> t = γ · t₀</li>
+      <li><strong>Comprimento contraído:</strong> L = L₀ / γ</li>
+    </ul>
+    
+    <h3>Fórmula Principal</h3>
+    <div class="formula">γ = 1 / √(1 - v²/c²)</div>
+    <p>Fator de Lorentz, onde v é a velocidade e c é a velocidade da luz.</p>
+    
+    <p style="margin-top: 15px; font-style: italic; text-align: center;">
+      Explore diferentes velocidades e observe os efeitos extremos da relatividade!
+    </p>
+  </div>
+
+  <footer>Simulador do Fator de Lorentz — Relatividade Especial</footer>
+
+<script>
+  const C = 299792458;
+  const betaNum = document.getElementById('betaNum');
+  const betaRange = document.getElementById('betaRange');
+  const vText = document.getElementById('vText');
+  const setHalf = document.getElementById('setHalf');
+  const setNine = document.getElementById('setNine');
+  const clearV = document.getElementById('clearV');
+  const t0 = document.getElementById('t0');
+  const L0 = document.getElementById('L0');
+  const reset = document.getElementById('reset');
+  const copy = document.getElementById('copy');
+  const gOut = document.getElementById('gOut');
+  const tOut = document.getElementById('tOut');
+  const LOut = document.getElementById('LOut');
+  const vOut = document.getElementById('vOut');
+  const showGrid = document.getElementById('showGrid');
+  const animate = document.getElementById('animate');
+
+  const objectCanvas = document.getElementById('objectCanvas');
+  const objCtx = objectCanvas.getContext('2d');
+
+  const plotCanvas = document.getElementById('plot');
+  const pctx = plotCanvas.getContext('2d');
+
+  // Tamanho fixo do bloco em pixels
+  const BLOCK_SIZE = 100;
+  
+  function clamp(b){ if (!isFinite(b)||isNaN(b)) return 0; if (b<0) return 0; if (b>=0.999999) return 0.999999; return b; }
+  function gamma(b){ const s = 1 - b*b; if (s<=0) return Infinity; return 1/Math.sqrt(s); }
+  function fmt(x,d=6){ if (!isFinite(x)) return '∞'; const a=Math.abs(x); if (a===0) return '0'; if (a>=1e4||a<1e-3) return x.toExponential(4); return x.toFixed(d); }
+
+  function updateAllFromBeta(b){
+    const bb = clamp(b);
+    betaNum.value = bb.toFixed(3);
+    betaRange.value = bb.toFixed(3);
+    const g = gamma(bb);
+    const v = bb * C;
+    const t0v = parseFloat(t0.value) || 0;
+    const L0v = parseFloat(L0.value) || 0;
+    gOut.textContent = fmt(g,6);
+    tOut.textContent = fmt(g * t0v,3);
+    LOut.textContent = fmt(L0v / g,3);
+    vOut.textContent = `v = ${bb.toFixed(3)} c = ${fmt(v,3)} m/s`;
+    drawPlot(bb,g);
+    drawObjectScene(bb,g);
+  }
+
+  function syncFromV(){
+    const s = (vText.value||'').trim();
+    if (!s) return;
+    let val = Number(s);
+    if (!isFinite(val)||isNaN(val)) return;
+    if (val<0) val = 0;
+    const b = val / C;
+    updateAllFromBeta(b);
+  }
+
+  betaNum.addEventListener('input',()=> updateAllFromBeta(parseFloat(betaNum.value)||0));
+  betaRange.addEventListener('input',()=> updateAllFromBeta(parseFloat(betaRange.value)||0));
+  vText.addEventListener('change', syncFromV);
+  vText.addEventListener('keyup', e=> { if (e.key==='Enter') syncFromV(); });
+  setHalf.addEventListener('click',()=> { updateAllFromBeta(0.5); vText.value = (0.5*C).toExponential(6); });
+  setNine.addEventListener('click',()=> { updateAllFromBeta(0.9); vText.value = (0.9*C).toExponential(6); });
+  clearV.addEventListener('click',()=> { vText.value = ''; });
+  t0.addEventListener('input', ()=> updateAllFromBeta(parseFloat(betaNum.value)||0));
+  L0.addEventListener('input', ()=> updateAllFromBeta(parseFloat(betaNum.value)||0));
+
+  reset.addEventListener('click',()=>{
+    betaNum.value = '0.500';
+    betaRange.value = '0.500';
+    vText.value = '';
+    t0.value = '1.000';
+    L0.value = '2.000';
+    updateAllFromBeta(0.5);
+  });
+
+  copy.addEventListener('click', async ()=>{
+    const state = { beta: parseFloat(betaNum.value), vText: vText.value, t0: parseFloat(t0.value), L0: parseFloat(L0.value) };
+    try { 
+      await navigator.clipboard.writeText(JSON.stringify(state,null,2)); 
+      copy.textContent = 'Copiado!'; 
+      setTimeout(()=>copy.textContent='Copiar estado',1200); 
+    } catch { 
+      copy.textContent='Falha'; 
+      setTimeout(()=>copy.textContent='Copiar estado',1200); 
+    }
+  });
+
+  // Tabs functionality
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const id = tab.getAttribute('data-tab');
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(id + '-tab').classList.add('active');
+      
+      // Animate content when switching to explanation tab
+      if (id === 'explanation') {
+        document.querySelectorAll('.explanation-content').forEach((content, index) => {
+          content.style.animation = `slideUp 0.6s ease-out ${index * 0.1}s both`;
+        });
+      }
+      
+      // Redesenhar os gráficos quando mudar de aba
+      setTimeout(() => {
+        resizePlot();
+        resizeScene();
+        const b = parseFloat(betaNum.value)||0;
+        const g = gamma(b);
+        drawPlot(b,g);
+        drawObjectScene(b,g);
+      }, 100);
+    });
+  });
+
+  // Help panel functionality
+  const helpButton = document.getElementById('helpButton');
+  const helpPanel = document.getElementById('helpPanel');
+  const closeHelp = document.getElementById('closeHelp');
+
+  helpButton.addEventListener('click', () => {
+    helpPanel.classList.toggle('active');
+  });
+
+  closeHelp.addEventListener('click', () => {
+    helpPanel.classList.remove('active');
+  });
+
+  // Close help panel when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!helpPanel.contains(e.target) && e.target !== helpButton) {
+      helpPanel.classList.remove('active');
+    }
+  });
+
+  // Funções de redimensionamento corrigidas
+  function resizePlot(){
+    const container = document.querySelector('.canvas-container');
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    
+    // Definir tamanhos fixos para o canvas
+    plotCanvas.width = Math.round(w * (devicePixelRatio || 1));
+    plotCanvas.height = Math.round(h * (devicePixelRatio || 1));
+    plotCanvas.style.width = w + 'px';
+    plotCanvas.style.height = h + 'px';
+    
+    // Aplicar transformação para alta resolução
+    pctx.setTransform(devicePixelRatio || 1, 0, 0, devicePixelRatio || 1, 0, 0);
+    
+    // Redesenhar o gráfico após redimensionamento
+    const b = parseFloat(betaNum.value)||0;
+    const g = gamma(b);
+    drawPlot(b,g);
+  }
+
+  function drawPlot(bCurrent,gCurrent){
+    const w = plotCanvas.width / (devicePixelRatio || 1);
+    const h = plotCanvas.height / (devicePixelRatio || 1);
+    
+    pctx.clearRect(0,0,w,h);
+    const pad = 36;
+    const x0 = pad, x1 = w - pad, y0 = h - pad, y1 = pad;
+    const plotW = x1 - x0, plotH = y0 - y1;
+    let gMax = Math.max(10, Math.min(100, Math.ceil(Math.max( gCurrent, 10))));
+    const mapX = b => x0 + (b/1) * plotW;
+    const mapY = g => y0 - ((g - 1) / (gMax - 1)) * plotH;
+    pctx.strokeStyle = '#19313b'; pctx.lineWidth = 1;
+    for (let i=0;i<=10;i++){ const xx = x0 + i*plotW/10; pctx.beginPath(); pctx.moveTo(xx,y0); pctx.lineTo(xx,y1); pctx.stroke(); }
+    for (let i=0;i<=10;i++){ const yy = y0 - i*plotH/10; pctx.beginPath(); pctx.moveTo(x0,yy); pctx.lineTo(x1,yy); pctx.stroke(); }
+    pctx.strokeStyle = '#34d1ea'; pctx.lineWidth = 2; pctx.beginPath();
+    const steps = 800;
+    for (let i=0;i<=steps;i++){ 
+      const beta = i/steps*0.9999; 
+      const gi = gamma(beta); 
+      const xx = mapX(beta); 
+      const yy = mapY(Math.min(gi,gMax)); 
+      if (i===0) pctx.moveTo(xx,yy); 
+      else pctx.lineTo(xx,yy); 
+    }
+    pctx.stroke();
+    const cx = mapX(bCurrent), cy = mapY(Math.min(gCurrent,gMax));
+    pctx.fillStyle = '#a78bfa'; pctx.beginPath(); pctx.arc(cx,cy,4,0,2*Math.PI); pctx.fill();
+    pctx.fillStyle = '#cbd5e1'; pctx.font = '12px system-ui'; pctx.textAlign='left'; 
+    pctx.fillText(`β=${bCurrent.toFixed(3)} γ=${fmt(gCurrent,3)}`,cx+8,cy-8);
+  }
+
+  function resizeScene(){
+    const container = document.querySelector('.object-scene');
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    
+    // Definir tamanhos fixos para o canvas
+    objectCanvas.width = Math.round(w * (devicePixelRatio || 1));
+    objectCanvas.height = Math.round(h * (devicePixelRatio || 1));
+    objectCanvas.style.width = w + 'px';
+    objectCanvas.style.height = h + 'px';
+    
+    // Aplicar transformação para alta resolução
+    objCtx.setTransform(devicePixelRatio || 1, 0, 0, devicePixelRatio || 1, 0, 0);
+    
+    // Redesenhar a cena após redimensionamento
+    const b = parseFloat(betaNum.value)||0;
+    const g = gamma(b);
+    drawObjectScene(b,g);
+  }
+
+  let lastTime = 0;
+  let animX = 0;
+  function drawObjectScene(b,g){
+    const w = objectCanvas.width / (devicePixelRatio || 1);
+    const h = objectCanvas.height / (devicePixelRatio || 1);
+    
+    objCtx.clearRect(0,0,w,h);
+    if (showGrid.checked){
+      objCtx.strokeStyle = 'rgba(255,255,255,0.03)'; objCtx.lineWidth = 1;
+      for (let x=0;x<=w;x+=20){ objCtx.beginPath(); objCtx.moveTo(x,0); objCtx.lineTo(x,h); objCtx.stroke(); }
+      for (let y=0;y<=h;y+=20){ objCtx.beginPath(); objCtx.moveTo(0,y); objCtx.lineTo(w,y); objCtx.stroke(); }
+    }
+    
+    // Tamanho fixo do bloco - sempre 100px para L₀
+    const L0px = BLOCK_SIZE;
+    // O comprimento observado é proporcional ao fator de Lorentz
+    const Lpx = Math.max(4, L0px / g);
+    
+    const centerY = h/2;
+    const baseX = w*0.08;
+    const travelW = w - baseX - 20;
+    
+    if (animate.checked){
+      const t = performance.now() / 1000;
+      animX = (Math.sin(t*0.6)+1)/2;
+    } else {
+      animX = 0.5;
+    }
+    
+    const objX = baseX + animX * travelW;
+    const objY = centerY;
+    
+    // draw proper length (outline, semi-transparent)
+    objCtx.fillStyle = 'rgba(52,209,234,0.08)';
+    objCtx.strokeStyle = 'rgba(52,209,234,0.5)';
+    objCtx.lineWidth = 2;
+    objCtx.fillRect(objX - L0px/2, objY - 22, L0px, 44);
+    objCtx.strokeRect(objX - L0px/2, objY - 22, L0px, 44);
+    
+    // draw observed length (solid)
+    objCtx.fillStyle = 'rgba(167,139,250,0.95)';
+    objCtx.strokeStyle = 'rgba(167,139,250,0.95)';
+    objCtx.lineWidth = 2;
+    objCtx.fillRect(objX - Lpx/2, objY - 12, Lpx, 24);
+    objCtx.strokeRect(objX - Lpx/2, objY - 12, Lpx, 24);
+    
+    // labels
+    objCtx.fillStyle = '#cbd5e1';
+    objCtx.font = '12px system-ui';
+    objCtx.textAlign = 'center';
+    objCtx.fillText(`L₀ = ${BLOCK_SIZE} px (comprimento próprio)`, objX, objY - 30);
+    objCtx.fillText(`L = ${Number.isFinite(Lpx)?Lpx.toFixed(0):'∞'} px (observado)`, objX, objY + 40);
+    
+    // velocity arrow
+    const arrowLen = 40;
+    objCtx.strokeStyle = '#9ae6ff';
+    objCtx.lineWidth = 2;
+    objCtx.beginPath();
+    objCtx.moveTo(objX - (arrowLen/2), objY + 60);
+    objCtx.lineTo(objX + (arrowLen/2), objY + 60);
+    objCtx.stroke();
+    objCtx.beginPath();
+    objCtx.moveTo(objX + (arrowLen/2), objY + 60);
+    objCtx.lineTo(objX + (arrowLen/2) - 6, objY + 60 - 6);
+    objCtx.lineTo(objX + (arrowLen/2) - 6, objY + 60 + 6);
+    objCtx.closePath();
+    objCtx.fillStyle = '#9ae6ff';
+    objCtx.fill();
+  }
+
+  // Função para interação com o gráfico
+  function setupPlotInteraction() {
+    let isDragging = false;
+    
+    plotCanvas.addEventListener('mousedown', startDrag);
+    plotCanvas.addEventListener('touchstart', startDrag, { passive: false });
+    
+    function startDrag(e) {
+      isDragging = true;
+      updateFromPlot(e);
+      e.preventDefault();
+    }
+    
+    window.addEventListener('mousemove', drag);
+    window.addEventListener('touchmove', drag, { passive: false });
+    
+    function drag(e) {
+      if (!isDragging) return;
+      updateFromPlot(e);
+      e.preventDefault();
+    }
+    
+    window.addEventListener('mouseup', stopDrag);
+    window.addEventListener('touchend', stopDrag);
+    window.addEventListener('touchcancel', stopDrag);
+    
+    function stopDrag() {
+      isDragging = false;
+    }
+    
+    function updateFromPlot(e) {
+      const rect = plotCanvas.getBoundingClientRect();
+      let clientX;
+      
+      if (e.type.includes('touch')) {
+        clientX = e.touches[0].clientX;
+      } else {
+        clientX = e.clientX;
+      }
+      
+      const x = clientX - rect.left;
+      const w = rect.width;
+      const pad = 36;
+      const plotW = w - 2 * pad;
+      
+      if (x < pad || x > w - pad) return;
+      
+      const beta = (x - pad) / plotW;
+      updateAllFromBeta(beta);
+    }
+  }
+
+  function loop(ts){
+    const b = parseFloat(betaNum.value)||0;
+    const g = gamma(b);
+    drawObjectScene(b,g);
+    requestAnimationFrame(loop);
+  }
+
+  // Inicialização
+  window.addEventListener('resize', () => {
+    resizePlot();
+    resizeScene();
+  });
+  
+  setupPlotInteraction();
+  updateAllFromBeta(0.5);
+  resizePlot();
+  resizeScene();
+  requestAnimationFrame(loop);
+</script>
+</body>
+</html>

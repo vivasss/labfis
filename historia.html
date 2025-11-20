@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linha do Tempo Interativa da Física</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --primary: #1a237e;
+            --secondary: #ffab00;
+            --accent: #00b0ff;
+            --dark: #0d1440;
+            --light: #e8eaf6;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--dark), var(--primary));
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 40px 0;
+            animation: fadeIn 2s ease;
+        }
+        
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(to right, var(--secondary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .timeline-container {
+            display: flex;
+            margin: 50px 0;
+            position: relative;
+        }
+        
+        .timeline-nav {
+            width: 300px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            margin-right: 30px;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+        
+        .nav-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+            color: var(--secondary);
+        }
+        
+        .era-list {
+            list-style: none;
+        }
+        
+        .era-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            border-left: 4px solid transparent;
+        }
+        
+        .era-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .era-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-left: 4px solid var(--secondary);
+        }
+        
+        .era-icon {
+            margin-right: 15px;
+            font-size: 1.2rem;
+            width: 30px;
+            text-align: center;
+        }
+        
+        .era-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .era-period {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .timeline-content {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            min-height: 600px;
+        }
+        
+        .era-section {
+            display: none;
+            animation: fadeInUp 0.8s ease;
+        }
+        
+        .era-section.active {
+            display: block;
+        }
+        
+        .era-header {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .era-title {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--secondary);
+        }
+        
+        .era-description {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .discoveries-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 40px;
+        }
+        
+        .discovery-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .discovery-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .discovery-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .discovery-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 1.5rem;
+        }
+        
+        .discovery-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+        
+        .discovery-year {
+            color: var(--secondary);
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        .discovery-description {
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .discovery-animation {
+            width: 100%;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            margin-top: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Animações específicas */
+        .pendulum {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform-origin: top center;
+        }
+        
+        .pendulum-string {
+            width: 2px;
+            height: 120px;
+            background: white;
+            margin: 0 auto;
+        }
+        
+        .pendulum-bob {
+            width: 25px;
+            height: 25px;
+            background: var(--secondary);
+            border-radius: 50%;
+            margin-top: -1px;
+            animation: swing 3s ease-in-out infinite alternate;
+        }
+        
+        .falling-object {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: fall 4s linear infinite;
+        }
+        
+        .apple {
+            width: 30px;
+            height: 30px;
+            background: #e53935;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            position: relative;
+        }
+        
+        .apple:before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 5px;
+            height: 10px;
+            background: #8d6e63;
+            border-radius: 2px;
+        }
+        
+        .prism {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 0;
+            height: 0;
+            border-left: 40px solid transparent;
+            border-right: 40px solid transparent;
+            border-bottom: 80px solid rgba(255, 255, 255, 0.7);
+            animation: prism 6s infinite;
+        }
+        
+        .light-beam {
+            position: absolute;
+            top: 20%;
+            left: 20%;
+            width: 120px;
+            height: 5px;
+            background: linear-gradient(to right, transparent, #ffeb3b, transparent);
+            animation: lightBeam 6s infinite;
+        }
+        
+        .rainbow {
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 100px;
+            border-radius: 50%;
+            border: 5px solid transparent;
+            border-top-color: #ff0000;
+            border-right-color: #ff7f00;
+            border-bottom-color: #ffff00;
+            border-left-color: #00ff00;
+            opacity: 0.7;
+            animation: rainbow 6s infinite;
+        }
+        
+        .atom {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: 100px;
+        }
+        
+        .nucleus {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #ff3333;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+        }
+        
+        .electron {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #3399ff;
+            border-radius: 50%;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: orbit 3s linear infinite;
+        }
+        
+        .electron:nth-child(2) {
+            animation-delay: -1s;
+        }
+        
+        .electron:nth-child(3) {
+            animation-delay: -2s;
+        }
+        
+        .orbit {
+            position: absolute;
+            border: 1px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .orbit-1 {
+            width: 100px;
+            height: 100px;
+        }
+        
+        .orbit-2 {
+            width: 80px;
+            height: 60px;
+        }
+        
+        .orbit-3 {
+            width: 60px;
+            height: 80px;
+        }
+        
+        .solar-system {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+        }
+        
+        .sun {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: #ff9800;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 20px #ff9800;
+        }
+        
+        .planet {
+            position: absolute;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .mercury {
+            width: 8px;
+            height: 8px;
+            background: #a6a6a6;
+            animation: orbit-planet 2s linear infinite;
+        }
+        
+        .venus {
+            width: 12px;
+            height: 12px;
+            background: #e6c229;
+            animation: orbit-planet 4s linear infinite;
+        }
+        
+        .earth {
+            width: 14px;
+            height: 14px;
+            background: #6b93d6;
+            animation: orbit-planet 6s linear infinite;
+        }
+        
+        .planet-orbit {
+            position: absolute;
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .orbit-mercury {
+            width: 60px;
+            height: 60px;
+        }
+        
+        .orbit-venus {
+            width: 90px;
+            height: 90px;
+        }
+        
+        .orbit-earth {
+            width: 120px;
+            height: 120px;
+        }
+        
+        .light-bulb {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 80px;
+        }
+        
+        .bulb {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 20px 10px rgba(255, 255, 255, 0.5);
+            animation: glow 2s infinite alternate;
+        }
+        
+        .base {
+            width: 20px;
+            height: 30px;
+            background: #8d6e63;
+            border-radius: 5px;
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .light-rays {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-bottom: 30px solid rgba(255, 255, 255, 0.3);
+            animation: rays 2s infinite alternate;
+        }
+        
+        .buoyancy-demo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150px;
+            height: 150px;
+        }
+        
+        .water-container {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 60%;
+            background: rgba(0, 0, 255, 0.3);
+            border-radius: 0 0 10px 10px;
+        }
+        
+        .water {
+            position: absolute;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 255, 0.5);
+            border-radius: 0 0 10px 10px;
+        }
+        
+        .floating-object {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 40px;
+            background: #ff5722;
+            border-radius: 50%;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        .wave-demo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 100px;
+            overflow: hidden;
+        }
+        
+        .wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%;
+            height: 50px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" fill="%2300b0ff"/><path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5" fill="%2300b0ff"/><path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" fill="%2300b0ff"/></svg>');
+            background-size: 50% 100%;
+            animation: wave 10s linear infinite;
+        }
+        
+        .wave:nth-child(2) {
+            animation-duration: 15s;
+            opacity: 0.7;
+        }
+        
+        .wave:nth-child(3) {
+            animation-duration: 20s;
+            opacity: 0.5;
+        }
+        
+        .relativity-demo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+        }
+        
+        .spacetime-grid {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        .mass-object {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, #ff9800, #ff5722);
+            border-radius: 50%;
+            animation: warp 4s infinite alternate;
+        }
+        
+        .quantum-demo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 150px;
+        }
+        
+        .quantum-particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #00ff00;
+            border-radius: 50%;
+            animation: quantum 5s infinite;
+        }
+        
+        .quantum-particle:nth-child(1) {
+            top: 20%;
+            left: 20%;
+            animation-delay: 0s;
+        }
+        
+        .quantum-particle:nth-child(2) {
+            top: 60%;
+            left: 70%;
+            animation-delay: 1s;
+        }
+        
+        .quantum-particle:nth-child(3) {
+            top: 40%;
+            left: 40%;
+            animation-delay: 2s;
+        }
+        
+        .projectile-demo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 150px;
+        }
+        
+        .projectile {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background: var(--secondary);
+            border-radius: 50%;
+            animation: projectile 4s infinite;
+        }
+        
+        .trajectory {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-top: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 50% 50% 0 0;
+        }
+        
+        .thermodynamics-demo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150px;
+            height: 120px;
+        }
+        
+        .piston {
+            position: absolute;
+            width: 80px;
+            height: 20px;
+            background: #8d6e63;
+            border-radius: 5px 5px 0 0;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: piston 3s infinite alternate;
+        }
+        
+        .cylinder {
+            position: absolute;
+            width: 100px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 10px 10px 0 0;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .heat {
+            position: absolute;
+            width: 60px;
+            height: 30px;
+            background: radial-gradient(ellipse, rgba(255, 100, 0, 0.7), transparent 70%);
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: heat 3s infinite alternate;
+        }
+        
+        .conservation-demo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 180px;
+            height: 120px;
+        }
+        
+        .balance {
+            position: absolute;
+            width: 120px;
+            height: 5px;
+            background: #8d6e63;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 5px;
+        }
+        
+        .balance-base {
+            position: absolute;
+            width: 10px;
+            height: 40px;
+            background: #8d6e63;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, 0);
+        }
+        
+        .balance-weight {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: var(--secondary);
+            border-radius: 50%;
+            top: 40%;
+            animation: balance 4s infinite alternate;
+        }
+        
+        .weight-left {
+            left: 30%;
+        }
+        
+        .weight-right {
+            right: 30%;
+        }
+        
+        .knowledge-demo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150px;
+            height: 150px;
+        }
+        
+        .book {
+            position: absolute;
+            width: 60px;
+            height: 80px;
+            background: #8d6e63;
+            border-radius: 5px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .book-pages {
+            position: absolute;
+            width: 50px;
+            height: 70px;
+            background: #fff;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 2px;
+        }
+        
+        .light-rays-knowledge {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 40px solid rgba(255, 255, 255, 0.3);
+            animation: rays-knowledge 3s infinite alternate;
+        }
+        
+        /* Animações CSS */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeInUp {
+            from { 
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes swing {
+            0% { transform: rotate(-30deg); }
+            100% { transform: rotate(30deg); }
+        }
+        
+        @keyframes fall {
+            0% { top: 20px; }
+            100% { top: 170px; }
+        }
+        
+        @keyframes prism {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+        }
+        
+        @keyframes lightBeam {
+            0%, 100% { 
+                transform: translateX(0) translateY(0);
+                opacity: 0.5;
+            }
+            50% { 
+                transform: translateX(80px) translateY(40px);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes rainbow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+        
+        @keyframes orbit {
+            0% {
+                transform: rotate(0deg) translateX(50px) rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg) translateX(50px) rotate(-360deg);
+            }
+        }
+        
+        @keyframes orbit-planet {
+            from { transform: translate(-50%, -50%) rotate(0deg) translateX(60px) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg) translateX(60px) rotate(-360deg); }
+        }
+        
+        @keyframes glow {
+            from { box-shadow: 0 0 10px 5px rgba(255, 255, 255, 0.5); }
+            to { box-shadow: 0 0 30px 15px rgba(255, 255, 255, 0.8); }
+        }
+        
+        @keyframes rays {
+            from { 
+                border-bottom: 30px solid rgba(255, 255, 255, 0.2);
+                width: 60px;
+            }
+            to { 
+                border-bottom: 30px solid rgba(255, 255, 255, 0.5);
+                width: 100px;
+            }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateX(-50%) translateY(0px); }
+            50% { transform: translateX(-50%) translateY(-10px); }
+        }
+        
+        @keyframes wave {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        
+        @keyframes warp {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1.2);
+                box-shadow: 0 0 20px 10px rgba(255, 152, 0, 0.5);
+            }
+        }
+        
+        @keyframes quantum {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            25% {
+                transform: scale(1.5);
+                opacity: 0.7;
+            }
+            50% {
+                transform: scale(1);
+                opacity: 0.3;
+            }
+            75% {
+                transform: scale(0.5);
+                opacity: 0.7;
+            }
+        }
+        
+        @keyframes projectile {
+            0% {
+                top: 100%;
+                left: 0;
+            }
+            50% {
+                top: 0;
+                left: 50%;
+            }
+            100% {
+                top: 100%;
+                left: 100%;
+            }
+        }
+        
+        @keyframes piston {
+            0% {
+                bottom: 40px;
+            }
+            100% {
+                bottom: 80px;
+            }
+        }
+        
+        @keyframes heat {
+            0% {
+                opacity: 0.5;
+                transform: translateX(-50%) scale(1);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(-50%) scale(1.2);
+            }
+        }
+        
+        @keyframes balance {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+        
+        @keyframes rays-knowledge {
+            from { 
+                border-bottom: 40px solid rgba(255, 255, 255, 0.2);
+                width: 80px;
+            }
+            to { 
+                border-bottom: 40px solid rgba(255, 255, 255, 0.5);
+                width: 120px;
+            }
+        }
+        
+        footer {
+            text-align: center;
+            padding: 30px;
+            margin-top: 40px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        @media screen and (max-width: 1100px) {
+            .timeline-container {
+                flex-direction: column;
+            }
+            
+            .timeline-nav {
+                width: 100%;
+                position: static;
+                margin-right: 0;
+                margin-bottom: 30px;
+            }
+            
+            .era-list {
+                display: flex;
+                overflow-x: auto;
+                padding-bottom: 10px;
+            }
+            
+            .era-item {
+                min-width: 200px;
+                margin-right: 10px;
+                margin-bottom: 0;
+            }
+        }
+        
+        @media screen and (max-width: 768px) {
+            .discoveries-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .era-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Linha do Tempo da Física</h1>
+            <p class="subtitle">Explore as descobertas mais importantes da história da física através de animações interativas. Navegue pelos períodos e descubra como nossa compreensão do universo evoluiu ao longo dos séculos.</p>
+        </header>
+        
+        <div class="timeline-container">
+            <div class="timeline-nav">
+                <h2 class="nav-title">Períodos da Física</h2>
+                <ul class="era-list">
+                    <li class="era-item active" data-era="antiguidade">
+                        <div class="era-icon"><i class="fas fa-monument"></i></div>
+                        <div>
+                            <div class="era-name">Antiguidade</div>
+                            <div class="era-period">Até 500 d.C.</div>
+                        </div>
+                    </li>
+                    <li class="era-item" data-era="medieval">
+                        <div class="era-icon"><i class="fas fa-feather-alt"></i></div>
+                        <div>
+                            <div class="era-name">Idade Média</div>
+                            <div class="era-period">500 - 1500</div>
+                        </div>
+                    </li>
+                    <li class="era-item" data-era="revolucao">
+                        <div class="era-icon"><i class="fas fa-compass"></i></div>
+                        <div>
+                            <div class="era-name">Revolução Científica</div>
+                            <div class="era-period">1500 - 1700</div>
+                        </div>
+                    </li>
+                    <li class="era-item" data-era="seculo18">
+                        <div class="era-icon"><i class="fas fa-bolt"></i></div>
+                        <div>
+                            <div class="era-name">Século XVIII</div>
+                            <div class="era-period">1700 - 1800</div>
+                        </div>
+                    </li>
+                    <li class="era-item" data-era="seculo19">
+                        <div class="era-icon"><i class="fas fa-magnet"></i></div>
+                        <div>
+                            <div class="era-name">Século XIX</div>
+                            <div class="era-period">1800 - 1900</div>
+                        </div>
+                    </li>
+                    <li class="era-item" data-era="moderna">
+                        <div class="era-icon"><i class="fas fa-atom"></i></div>
+                        <div>
+                            <div class="era-name">Física Moderna</div>
+                            <div class="era-period">1900 - Presente</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="timeline-content">
+                <!-- Antiguidade -->
+                <div class="era-section active" id="antiguidade">
+                    <div class="era-header">
+                        <h2 class="era-title">Física na Antiguidade</h2>
+                        <p class="era-description">Os primeiros estudos da natureza e do movimento. Filósofos gregos estabeleceram as bases do pensamento científico através da observação e razão.</p>
+                    </div>
+                    
+                    <div class="discoveries-grid">
+                        <div class="discovery-card">
+                            <div class="discovery-header">
+                                <div class="discovery-icon"><i class="fas fa-balance-scale"></i></div>
+                                <div>
+                                    <div class="discovery-title">Princípio da Alavanca</div>
+                                    <div class="discovery-year">~260 a.C.</div>
+                                </div>
+                            </div>
+                            <p class="discovery-description">Arquimedes formulou o princípio da alavanca, estabelecendo a relação matemática entre forças e distâncias em sistemas de equilíbrio.</p>
+                            <div class="discovery-animation">
+                                <div class="pendulum">
+                                    <div class="pendulum-string"></div>
+                                    <div class="pendulum-bob"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="discovery-card">
+                            <div class="discovery-header">
+                                <div class="discovery-icon"><i class="fas fa-water"></i></div>
+                                <div>
+                                    <div class="discovery-title">Princípio do Empuxo</div>
+                                    <div class="discovery-year">~250 a.C.</div>
+                                </div>
+                            </div>
+                            <p class="discovery-description">Arquimedes descobriu que um corpo imerso em um fluido sofre uma força vertical para cima igual ao peso do fluido deslocado.</p>
+                            <div class="discovery-animation">
+                                <div class="buoyancy-demo">
+                                    <div class="water-container">
+                                        <div class="water"></div>
+                                    </div>
+                                    <div class="floating-object"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="discovery-card">
+                            <div class="discovery-header">
+                                <div class="discovery-icon"><i class="fas fa-sun"></i></div>
+                                <div>
+                                    <div class="discovery-title">Geocentrismo</div>
+                                    <div class="discovery-year">~350 a.C.</div>
+                                </div>
+                            </div>
+                            <p class="discovery-description">Aristóteles e Ptolomeu desenvolveram o modelo geocêntrico, com a Terra no centro do universo e os corpos celestes girando ao seu redor.</p>
+                            <div class="discovery-animation">
+                                <div class="solar-system">
+                                    <div class="earth"></div>
+                                    <div class="planet-orbit orbit-mercury"></div>
+                                    <div class="planet-orbit orbit-venus"></div>
+                                    <div class="planet-orbit orbit-sun"></div>
+                                    <div class="planet mercury"></div>
+                                    <div class="planet venus"></div>
+                                    <div class="sun"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Idade Média -->
+                <div class="era-section" id="medieval">
+                    <div class="era-header">
+                        <h2 class="era-title">Física na Idade Média</h2>
+                        <p class="era-description">Preservação do conhecimento antigo por estudiosos islâmicos e europeus. Desenvolvimentos em óptica, mecânica e a introdução do método experimental.</p>
+                    </div>
+                    
+                    <div class="discoveries-grid">
+                        <div class="discovery-card">
+                            <div class="discovery-header">
+                                <div class="discovery-icon"><i class="fas fa-eye"></i></div>
+                                <div>
+                                    <div class="discovery-title">Leis da Óptica</div>
+                                    <div class="discovery-year">~1020</div>
+                                </div>
+                            </div>
+                            <p class="discovery-description">Alhazen (Ibn al-Haytham) estabeleceu as bases da óptica moderna, descrevendo a propagação retilínea da luz e a reflexão.</p>
+                            <div class="discovery-animation">
+                                <div class="prism"></div>
+                                <div class="light-beam"></div>
+                                <div class="rainbow"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="discovery-card">
+                            <div class="discovery-header">
+                                <div class="discovery-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                <div>
+                                    <div class="discovery-title">Teoria do Ímpeto</div>
+                                    <div class="discovery-year">~1350</div>
+                                </div>
+                            </div>
+                            <p class="discovery-description">Jean Buridan desenvolveu a teoria do ímpeto, um precursor do conceito de inércia, explicando o movimento de projéteis.</p>
+                            <div class="discovery-animation">
+                                <div class="projectile-demo">
+                                    <div class="trajectory"></div>
+                                    <div class="projectile"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="discovery-card">
+                            <div class="discovery-header">
+                                <div class="discovery-icon"><i class="fas fa-book"></i></div>
+                                <div>
+                                    <div class="discovery-title">Preservação do Conhecimento</div>
+                                    <div class="discovery-year">800-1200</div>
+                                </div>
+                            </div>
+                            <p class="discovery-description">Estudiosos islâmicos e monges europeus preservaram e traduziram obras gregas, mantendo vivo o conhecimento científico durante a Idade Média.</p>
+                            <div class="discovery-animation">
+                                <div class="knowledge-demo">
+                                    <div class="book">
+                                        <div class="book-pages"></div>
+                                    </div>
+                                    <div class="light-rays-knowledge"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Revolução Científica -->
+                <div class="era-section" id="revolucao">
+                    <div class="era-header">
+                        <h2 class="era-title">Revolução Científica</h2>
+                        <p class="era-description">Mudança de paradigma com o heliocentrismo e o desenvolvimento do método científico. Nascimento da física moderna com Galileu, Kepler e Newton.</p>
+                    </div>
+                    
+                    <div class="discoveries-grid">
+                        <div class="discovery-card">
+                            <div class="discovery-header">
+                                <div class="discovery-icon"><i class="fas fa-solar-system"></i></div>
+                                <div>
+                                    <div class="discovery-title">Heliocentrismo</div>
+                                    <div class="discovery-year">1543</div>
+                                </div>
+                            </div>
+                            <p class="discovery-description">Copérnico propôs o modelo heliocêntrico, colocando o Sol no centro do sistema solar, revolucionando a astronomia.</p>
+                            <div class="discovery-animation">
+                                <div class="solar-system">
+                                    <div class="sun"></div>
+                                    <div class="planet-orbit orbit-mercury"></div>
+                                    <div class="planet-orbit orbit-venus"></div>
+                                    <div class="planet-orbit orbit-earth"></div>
+                                    <div class="planet mercury"></div>
+                                    <div class="planet venus"></div>
+                                    <div class="planet earth"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="discovery-card">
+                            <div class="discovery-header">
+                                <div class="discovery-icon"><i class="fas fa-apple-alt"></i></div>
+                                <div>
+                                    <div class="discovery-title">Lei da Gravitação</div>
+                                    <div class="discovery-year">1687</div>
+                                </div>
+                            </div>
+                            <p class="discovery-description">Isaac Newton publicou a lei da gravitação universal, descrevendo a atração entre todos os corpos com massa.</p>
+                            <div class="discovery-animation">
+                                <div class="falling-object">
+                                    <div class="apple"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="discovery-card">
+                            <div class="discovery-header">
+                                <div class="discovery-icon"><i class="fas fa-ruler-combined"></i></div>
+                                <div>
+                                    <div class="discovery-title">Leis do Movimento</div>
+                                    <div class="discovery-year">1687</div>
+                                </div>
+                            </div>
+                            <p class="discovery-description">Newton formulou as três leis do movimento, estabelecendo os fundamentos da mecânica clássica.</p>
+                            <div class="discovery-animation">
+                                <div class="pendulum">
+                                    <div class="pendulum-string"></div>
+                                    <div class="pendulum-bob"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Século XVIII -->
+                <div class="era-section" id="seculo18">
+                    <div class="era-header">
+                        <h2 class="era-title">Século XVIII</h2>
+                        <p class="era-description">Consolidação da mecânica newtoniana e desenvolvimento da termodinâmica. Estudos sobre eletricidade, magnetismo e a conservação de energia.</p>
+                    </div>
+                    
+                    <div class="discoveries-grid">
+                        <div class="discovery-card">
+                            <div class="discovery-header">
+                                <div class="discovery-icon"><i class="fas fa-fire"></i></div>
+                                <div>
+                                    <div class="discovery-title">Termodinâmica</div>
+                                    <div class="discovery-year">~1790</div>
+                                </div>
+                            </div>
+                            <p class="discovery-description">Desenvolvimento da teoria calórica e dos primeiros conceitos de conservação de energia na transformação de calor em trabalho.</p>
+                            <div class="discovery-animation">
+                                <div class="thermodynamics-demo">
+                                    <div class="cylinder"></div>
+                                    <div class="piston"></div>
+                                    <div class="heat"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="discovery-card">
+                            <div class="discovery-header">
+                                <div class="discovery-icon"><i class="fas fa-bolt"></i></div>
+                                <div>
+                                    <div class="discovery-title">Eletricidade</div>
+                                    <div class="discovery-year">~1750</div>
+                                </div>
+                            </div>
+                            <p class="discovery-description">Benjamin Franklin e outros cientistas investigaram a natureza da eletricidade, incluindo a identificação de cargas positivas e negativas.</p>
+                            <div class="discovery-animation">
+                                <div class="light-bulb">
+                                    <div class="bulb"></div>
+                                    <div class="base"></div>
+                                    <div class="light-rays"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="discovery-card">
+                            <div class="discovery-header">
+                                <div class="discovery-icon"><i class="fas fa-vial"></i></div>
+                                <div>
+                                    <div class="discovery-title">Conservação da Massa</div>
+                                    <div class="discovery-year">1789</div>
+                                </div>
+                            </div>
+                            <p class="discovery-description">Antoine Lavoisier estabeleceu a lei da conservação da massa, fundamental para o desenvolvimento da química moderna.</p>
+                            <div class="discovery-animation">
+                                <div class="conservation-demo">
+                                    <div class="balance-base"></div>
+                                    <div class="balance"></div>
+                                    <div class="balance-weight weight-left"></div>
+                                    <div class="balance-weight weight-right"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Século XIX -->
+                <div class="era-section" id="seculo19">
+                    <div class="era-header">
+                        <h2 class="era-title">Século XIX</h2>
+                        <p class="era-description">Unificação da eletricidade e magnetismo. Desenvolvimento da termodinâmica, teoria cinética dos gases e os fundamentos da física moderna.</p>
+                    </div>
+                    
+                    <div class="discoveries-grid">
+                        <div class="discovery-card">
+                            <div class="discovery-header">
+                                <div class="discovery-icon"><i class="fas fa-magnet"></i></div>
+                                <div>
+                                    <div class="discovery-title">Eletromagnetismo</div>
+                                    <div class="discovery-year">1865</div>
+                                </div>
+                            </div>
+                            <p class="discovery-description">James Clerk Maxwell unificou eletricidade e magnetismo em quatro equações, prevendo a existência de ondas eletromagnéticas.</p>
+                            <div class="discovery-animation">
+                                <div class="wave-demo">
+                                    <div class="wave"></div>
+                                    <div class="wave"></div>
+                                    <div class="wave"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="discovery-card">
+                            <div class="discovery-header">
+                                <div class="discovery-icon"><i class="fas fa-temperature-high"></i></div>
+                                <div>
+                                    <div class="discovery-title">Leis da Termodinâmica</div>
+                                    <div class="discovery-year">~1850</div>
+                                </div>
+                            </div>
+                            <p class="discovery-description">Formulação das leis da termodinâmica, incluindo a conservação de energia e o aumento da entropia em sistemas isolados.</p>
+                            <div class="discovery-animation">
+                                <div class="thermodynamics-demo">
+                                    <div class="cylinder"></div>
+                                    <div class="piston"></div>
+                                    <div class="heat"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="discovery-card">
+                            <div class="discovery-header">
+                                <div class="discovery-icon"><i class="fas fa-atom"></i></div>
+                                <div>
+                                    <div class="discovery-title">Teoria Atômica</div>
+                                    <div class="discovery-year">1808</div>
+                                </div>
+                            </div>
+                            <p class="discovery-description">John Dalton propôs a teoria atômica moderna, descrevendo a matéria como composta de átomos indivisíveis.</p>
+                            <div class="discovery-animation">
+                                <div class="atom">
+                                    <div class="nucleus"></div>
+                                    <div class="orbit orbit-1"></div>
+                                    <div class="orbit orbit-2"></div>
+                                    <div class="orbit orbit-3"></div>
+                                    <div class="electron"></div>
+                                    <div class="electron"></div>
+                                    <div class="electron"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Física Moderna -->
+                <div class="era-section" id="moderna">
+                    <div class="era-header">
+                        <h2 class="era-title">Física Moderna</h2>
+                        <p class="era-description">Revoluções na compreensão do universo com a relatividade e mecânica quântica. Desenvolvimento do modelo padrão, cosmologia e busca por teorias unificadas.</p>
+                    </div>
+                    
+                    <div class="discoveries-grid">
+                        <div class="discovery-card">
+                            <div class="discovery-header">
+                                <div class="discovery-icon"><i class="fas fa-atom"></i></div>
+                                <div>
+                                    <div class="discovery-title">Mecânica Quântica</div>
+                                    <div class="discovery-year">1900-1930</div>
+                                </div>
+                            </div>
+                            <p class="discovery-description">Desenvolvimento da teoria quântica para explicar fenômenos atômicos e subatômicos, incluindo o princípio da incerteza e dualidade onda-partícula.</p>
+                            <div class="discovery-animation">
+                                <div class="quantum-demo">
+                                    <div class="quantum-particle"></div>
+                                    <div class="quantum-particle"></div>
+                                    <div class="quantum-particle"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="discovery-card">
+                            <div class="discovery-header">
+                                <div class="discovery-icon"><i class="fas fa-rocket"></i></div>
+                                <div>
+                                    <div class="discovery-title">Relatividade</div>
+                                    <div class="discovery-year">1905-1915</div>
+                                </div>
+                            </div>
+                            <p class="discovery-description">Albert Einstein revolucionou a física com as teorias da relatividade especial e geral, alterando a compreensão de espaço, tempo e gravidade.</p>
+                            <div class="discovery-animation">
+                                <div class="relativity-demo">
+                                    <div class="spacetime-grid"></div>
+                                    <div class="mass-object"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="discovery-card">
+                            <div class="discovery-header">
+                                <div class="discovery-icon"><i class="fas fa-star"></i></div>
+                                <div>
+                                    <div class="discovery-title">Expansão do Universo</div>
+                                    <div class="discovery-year">1929</div>
+                                </div>
+                            </div>
+                            <p class="discovery-description">Edwin Hubble descobriu que o universo está se expandindo, fornecendo evidências para a teoria do Big Bang.</p>
+                            <div class="discovery-animation">
+                                <div class="solar-system">
+                                    <div class="sun"></div>
+                                    <div class="planet-orbit orbit-mercury"></div>
+                                    <div class="planet-orbit orbit-venus"></div>
+                                    <div class="planet-orbit orbit-earth"></div>
+                                    <div class="planet mercury"></div>
+                                    <div class="planet venus"></div>
+                                    <div class="planet earth"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Explorando o universo através da física | Linha do tempo interativa com animações | Desenvolvido para fins educacionais</p>
+        </footer>
+    </div>
+
+    <script>
+        // Navegação entre períodos
+        document.addEventListener('DOMContentLoaded', function() {
+            const eraItems = document.querySelectorAll('.era-item');
+            const eraSections = document.querySelectorAll('.era-section');
+            
+            eraItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const era = this.getAttribute('data-era');
+                    
+                    // Atualizar navegação
+                    eraItems.forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Mostrar seção correspondente
+                    eraSections.forEach(section => {
+                        section.classList.remove('active');
+                        if (section.id === era) {
+                            section.classList.add('active');
+                        }
+                    });
+                });
+            });
+            
+            // Adicionar efeito de digitação ao título
+            const title = document.querySelector('h1');
+            const text = title.textContent;
+            title.textContent = '';
+            let i = 0;
+            
+            function typeWriter() {
+                if (i < text.length) {
+                    title.textContent += text.charAt(i);
+                    i++;
+                    setTimeout(typeWriter, 100);
+                }
+            }
+            
+            setTimeout(typeWriter, 1000);
+            
+            // Adicionar interação com os cards
+            const discoveryCards = document.querySelectorAll('.discovery-card');
+            discoveryCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    // Pausar/retomar animações ao clicar no card
+                    const animations = this.querySelectorAll('*');
+                    animations.forEach(el => {
+                        if (el.style.animationPlayState === 'paused') {
+                            el.style.animationPlayState = 'running';
+                        } else {
+                            el.style.animationPlayState = 'paused';
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

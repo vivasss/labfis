@@ -1,0 +1,1880 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Simulação de Gravitação Universal</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #071028;
+      --card: #0f1724;
+      --muted: #94a3b8;
+      --primary: #8a2be2;
+      --accent: #00bfff;
+      --success: #10b981;
+      --warning: #f59e0b;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: all 0.3s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, 'Segoe UI', Roboto, Arial;
+      background: linear-gradient(180deg, #071028 0%, #071021 60%);
+      color: #e6eef8;
+      min-height: 100vh;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+
+    header {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: textGlow 3s infinite alternate;
+    }
+
+    .tab-container {
+      display: flex;
+      background: var(--card);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .tab {
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tab:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .tab.active {
+      background: var(--primary);
+      font-weight: 700;
+      box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
+    }
+
+    .tab::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 3px;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    .tab.active::after {
+      width: 100%;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 18px;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 18px;
+      height: calc(100vh - 134px);
+      padding: 0 18px 18px;
+      animation: slideUp 0.6s ease-out;
+    }
+
+    .simulation-container {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .simulation-container::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(138, 43, 226, 0.05) 0%, transparent 70%);
+      animation: rotate 20s linear infinite;
+      pointer-events: none;
+    }
+
+    #canvas {
+      width: 100%;
+      height: 560px;
+      border-radius: 8px;
+      background: transparent;
+      display: block;
+      animation: canvasAppear 1s ease-out;
+      touch-action: none;
+    }
+
+    .info-panel {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .info-card {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      border-left: 3px solid var(--primary);
+      position: relative;
+      overflow: hidden;
+      animation: cardSlideIn 0.5s ease-out;
+    }
+
+    .info-card:nth-child(2) {
+      border-left-color: var(--accent);
+      animation-delay: 0.1s;
+    }
+
+    .info-card:nth-child(3) {
+      border-left-color: var(--success);
+      animation-delay: 0.2s;
+    }
+
+    .info-card:nth-child(4) {
+      border-left-color: var(--warning);
+      animation-delay: 0.3s;
+    }
+
+    .info-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .info-card:hover::before {
+      left: 100%;
+    }
+
+    .info-card .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .info-card .value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .controls {
+      background: var(--card);
+      padding: 16px;
+      border-radius: 12px;
+      height: 100%;
+      overflow-y: auto;
+      animation: slideInRight 0.6s ease-out;
+    }
+
+    .controls::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .controls::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    .controls::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 3px;
+    }
+
+    .group {
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .group:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .group:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+
+    .group:nth-child(4) {
+      animation-delay: 0.3s;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    input[type='range'] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type='range']::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+      transition: all 0.2s ease;
+    }
+
+    input[type='range']::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 10px rgba(138, 43, 226, 0.8);
+    }
+
+    input[type='number'],
+    select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.02);
+      color: inherit;
+      margin-bottom: 8px;
+      transition: all 0.3s ease;
+    }
+
+    input[type='number']:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background: linear-gradient(90deg, var(--primary), #6a0dad);
+      border: 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.secondary {
+      background: linear-gradient(90deg, #444, #666);
+    }
+
+    button.secondary:hover {
+      box-shadow: 0 5px 15px rgba(102, 102, 102, 0.4);
+    }
+
+    .muted {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .charts-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .chart-panel {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    .chart-panel:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .chart-container {
+      height: 240px;
+      width: 100%;
+    }
+
+    .explanation-container {
+      padding: 18px;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    .explanation-content {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      margin-bottom: 18px;
+    }
+
+    .explanation-content h2 {
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1.5rem;
+    }
+
+    .explanation-content h3 {
+      margin: 20px 0 10px;
+      color: var(--primary);
+      font-size: 1.2rem;
+    }
+
+    .explanation-content p {
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+
+    .explanation-content ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    .explanation-content li {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .highlight {
+      background: linear-gradient(90deg, transparent, rgba(138, 43, 226, 0.1), transparent);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .formula {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 12px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-family: monospace;
+      text-align: center;
+      border-left: 3px solid var(--accent);
+    }
+
+    .example {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 3px solid var(--success);
+    }
+
+    .concept-card {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 3px solid var(--primary);
+      transition: all 0.3s ease;
+    }
+
+    .concept-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .touch-hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      max-width: 80%;
+      z-index: 5;
+      animation: pulse 2s infinite;
+    }
+
+    /* Botão de ajuda flutuante */
+    .help-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      transition: all 0.3s ease;
+      border: none;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .help-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 25px rgba(138, 43, 226, 0.5);
+    }
+
+    .help-button:active {
+      transform: scale(0.95);
+    }
+
+    /* Painel de ajuda */
+    .help-panel {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 320px;
+      max-height: 70vh;
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      overflow-y: auto;
+      transform: translateY(20px);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    .help-panel.active {
+      transform: translateY(0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .help-panel h2 {
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .help-panel h3 {
+      margin: 15px 0 8px;
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+
+    .help-panel p {
+      margin-bottom: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .help-panel ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    .help-panel li {
+      margin-bottom: 6px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .help-panel .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .help-panel .close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    footer {
+      padding: 12px 20px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+      animation: fadeIn 1s ease-out;
+    }
+
+    /* Animações personalizadas */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes canvasAppear {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes cardSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes textGlow {
+      0% {
+        text-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+      }
+      100% {
+        text-shadow: 0 0 15px rgba(0, 191, 255, 0.8), 0 0 20px rgba(138, 43, 226, 0.6);
+      }
+    }
+
+    @keyframes rotate {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: 0.7;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0.7;
+      }
+    }
+
+    /* Responsividade */
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+        height: auto;
+        padding-bottom: 18px;
+      }
+      
+      #canvas {
+        height: 420px;
+      }
+      
+      .info-panel {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .help-panel {
+        width: 280px;
+        right: 10px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .info-panel {
+        grid-template-columns: 1fr;
+      }
+      
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .tab-container {
+        width: 100%;
+      }
+      
+      .tab {
+        flex: 1;
+        text-align: center;
+        padding: 12px 8px;
+      }
+      
+      .simulation-container {
+        padding: 8px;
+      }
+      
+      #canvas {
+        height: 60vh;
+        min-height: 400px;
+      }
+      
+      .controls {
+        padding: 12px;
+      }
+      
+      button {
+        padding: 12px 16px;
+        font-size: 16px;
+      }
+      
+      .help-button {
+        width: 50px;
+        height: 50px;
+        bottom: 15px;
+        right: 15px;
+        font-size: 20px;
+      }
+      
+      .help-panel {
+        width: calc(100% - 30px);
+        right: 15px;
+        bottom: 75px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #canvas {
+        height: 50vh;
+        min-height: 350px;
+      }
+      
+      .touch-hint {
+        font-size: 14px;
+        padding: 12px;
+      }
+    }
+
+    /* Painel de edição */
+    #edit-panel {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+      display: none;
+      flex-direction: column;
+      gap: 15px;
+      width: 90%;
+      max-width: 300px;
+      z-index: 20;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    #edit-panel h3 {
+      margin-bottom: 10px;
+      color: var(--accent);
+      text-align: center;
+    }
+    
+    .edit-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .edit-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      gap: 10px;
+    }
+    
+    .edit-buttons button {
+      flex: 1;
+    }
+    
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #0008;
+      backdrop-filter: blur(2px);
+      display: none;
+      z-index: 15;
+    }
+    
+    .mass-input-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .mass-input-container input[type="number"] {
+      width: 80px;
+    }
+    
+    /* Efeito de colisão */
+    .collision-effect {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Simulação de Gravitação Universal</h1>
+    <div class="tab-container">
+      <div class="tab active" data-tab="simulation">Simulação</div>
+      <div class="tab" data-tab="charts">Gráficos</div>
+      <div class="tab" data-tab="explanation">Explicação</div>
+    </div>
+  </header>
+
+  <div class="tab-content active" id="simulation-tab">
+    <main>
+      <div class="simulation-container">
+        <canvas id="canvas"></canvas>
+        
+        <div class="touch-hint" id="touchHint">
+          <p>💡 Toque para criar corpos</p>
+          <p>Arraste para mover ou alterar velocidade</p>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-card">
+            <div class="label">Corpos Ativos</div>
+            <div class="value" id="bodyCount">0</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Massa Total</div>
+            <div class="value" id="totalMass">0</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Energia Total</div>
+            <div class="value" id="totalEnergy">0</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Colisões</div>
+            <div class="value" id="collisionCount">0</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; display:flex; gap:10px;">
+          <button id="playPauseBtn">Pausar</button>
+          <button id="resetBtn" class="secondary">Resetar</button>
+          <button id="clearTrailsBtn" class="secondary">Limpar Trilhas</button>
+        </div>
+      </div>
+
+      <aside class="controls">
+        <div class="group">
+          <label><strong>Parâmetros da Simulação</strong></label>
+          <div class="row">
+            <div style="flex:1">
+              <label class="small">Constante Gravitacional</label>
+              <input id="gravity" type="number" step="0.01" value="0.05">
+            </div>
+            <div style="flex:1">
+              <label class="small">Velocidade (x)</label>
+              <input id="speed" type="number" step="0.1" value="1.0" min="0.1" max="3">
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <label><strong>Novo Corpo</strong></label>
+          <label class="small">Massa (5-1000)</label>
+          <div class="mass-input-container">
+            <input id="massRange" type="range" min="5" max="1000" step="1" value="10">
+            <input id="massNum" type="number" min="5" max="1000" step="1" value="10">
+          </div>
+          
+          <label class="small">Cor</label>
+          <select id="colorSelect">
+            <option value="random">Aleatória</option>
+            <option value="red">Vermelho</option>
+            <option value="blue">Azul</option>
+            <option value="green">Verde</option>
+            <option value="yellow">Amarelo</option>
+            <option value="purple">Roxo</option>
+          </select>
+        </div>
+
+        <div class="group">
+          <label><strong>Visual</strong></label>
+          <label class="small"><input id="trail" type="checkbox" checked> Mostrar rastro</label>
+          <label class="small"><input id="grid" type="checkbox" checked> Mostrar grade</label>
+          <label class="small"><input id="touchHintToggle" type="checkbox"> Mostrar dicas</label>
+        </div>
+        
+        <div class="group">
+          <label><strong>Comportamento</strong></label>
+          <label class="small"><input id="enableCollisions" type="checkbox" checked> Colisões e fusões</label>
+          <label class="small"><input id="enableConfinement" type="checkbox" checked> Confinamento na tela</label>
+          <label class="small"><input id="showCollisionEffect" type="checkbox" checked> Efeito de colisão</label>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div class="tab-content" id="charts-tab">
+    <div class="charts-container" style="padding:12px 18px;">
+      <div class="chart-panel">
+        <h3 style="margin:0 0 8px 0">Energias</h3>
+        <div class="chart-container"><canvas id="energyChart"></canvas></div>
+      </div>
+
+      <div class="chart-panel" style="margin-top:10px">
+        <h3 style="margin:0 0 8px 0">Massa Total</h3>
+        <div class="chart-container"><canvas id="massChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="explanation-tab">
+    <div class="explanation-container">
+      <div class="explanation-content">
+        <h2>Lei da Gravitação Universal</h2>
+        <p>A Lei da Gravitação Universal, formulada por Isaac Newton em 1687, estabelece que dois corpos se atraem com uma força diretamente proporcional ao produto de suas massas e inversamente proporcional ao quadrado da distância entre eles.</p>
+        
+        <div class="concept-card">
+          <h3>A Fórmula</h3>
+          <div class="formula">F = G × (m₁ × m₂) / r²</div>
+          <p>Onde:</p>
+          <ul>
+            <li><span class="highlight">F</span> é a força gravitacional entre os dois corpos</li>
+            <li><span class="highlight">G</span> é a constante gravitacional</li>
+            <li><span class="highlight">m₁</span> e <span class="highlight">m₂</span> são as massas dos corpos</li>
+            <li><span class="highlight">r</span> é a distância entre os centros de massa</li>
+          </ul>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Importância Histórica</h3>
+          <p>Esta lei revolucionou a compreensão do universo, explicando tanto a queda de objetos na Terra quanto o movimento dos planetas ao redor do Sol. Foi a primeira vez que se demonstrou que as mesmas leis físicas governavam tanto o mundo terrestre quanto o celeste.</p>
+        </div>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Como Usar Esta Simulação</h2>
+        
+        <div class="concept-card">
+          <h3>Interação Direta</h3>
+          <p>Toque no espaço vazio para criar novos corpos. Arraste um corpo para movê-lo ou arraste a ponta do vetor de velocidade para alterar sua direção e magnitude.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Controles</h3>
+          <p>Use os botões Iniciar, Pausar e Resetar para controlar a simulação. Ajuste os parâmetros físicos nos controles laterais para ver como afetam o movimento dos corpos.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Colisões e Fusões</h3>
+          <p>Quando dois corpos colidem, eles se fundem em um único corpo com massa combinada, conservando o momento linear do sistema. Você pode desativar esta opção nas configurações.</p>
+        </div>
+        
+        <p>Experimente diferentes configurações e observe como os corpos interagem gravitacionalmente!</p>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Exemplo Prático</h2>
+        
+        <div class="example">
+          <h3>Sistema Solar</h3>
+          <p>No nosso sistema solar, a força gravitacional do Sol mantém os planetas em órbitas estáveis. A Terra, por exemplo, orbita o Sol a uma distância média de 149,6 milhões de quilômetros, com uma força gravitacional de aproximadamente 3,54 × 10²² Newtons.</p>
+        </div>
+        
+        <div class="formula">
+          F = (6,67430 × 10⁻¹¹) × (1,989 × 10³⁰ × 5,972 × 10²⁴) / (1,496 × 10¹¹)²
+        </div>
+        
+        <p>Esta força é equilibrada pela força centrípeta do movimento orbital da Terra, resultando em uma órbita estável.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botão de ajuda flutuante -->
+  <button class="help-button" id="helpButton">?</button>
+
+  <!-- Painel de ajuda -->
+  <div class="help-panel" id="helpPanel">
+    <button class="close-btn" id="closeHelp">&times;</button>
+    <h2>💡 Como Usar o Simulador</h2>
+    
+    <h3>Interação</h3>
+    <ul>
+      <li><strong>Toque no espaço vazio</strong> - Cria novo corpo</li>
+      <li><strong>Toque em um corpo</strong> - Seleciona para editar</li>
+      <li><strong>Arraste o corpo</strong> - Move sua posição</li>
+      <li><strong>Arraste a ponta do vetor</strong> - Altera velocidade</li>
+      <li><strong>Toque duplo em um corpo</strong> - Abre editor de massa</li>
+    </ul>
+    
+    <h3>Controles</h3>
+    <ul>
+      <li><strong>Massa</strong> - Pode variar de 5 a 1000 unidades</li>
+      <li><strong>Cor</strong> - Escolha entre várias cores ou aleatória</li>
+      <li><strong>Constante Gravitacional</strong> - Controla a intensidade da gravidade</li>
+      <li><strong>Velocidade</strong> - Controla a velocidade da simulação</li>
+    </ul>
+    
+    <h3>Física</h3>
+    <div class="formula">F = G × (m₁ × m₂) / r²</div>
+    <p>Os corpos se atraem gravitacionalmente e podem colidir e se fundir.</p>
+    
+    <p style="margin-top: 15px; font-style: italic; text-align: center;">
+      Explore diferentes configurações e observe como os corpos interagem!
+    </p>
+  </div>
+
+  <div id="overlay"></div>
+
+  <div id="edit-panel">
+    <h3>Editar Corpo</h3>
+    <div class="edit-controls">
+      <label for="editMassRange">Massa (5-1000):</label>
+      <div class="mass-input-container">
+        <input id="editMassRange" type="range" min="5" max="1000" step="1" value="10">
+        <input id="editMassNum" type="number" min="5" max="1000" step="1" value="10">
+      </div>
+      
+      <label for="editColorSelect">Cor:</label>
+      <select id="editColorSelect">
+        <option value="red">Vermelho</option>
+        <option value="blue">Azul</option>
+        <option value="green">Verde</option>
+        <option value="yellow">Amarelo</option>
+        <option value="purple">Roxo</option>
+        <option value="random">Aleatória</option>
+      </select>
+    </div>
+    <div class="edit-buttons">
+      <button id="applyEditBtn">Aplicar</button>
+      <button id="cancelEditBtn" class="secondary">Cancelar</button>
+    </div>
+  </div>
+
+  <footer>Simulação de Gravitação Universal — HTML5 & Canvas & Chart.js</footer>
+
+  <script>
+    // Canvas and context
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Charts variables
+    let energyChart, massChart;
+
+    // Chart data buffers
+    const chartData = { time: [], kinetic: [], potential: [], total: [], mass: [] };
+    const maxDataPoints = 200;
+
+    // Controls
+    const gravityInput = document.getElementById('gravity');
+    const speedInput = document.getElementById('speed');
+    const massRange = document.getElementById('massRange');
+    const massNum = document.getElementById('massNum');
+    const colorSelect = document.getElementById('colorSelect');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const clearBtn = document.getElementById('clearTrailsBtn');
+    const trailChk = document.getElementById('trail');
+    const gridChk = document.getElementById('grid');
+    const touchHintToggle = document.getElementById('touchHintToggle');
+    const touchHint = document.getElementById('touchHint');
+    const enableCollisions = document.getElementById('enableCollisions');
+    const enableConfinement = document.getElementById('enableConfinement');
+    const showCollisionEffect = document.getElementById('showCollisionEffect');
+
+    // Info displays
+    const bodyCount = document.getElementById('bodyCount');
+    const totalMass = document.getElementById('totalMass');
+    const totalEnergy = document.getElementById('totalEnergy');
+    const collisionCount = document.getElementById('collisionCount');
+
+    // Help elements
+    const helpButton = document.getElementById('helpButton');
+    const helpPanel = document.getElementById('helpPanel');
+    const closeHelp = document.getElementById('closeHelp');
+
+    // Edit panel
+    const editPanel = document.getElementById('edit-panel');
+    const overlay = document.getElementById('overlay');
+    const editMassRange = document.getElementById('editMassRange');
+    const editMassNum = document.getElementById('editMassNum');
+    const editColorSelect = document.getElementById('editColorSelect');
+    const applyEditBtn = document.getElementById('applyEditBtn');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+
+    // Simulation state
+    let running = true;
+    let lastTime = null;
+    let chartTime = 0;
+    let collisions = 0;
+    let wasRunningBeforeEdit = false; // Para guardar o estado antes da edição
+
+    // Touch interaction state
+    let isDragging = false;
+    let touchHintTimeout = null;
+
+    // Gravitational constant
+    let G = parseFloat(gravityInput.value);
+    let speed = parseFloat(speedInput.value);
+
+    // Bodies and trails
+    let bodies = [];
+    let trails = new Map();
+    let selectedMass = parseInt(massRange.value);
+    let selectedColor = colorSelect.value;
+    let selectedBody = null;
+    let lastTouchTime = 0;
+    
+    // Collision effects
+    let collisionEffects = [];
+
+    // Resize canvas properly for high-dpi
+    function resizeCanvas(){
+      const ratio = devicePixelRatio || 1;
+      canvas.width = canvas.clientWidth * ratio;
+      canvas.height = canvas.clientHeight * ratio;
+      ctx.setTransform(ratio,0,0,ratio,0,0);
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const id = tab.getAttribute('data-tab');
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(id + '-tab').classList.add('active');
+        
+        // Animate content when switching to explanation tab
+        if (id === 'explanation') {
+          document.querySelectorAll('.explanation-content').forEach((content, index) => {
+            content.style.animation = `slideUp 0.6s ease-out ${index * 0.1}s both`;
+          });
+        }
+      });
+    });
+
+    // Help panel functionality
+    helpButton.addEventListener('click', () => {
+      helpPanel.classList.toggle('active');
+    });
+
+    closeHelp.addEventListener('click', () => {
+      helpPanel.classList.remove('active');
+    });
+
+    // Close help panel when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!helpPanel.contains(e.target) && e.target !== helpButton) {
+        helpPanel.classList.remove('active');
+      }
+    });
+
+    // Touch hint toggle
+    touchHintToggle.addEventListener('change', () => {
+      if (touchHintToggle.checked) {
+        touchHint.style.display = 'block';
+        // Auto-hide after 5 seconds
+        clearTimeout(touchHintTimeout);
+        touchHintTimeout = setTimeout(() => {
+          touchHint.style.display = 'none';
+          touchHintToggle.checked = false;
+        }, 5000);
+      } else {
+        touchHint.style.display = 'none';
+      }
+    });
+
+    // Sincronizar controles de massa para novos corpos
+    function syncMassControls() {
+      selectedMass = parseInt(massRange.value);
+      massRange.value = selectedMass;
+      massNum.value = selectedMass;
+    }
+
+    massRange.addEventListener('input', syncMassControls);
+    massNum.addEventListener('input', () => {
+      let value = parseInt(massNum.value);
+      if (value < 5) value = 5;
+      if (value > 1000) value = 1000;
+      massNum.value = value;
+      massRange.value = value;
+      selectedMass = value;
+    });
+
+    // Sincronizar controles de massa para edição
+    function syncEditMassControls() {
+      const value = parseInt(editMassRange.value);
+      editMassRange.value = value;
+      editMassNum.value = value;
+    }
+
+    editMassRange.addEventListener('input', syncEditMassControls);
+    editMassNum.addEventListener('input', () => {
+      let value = parseInt(editMassNum.value);
+      if (value < 5) value = 5;
+      if (value > 1000) value = 1000;
+      editMassNum.value = value;
+      editMassRange.value = value;
+    });
+
+    // Atualizar cor selecionada
+    colorSelect.addEventListener('change', () => {
+      selectedColor = colorSelect.value;
+    });
+
+    class Body {
+      constructor(x, y, m, vx = 0, vy = 0, color = 'white') {
+        this.x = x;
+        this.y = y;
+        this.m = m;
+        this.vx = vx;
+        this.vy = vy;
+        this.r = Math.cbrt(m) * 2; // Raio baseado na massa
+        this.color = color;
+        this.selected = false;
+      }
+    }
+
+    function getRandomColor() {
+      const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3'];
+      return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    function getSelectedColor() {
+      switch(selectedColor) {
+        case 'red': return '#ff6b6b';
+        case 'blue': return '#4ecdc4';
+        case 'green': return '#96ceb4';
+        case 'yellow': return '#feca57';
+        case 'purple': return '#ff9ff3';
+        default: return getRandomColor();
+      }
+    }
+
+    function getColorByName(colorName) {
+      switch(colorName) {
+        case 'red': return '#ff6b6b';
+        case 'blue': return '#4ecdc4';
+        case 'green': return '#96ceb4';
+        case 'yellow': return '#feca57';
+        case 'purple': return '#ff9ff3';
+        default: return getRandomColor();
+      }
+    }
+
+    function init() {
+      bodies = [];
+      trails.clear();
+      selectedBody = null;
+      collisions = 0;
+      collisionEffects = [];
+      chartTime = 0;
+      chartData.time.length = 0;
+      chartData.kinetic.length = 0;
+      chartData.potential.length = 0;
+      chartData.total.length = 0;
+      chartData.mass.length = 0;
+      
+      // Criar dois corpos no centro com órbitas estáveis
+      const centerX = canvas.width / (2 * (devicePixelRatio || 1));
+      const centerY = canvas.height / (2 * (devicePixelRatio || 1));
+      const distance = Math.min(canvas.width, canvas.height) * 0.15;
+      
+      // Corpo 1 (mais massivo, no centro)
+      const body1 = new Body(
+        centerX - distance/2,
+        centerY,
+        100,
+        0,
+        0.8,
+        '#ff6b6b'
+      );
+      
+      // Corpo 2 (menos massivo, orbitando)
+      const body2 = new Body(
+        centerX + distance/2,
+        centerY,
+        20,
+        0,
+        -0.8,
+        '#4ecdc4'
+      );
+      
+      bodies.push(body1, body2);
+      trails.set(body1, []);
+      trails.set(body2, []);
+      
+      updateInfo();
+      if (energyChart) energyChart.update();
+      if (massChart) massChart.update();
+    }
+
+    function drawGrid() {
+      if (!gridChk.checked) return;
+      
+      const gridSize = 50;
+      ctx.strokeStyle = 'rgba(100, 150, 255, 0.1)';
+      ctx.lineWidth = 1;
+      
+      // Linhas verticais
+      for(let x = 0; x < canvas.width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      
+      // Linhas horizontais
+      for(let y = 0; y < canvas.height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+    }
+
+    function update() {
+      if(!running) return;
+      
+      // Update simulation parameters
+      G = parseFloat(gravityInput.value);
+      speed = parseFloat(speedInput.value);
+      
+      // Calcular forças gravitacionais
+      for(let i = 0; i < bodies.length; i++) {
+        const a = bodies[i];
+        let ax = 0, ay = 0;
+        
+        for(let j = 0; j < bodies.length; j++) {
+          if(i === j) continue;
+          
+          const b = bodies[j];
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const dist = Math.hypot(dx, dy);
+          
+          if(dist < 5) continue; // Evitar divisão por zero
+          
+          const F = G * b.m / (dist * dist);
+          ax += F * dx / dist;
+          ay += F * dy / dist;
+        }
+        
+        a.vx += ax;
+        a.vy += ay;
+      }
+
+      // Atualizar posições
+      for(let i = 0; i < bodies.length; i++) {
+        const a = bodies[i];
+        a.x += a.vx * speed;
+        a.y += a.vy * speed;
+        
+        // Confinamento na tela
+        if (enableConfinement.checked) {
+          if (a.x - a.r < 0) {
+            a.x = a.r;
+            a.vx = Math.abs(a.vx) * 0.9; // Inverter e perder um pouco de energia
+          } else if (a.x + a.r > canvas.width) {
+            a.x = canvas.width - a.r;
+            a.vx = -Math.abs(a.vx) * 0.9;
+          }
+          
+          if (a.y - a.r < 0) {
+            a.y = a.r;
+            a.vy = Math.abs(a.vy) * 0.9;
+          } else if (a.y + a.r > canvas.height) {
+            a.y = canvas.height - a.r;
+            a.vy = -Math.abs(a.vy) * 0.9;
+          }
+        }
+      }
+      
+      // Verificar colisões (se habilitado)
+      if (enableCollisions.checked) {
+        for(let i = bodies.length - 1; i >= 0; i--) {
+          const a = bodies[i];
+          
+          for(let j = i - 1; j >= 0; j--) {
+            const b = bodies[j];
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            const dist = Math.hypot(dx, dy);
+            
+            if(dist < a.r + b.r) {
+              // Fusão de corpos (colisão inelástica)
+              const big = a.m >= b.m ? a : b;
+              const small = a.m < b.m ? a : b;
+              
+              // Conservação do momento
+              big.vx = (big.vx * big.m + small.vx * small.m) / (big.m + small.m);
+              big.vy = (big.vy * big.m + small.vy * small.m) / (big.m + small.m);
+              
+              // Aumentar massa
+              big.m += small.m;
+              big.r = Math.cbrt(big.m) * 2;
+              
+              // Adicionar efeito de colisão
+              if (showCollisionEffect.checked) {
+                collisionEffects.push({
+                  x: (a.x + b.x) / 2,
+                  y: (a.y + b.y) / 2,
+                  radius: (a.r + b.r) * 1.5,
+                  alpha: 1,
+                  color: big.color
+                });
+              }
+              
+              // Remover corpo menor
+              bodies.splice(bodies.indexOf(small), 1);
+              trails.delete(small);
+              
+              // Se o corpo selecionado foi removido
+              if (selectedBody === small) {
+                selectedBody = null;
+              }
+              
+              collisions++;
+            }
+          }
+        }
+      }
+      
+      // Atualizar trilhas
+      for (const a of bodies) {
+        const t = trails.get(a);
+        if(t && trailChk.checked) {
+          t.push([a.x, a.y]);
+          if(t.length > 100) t.shift();
+        }
+      }
+      
+      // Atualizar efeitos de colisão
+      for (let i = collisionEffects.length - 1; i >= 0; i--) {
+        const effect = collisionEffects[i];
+        effect.alpha -= 0.05;
+        effect.radius += 2;
+        
+        if (effect.alpha <= 0) {
+          collisionEffects.splice(i, 1);
+        }
+      }
+    }
+
+    function calculateEnergies() {
+      let kinetic = 0;
+      let potential = 0;
+      
+      for(let i = 0; i < bodies.length; i++) {
+        const a = bodies[i];
+        // Energia cinética
+        kinetic += 0.5 * a.m * (a.vx * a.vx + a.vy * a.vy);
+        
+        // Energia potencial
+        for(let j = i + 1; j < bodies.length; j++) {
+          const b = bodies[j];
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const dist = Math.hypot(dx, dy);
+          if(dist > 5) { // Evitar divisão por zero
+            potential -= G * a.m * b.m / dist;
+          }
+        }
+      }
+      
+      return { kinetic, potential, total: kinetic + potential };
+    }
+
+    function calculateTotalMass() {
+      let mass = 0;
+      for(const b of bodies) {
+        mass += b.m;
+      }
+      return mass;
+    }
+
+    function draw() {
+      // Limpar canvas com transparência para efeito de rastro
+      ctx.fillStyle = "rgba(6, 18, 41, 0.3)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Desenhar grade
+      drawGrid();
+      
+      // Desenhar trilhas
+      if (trailChk.checked) {
+        for(const [b, t] of trails) {
+          if(t.length < 2) continue;
+          
+          ctx.beginPath();
+          ctx.moveTo(t[0][0], t[0][1]);
+          
+          for(let i = 1; i < t.length; i++) {
+            ctx.lineTo(t[i][0], t[i][1]);
+          }
+          
+          ctx.strokeStyle = b.color;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      }
+
+      // Desenhar efeitos de colisão
+      for (const effect of collisionEffects) {
+        ctx.beginPath();
+        ctx.arc(effect.x, effect.y, effect.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${parseInt(effect.color.slice(1,3), 16)}, ${parseInt(effect.color.slice(3,5), 16)}, ${parseInt(effect.color.slice(5,7), 16)}, ${effect.alpha})`;
+        ctx.fill();
+      }
+
+      // Desenhar corpos
+      for(const b of bodies) {
+        // Corpo (círculo)
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.fillStyle = b.color;
+        ctx.fill();
+        
+        // Borda do corpo (destaque se selecionado)
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.strokeStyle = b.selected ? "#fff" : "rgba(255,255,255,0.5)";
+        ctx.lineWidth = b.selected ? 3 : 1;
+        ctx.stroke();
+        
+        // Vetor velocidade
+        const vx = b.vx * 30;
+        const vy = b.vy * 30;
+        
+        ctx.beginPath();
+        ctx.moveTo(b.x, b.y);
+        ctx.lineTo(b.x + vx, b.y + vy);
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Ponta do vetor (seta)
+        ctx.beginPath();
+        ctx.arc(b.x + vx, b.y + vy, 4, 0, Math.PI * 2);
+        ctx.fillStyle = "#fff";
+        ctx.fill();
+        
+        // Texto da massa
+        ctx.fillStyle = "#fff";
+        ctx.font = "12px Segoe UI";
+        ctx.fillText("m=" + Math.round(b.m), b.x - 12, b.y - b.r - 5);
+      }
+    }
+
+    function updateInfo() {
+      bodyCount.textContent = bodies.length;
+      totalMass.textContent = Math.round(calculateTotalMass());
+      
+      const energies = calculateEnergies();
+      totalEnergy.textContent = energies.total.toFixed(2);
+      collisionCount.textContent = collisions;
+    }
+
+    function pushChartData() {
+      const energies = calculateEnergies();
+      const mass = calculateTotalMass();
+      
+      if (chartData.time.length >= maxDataPoints) {
+        chartData.time.shift();
+        chartData.kinetic.shift();
+        chartData.potential.shift();
+        chartData.total.shift();
+        chartData.mass.shift();
+      }
+      
+      chartData.time.push(chartTime.toFixed(2));
+      chartData.kinetic.push(energies.kinetic);
+      chartData.potential.push(energies.potential);
+      chartData.total.push(energies.total);
+      chartData.mass.push(mass);
+
+      if (energyChart) energyChart.update();
+      if (massChart) massChart.update();
+    }
+
+    // Charts initialization
+    function initCharts() {
+      const energyCtx = document.getElementById('energyChart').getContext('2d');
+      energyChart = new Chart(energyCtx, {
+        type: 'line',
+        data: {
+          labels: chartData.time,
+          datasets: [
+            { label: 'Energia Cinética', data: chartData.kinetic, borderColor: '#00bfff', backgroundColor: 'transparent', tension: .3 },
+            { label: 'Energia Potencial', data: chartData.potential, borderColor: '#ff2070', backgroundColor: 'transparent', tension: .3 },
+            { label: 'Energia Total', data: chartData.total, borderColor: '#8a2be2', backgroundColor: 'transparent', tension: .3, borderDash: [5,5] }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: {
+            x: { ticks: { color: '#cbd5e1' }, title: { display: true, text: 'Tempo (s)', color: '#9ca3af' } },
+            y: { ticks: { color: '#cbd5e1' }, title: { display: true, text: 'Energia (J)', color: '#9ca3af' } }
+          },
+          plugins: { legend: { labels: { color: '#e6eef8' } } }
+        }
+      });
+
+      const massCtx = document.getElementById('massChart').getContext('2d');
+      massChart = new Chart(massCtx, {
+        type: 'line',
+        data: {
+          labels: chartData.time,
+          datasets: [
+            { label: 'Massa Total', data: chartData.mass, borderColor: '#8a2be2', backgroundColor: 'transparent', tension: .3 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: {
+            x: { ticks: { color: '#cbd5e1' }, title: { display: true, text: 'Tempo (s)', color: '#9ca3af' } },
+            y: { ticks: { color: '#cbd5e1' }, title: { display: true, text: 'Massa', color: '#9ca3af' } }
+          },
+          plugins: { legend: { labels: { color: '#e6eef8' } } }
+        }
+      });
+    }
+
+    // --- Sistema de interação ---
+    const mouse = {x: 0, y: 0, down: false, drag: null, editVec: null};
+
+    function getPos(e) {
+      if(e.touches) {
+        const rect = canvas.getBoundingClientRect();
+        const ratio = devicePixelRatio || 1;
+        return {
+          x: (e.touches[0].clientX - rect.left) * ratio,
+          y: (e.touches[0].clientY - rect.top) * ratio
+        };
+      }
+      const rect = canvas.getBoundingClientRect();
+      const ratio = devicePixelRatio || 1;
+      return {
+        x: (e.clientX - rect.left) * ratio,
+        y: (e.clientY - rect.top) * ratio
+      };
+    }
+
+    function down(e) {
+      e.preventDefault();
+      const {x, y} = getPos(e);
+      mouse.down = true;
+      mouse.x = x;
+      mouse.y = y;
+      
+      // Desselecionar corpo anterior
+      if (selectedBody) {
+        selectedBody.selected = false;
+        selectedBody = null;
+      }
+      
+      // Verificar se é um toque duplo
+      const currentTime = new Date().getTime();
+      const isDoubleTap = currentTime - lastTouchTime < 300;
+      lastTouchTime = currentTime;
+      
+      // Verificar se clicou na ponta de um vetor de velocidade
+      for(const b of bodies) {
+        const tipX = b.x + b.vx * 30;
+        const tipY = b.y + b.vy * 30;
+        
+        if(Math.hypot(x - tipX, y - tipY) < 10) {
+          mouse.editVec = b;
+          return;
+        }
+      }
+      
+      // Verificar se clicou em um corpo
+      for(const b of bodies) {
+        if(Math.hypot(x - b.x, y - b.y) < b.r + 6) {
+          // Selecionar o corpo
+          b.selected = true;
+          selectedBody = b;
+          
+          // Se for toque duplo, abrir editor
+          if (isDoubleTap) {
+            openEditPanel(b);
+          } else {
+            mouse.drag = b;
+          }
+          return;
+        }
+      }
+      
+      // Se não clicou em nada existente, criar novo corpo
+      const color = getSelectedColor();
+      const newB = new Body(
+        x, 
+        y, 
+        selectedMass,
+        (Math.random() - 0.5) * 2,
+        (Math.random() - 0.5) * 2,
+        color
+      );
+      
+      bodies.push(newB);
+      trails.set(newB, []);
+    }
+
+    function move(e) {
+      if(!mouse.down) return;
+      
+      const {x, y} = getPos(e);
+      
+      if(mouse.drag) {
+        // Arrastar corpo
+        mouse.drag.x = x;
+        mouse.drag.y = y;
+      } else if(mouse.editVec) {
+        // Editar vetor velocidade
+        const b = mouse.editVec;
+        b.vx = (x - b.x) / 30;
+        b.vy = (y - b.y) / 30;
+      }
+    }
+
+    function up() {
+      mouse.down = false;
+      mouse.drag = null;
+      mouse.editVec = null;
+    }
+
+    function openEditPanel(body) {
+      // Salvar o estado atual da simulação
+      wasRunningBeforeEdit = running;
+      
+      // Pausar a simulação
+      running = false;
+      playPauseBtn.textContent = 'Continuar';
+      
+      // Preencher os controles com os valores atuais do corpo
+      editMassRange.value = body.m;
+      editMassNum.value = body.m;
+      
+      // Determinar a cor atual (aproximadamente)
+      const bodyColor = body.color;
+      let colorName = 'random';
+      
+      if (bodyColor === '#ff6b6b') colorName = 'red';
+      else if (bodyColor === '#4ecdc4') colorName = 'blue';
+      else if (bodyColor === '#96ceb4') colorName = 'green';
+      else if (bodyColor === '#feca57') colorName = 'yellow';
+      else if (bodyColor === '#ff9ff3') colorName = 'purple';
+      
+      editColorSelect.value = colorName;
+      
+      // Mostrar o painel de edição
+      editPanel.style.display = 'flex';
+      overlay.style.display = 'block';
+      
+      // Armazenar o corpo sendo editado
+      editPanel.currentBody = body;
+    }
+
+    function closeEditPanel() {
+      // Restaurar o estado da simulação
+      running = wasRunningBeforeEdit;
+      playPauseBtn.textContent = running ? 'Pausar' : 'Continuar';
+      
+      editPanel.style.display = 'none';
+      overlay.style.display = 'none';
+      editPanel.currentBody = null;
+    }
+
+    function applyEdit() {
+      const body = editPanel.currentBody;
+      if (body) {
+        // Aplicar nova massa
+        body.m = parseInt(editMassRange.value);
+        body.r = Math.cbrt(body.m) * 2;
+        
+        // Aplicar nova cor
+        const newColor = getColorByName(editColorSelect.value);
+        body.color = newColor;
+      }
+      
+      closeEditPanel();
+    }
+
+    // Event listeners
+    canvas.addEventListener('mousedown', down);
+    canvas.addEventListener('mousemove', move);
+    canvas.addEventListener('mouseup', up);
+    canvas.addEventListener('touchstart', down, {passive: false});
+    canvas.addEventListener('touchmove', move, {passive: false});
+    canvas.addEventListener('touchend', up);
+
+    // Controles da UI
+    playPauseBtn.onclick = () => {
+      running = !running;
+      playPauseBtn.textContent = running ? 'Pausar' : 'Continuar';
+    };
+    
+    resetBtn.onclick = () => init();
+    clearBtn.onclick = () => {
+      for(const k of trails.keys()) trails.set(k, []);
+    }
+
+    // Controles do painel de edição
+    applyEditBtn.onclick = applyEdit;
+    cancelEditBtn.onclick = closeEditPanel;
+    overlay.onclick = closeEditPanel;
+
+    // Main draw loop
+    function loop(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      const dt = Math.min(0.03, (timestamp - lastTime) / 1000);
+      lastTime = timestamp;
+
+      if (running && !mouse.down) {
+        update();
+        chartTime += dt;
+        pushChartData();
+      }
+
+      updateInfo();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    // initial setup
+    function start() {
+      resizeCanvas();
+      initCharts();
+      init();
+      syncMassControls();
+      requestAnimationFrame(loop);
+      
+      // Auto-hide touch hint after 5 seconds
+      touchHintTimeout = setTimeout(() => {
+        touchHint.style.display = 'none';
+      }, 5000);
+    }
+
+    start();
+  </script>
+</body>
+</html>

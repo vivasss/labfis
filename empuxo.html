@@ -1,0 +1,2663 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Simulador de Empuxo — Princípio de Arquimedes</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #071028;
+      --card: #0f1724;
+      --muted: #94a3b8;
+      --primary: #8a2be2;
+      --accent: #00bfff;
+      --success: #10b981;
+      --warning: #f59e0b;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: all 0.3s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, 'Segoe UI', Roboto, Arial;
+      background: linear-gradient(180deg, #071028 0%, #071021 60%);
+      color: #e6eef8;
+      min-height: 100vh;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+
+    header {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    h1 {
+      font-size: clamp(16px, 4vw, 20px);
+      margin: 0;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: textGlow 3s infinite alternate;
+    }
+
+    .tab-container {
+      display: flex;
+      background: var(--card);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      flex: 1;
+      min-width: 100px;
+      text-align: center;
+    }
+
+    .tab:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .tab.active {
+      background: var(--primary);
+      font-weight: 700;
+      box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
+    }
+
+    .tab::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 3px;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    .tab.active::after {
+      width: 100%;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 18px;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr minmax(300px, 380px);
+      gap: 18px;
+      height: calc(100vh - 134px);
+      padding: 0 18px 18px;
+      animation: slideUp 0.6s ease-out;
+    }
+
+    .simulation-container {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+      min-height: 500px;
+    }
+
+    .simulation-container::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(138, 43, 226, 0.05) 0%, transparent 70%);
+      animation: rotate 20s linear infinite;
+      pointer-events: none;
+    }
+
+    .pool-container {
+      width: 100%;
+      height: 560px;
+      border-radius: 8px;
+      background: transparent;
+      display: block;
+      animation: canvasAppear 1s ease-out;
+      touch-action: none;
+      position: relative;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    #poolCanvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 8px;
+    }
+
+    .objects-panel {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 150px;
+      background: rgba(15, 23, 36, 0.9);
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 10;
+      transition: all 0.3s ease;
+      transform: translateX(0);
+    }
+
+    .objects-panel.collapsed {
+      transform: translateX(calc(100% - 30px));
+    }
+
+    .objects-panel h3 {
+      font-size: 14px;
+      margin-bottom: 10px;
+      color: var(--accent);
+      text-align: center;
+    }
+
+    .object-item {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      padding: 8px;
+      margin-bottom: 8px;
+      cursor: grab;
+      text-align: center;
+      transition: all 0.2s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .object-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .object-item:active {
+      cursor: grabbing;
+    }
+
+    .object-item.dragging {
+      opacity: 0.7;
+      transform: scale(0.95);
+    }
+
+    .object-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .object-item:hover::before {
+      left: 100%;
+    }
+
+    .panel-toggle {
+      position: absolute;
+      left: -25px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 25px;
+      height: 40px;
+      background: rgba(15, 23, 36, 0.9);
+      border-radius: 6px 0 0 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-right: none;
+      color: var(--accent);
+      font-size: 12px;
+    }
+
+    .info-panel {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .info-card {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      border-left: 3px solid var(--primary);
+      position: relative;
+      overflow: hidden;
+      animation: cardSlideIn 0.5s ease-out;
+      transition: all 0.3s ease;
+    }
+
+    .info-card:nth-child(2) {
+      border-left-color: var(--accent);
+      animation-delay: 0.1s;
+    }
+
+    .info-card:nth-child(3) {
+      border-left-color: var(--success);
+      animation-delay: 0.2s;
+    }
+
+    .info-card:nth-child(4) {
+      border-left-color: var(--warning);
+      animation-delay: 0.3s;
+    }
+
+    .info-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .info-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .info-card:hover::before {
+      left: 100%;
+    }
+
+    .info-card .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .info-card .value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .controls {
+      background: var(--card);
+      padding: 16px;
+      border-radius: 12px;
+      height: 100%;
+      overflow-y: auto;
+      animation: slideInRight 0.6s ease-out;
+    }
+
+    .controls::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .controls::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    .controls::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 3px;
+    }
+
+    .group {
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .group:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .group:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+
+    .group:nth-child(4) {
+      animation-delay: 0.3s;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    input[type='range'] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type='range']::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+      transition: all 0.2s ease;
+    }
+
+    input[type='range']::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 10px rgba(138, 43, 226, 0.8);
+    }
+
+    input[type='number'],
+    select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.02);
+      color: inherit;
+      margin-bottom: 8px;
+      transition: all 0.3s ease;
+    }
+
+    input[type='number']:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background: linear-gradient(90deg, var(--primary), #6a0dad);
+      border: 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.secondary {
+      background: linear-gradient(90deg, #444, #666);
+    }
+
+    button.secondary:hover {
+      box-shadow: 0 5px 15px rgba(102, 102, 102, 0.4);
+    }
+
+    .muted {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .charts-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .chart-panel {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    .chart-panel:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .chart-container {
+      height: 240px;
+      width: 100%;
+    }
+
+    .explanation-container {
+      padding: 18px;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    .explanation-content {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      margin-bottom: 18px;
+    }
+
+    .explanation-content h2 {
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1.5rem;
+    }
+
+    .explanation-content h3 {
+      margin: 20px 0 10px;
+      color: var(--primary);
+      font-size: 1.2rem;
+    }
+
+    .explanation-content p {
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+
+    .explanation-content ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    .explanation-content li {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .highlight {
+      background: linear-gradient(90deg, transparent, rgba(138, 43, 226, 0.1), transparent);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .formula {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 12px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-family: monospace;
+      text-align: center;
+      border-left: 3px solid var(--accent);
+    }
+
+    .example {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 3px solid var(--success);
+    }
+
+    .concept-card {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 3px solid var(--primary);
+      transition: all 0.3s ease;
+    }
+
+    .concept-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .help-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      transition: all 0.3s ease;
+      border: none;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .help-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 25px rgba(138, 43, 226, 0.5);
+    }
+
+    .help-button:active {
+      transform: scale(0.95);
+    }
+
+    .help-panel {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 320px;
+      max-height: 70vh;
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      overflow-y: auto;
+      transform: translateY(20px);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    .help-panel.active {
+      transform: translateY(0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .help-panel h2 {
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .help-panel h3 {
+      margin: 15px 0 8px;
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+
+    .help-panel p {
+      margin-bottom: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .help-panel ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    .help-panel li {
+      margin-bottom: 6px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .help-panel .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .help-panel .close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    footer {
+      padding: 12px 20px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+      animation: fadeIn 1s ease-out;
+    }
+
+    .mass-controls {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 12px;
+      margin: 10px 0;
+      border-left: 3px solid var(--warning);
+    }
+    
+    .radio-group {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 10px;
+    }
+    
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 14px;
+    }
+    
+    .radio-option input {
+      margin: 0;
+    }
+    
+    .volume-controls {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 12px;
+      margin: 10px 0;
+      border-left: 3px solid var(--success);
+    }
+
+    /* Novos elementos para melhorar a interatividade */
+    .floating-controls {
+      position: absolute;
+      bottom: 15px;
+      left: 15px;
+      display: flex;
+      gap: 10px;
+      z-index: 10;
+    }
+
+    .floating-button {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(15, 23, 36, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--accent);
+      font-size: 18px;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .floating-button:hover {
+      transform: scale(1.1);
+      background: rgba(15, 23, 36, 0.9);
+    }
+
+    .touch-indicator {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(138, 43, 226, 0.3);
+      pointer-events: none;
+      z-index: 100;
+      animation: pulse 1.5s infinite;
+      transform: translate(-50%, -50%);
+    }
+
+    .water-disturbance {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      pointer-events: none;
+      z-index: 5;
+      transform: translate(-50%, -50%);
+    }
+
+    .object-highlight {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      pointer-events: none;
+      z-index: 4;
+      animation: highlightPulse 2s infinite;
+    }
+
+    @keyframes highlightPulse {
+      0% { transform: scale(1); opacity: 0.7; }
+      50% { transform: scale(1.2); opacity: 0.3; }
+      100% { transform: scale(1); opacity: 0.7; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes canvasAppear {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes cardSlideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes textGlow {
+      0% { text-shadow: 0 0 5px rgba(138, 43, 226, 0.5); }
+      100% { text-shadow: 0 0 15px rgba(0, 191, 255, 0.8), 0 0 20px rgba(138, 43, 226, 0.6); }
+    }
+
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes pulse {
+      0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.7; }
+      50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.3; }
+      100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.7; }
+    }
+
+    /* Responsividade aprimorada */
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+        height: auto;
+        padding-bottom: 18px;
+      }
+      
+      .pool-container {
+        height: 420px;
+      }
+      
+      .info-panel {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .help-panel {
+        width: 280px;
+        right: 10px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .info-panel {
+        grid-template-columns: 1fr;
+      }
+      
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .tab-container {
+        width: 100%;
+      }
+      
+      .tab {
+        flex: 1;
+        text-align: center;
+        padding: 12px 8px;
+      }
+      
+      .simulation-container {
+        padding: 8px;
+      }
+      
+      .pool-container {
+        height: 60vh;
+        min-height: 400px;
+      }
+      
+      .controls {
+        padding: 12px;
+      }
+      
+      button {
+        padding: 12px 16px;
+        font-size: 16px;
+      }
+      
+      .help-button {
+        width: 50px;
+        height: 50px;
+        bottom: 15px;
+        right: 15px;
+        font-size: 20px;
+      }
+      
+      .help-panel {
+        width: calc(100% - 30px);
+        right: 15px;
+        bottom: 75px;
+      }
+      
+      .radio-group {
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .objects-panel {
+        width: 130px;
+      }
+
+      .floating-controls {
+        bottom: 10px;
+        left: 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .pool-container {
+        height: 50vh;
+        min-height: 350px;
+      }
+
+      .objects-panel {
+        width: 120px;
+        padding: 8px;
+      }
+
+      .object-item {
+        padding: 10px 6px;
+        font-size: 12px;
+      }
+    }
+
+    @media (max-height: 500px) and (orientation: landscape) {
+      .pool-container {
+        height: 70vh;
+      }
+
+      .objects-panel {
+        top: 5px;
+        right: 5px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Simulador de Empuxo(arquimesdes)</h1>
+    <div class="tab-container">
+      <div class="tab active" data-tab="simulation">Simulação</div>
+      <div class="tab" data-tab="charts">Gráficos</div>
+      <div class="tab" data-tab="explanation">Explicação</div>
+    </div>
+  </header>
+
+  <div class="tab-content active" id="simulation-tab">
+    <main>
+      <div class="simulation-container">
+        <div class="pool-container">
+          <canvas id="poolCanvas"></canvas>
+          
+          <div class="objects-panel">
+            <div class="panel-toggle">◀</div>
+            <h3>Objetos</h3>
+            <div class="object-item" data-type="sphere" data-density="500">Esfera (500 kg/m³)</div>
+            <div class="object-item" data-type="cube" data-density="800">Cubo (800 kg/m³)</div>
+            <div class="object-item" data-type="cylinder" data-density="1200">Cilindro (1200 kg/m³)</div>
+            <div class="object-item" data-type="cone" data-density="2000">Cone (2000 kg/m³)</div>
+          </div>
+
+          <div class="floating-controls">
+            <div class="floating-button" id="pauseBtn" title="Pausar/Continuar">⏸️</div>
+            <div class="floating-button" id="slowMotionBtn" title="Câmera lenta">🐌</div>
+            <div class="floating-button" id="resetCameraBtn" title="Redefinir visualização">🔍</div>
+          </div>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-card">
+            <div class="label">Objeto Selecionado</div>
+            <div class="value" id="selectedObject">Nenhum</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Densidade</div>
+            <div class="value" id="densityValue">-- kg/m³</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Volume</div>
+            <div class="value" id="volumeValue">-- m³</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Empuxo</div>
+            <div class="value" id="buoyancyValue">-- N</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; display:flex; gap:10px; flex-wrap: wrap;">
+          <button id="addObject">Adicionar Objeto</button>
+          <button id="clearObjects" class="secondary">Limpar Objetos</button>
+          <button id="randomScenario" class="secondary">Cenário Aleatório</button>
+        </div>
+      </div>
+
+      <aside class="controls">
+        <div class="group">
+          <label><strong>Configurações da Água</strong></label>
+          <label class="small">Densidade (kg/m³)</label>
+          <input id="waterDensity" type="number" step="10" value="1000">
+          <label class="small">Profundidade (m)</label>
+          <input id="waterDepth" type="number" step="0.1" value="2.5" min="1" max="5">
+          <label class="small">Temperatura (°C)</label>
+          <input id="waterTemperature" type="range" min="0" max="40" step="1" value="20">
+          <span id="temperatureDisplay" class="muted">20°C</span>
+        </div>
+
+        <div class="group">
+          <label><strong>Configurações do Objeto</strong></label>
+          <label class="small">Tipo</label>
+          <select id="objectType">
+            <option value="sphere">Esfera</option>
+            <option value="cube">Cubo</option>
+            <option value="cylinder">Cilindro</option>
+            <option value="cone">Cone</option>
+          </select>
+          
+          <div class="mass-controls">
+            <div class="radio-group">
+              <div class="radio-option">
+                <input type="radio" id="calcByDensity" name="massMode" value="density" checked>
+                <label for="calcByDensity">Calcular por densidade</label>
+              </div>
+              <div class="radio-option">
+                <input type="radio" id="setMassDirectly" name="massMode" value="mass">
+                <label for="setMassDirectly">Definir massa</label>
+              </div>
+            </div>
+            
+            <div id="densityControl">
+              <label class="small">Densidade (kg/m³)</label>
+              <input id="objectDensity" type="range" min="100" max="3000" step="50" value="800">
+              <span id="densityDisplay" class="muted">800 kg/m³</span>
+            </div>
+            
+            <div id="massControl" style="display: none;">
+              <label class="small">Massa (kg)</label>
+              <input id="objectMass" type="range" min="0.1" max="50" step="0.1" value="1.0">
+              <span id="massDisplay" class="muted">1.0 kg</span>
+            </div>
+          </div>
+          
+          <div class="volume-controls">
+            <div class="radio-group">
+              <div class="radio-option">
+                <input type="radio" id="calcBySize" name="volumeMode" value="size" checked>
+                <label for="calcBySize">Calcular por tamanho</label>
+              </div>
+              <div class="radio-option">
+                <input type="radio" id="setVolumeDirectly" name="volumeMode" value="volume">
+                <label for="setVolumeDirectly">Definir volume</label>
+              </div>
+            </div>
+            
+            <div id="sizeControl">
+              <label class="small">Tamanho (m)</label>
+              <input id="objectSize" type="range" min="0.2" max="1.5" step="0.1" value="0.8">
+              <span id="sizeDisplay" class="muted">0.8 m</span>
+            </div>
+            
+            <div id="volumeControl" style="display: none;">
+              <label class="small">Volume (m³)</label>
+              <input id="objectVolume" type="range" min="0.01" max="3" step="0.01" value="0.5">
+              <span id="volumeDisplay" class="muted">0.5 m³</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <label><strong>Visual</strong></label>
+          <label class="small"><input id="showVectors" type="checkbox" checked> Mostrar vetores de força</label>
+          <label class="small"><input id="showGrid" type="checkbox" checked> Mostrar grade</label>
+          <label class="small"><input id="showInfo" type="checkbox" checked> Mostrar informações</label>
+          <label class="small"><input id="showParticles" type="checkbox" checked> Mostrar partículas</label>
+          <label class="small"><input id="showTrails" type="checkbox"> Mostrar rastros</label>
+        </div>
+
+        <div class="group">
+          <label><strong>Física</strong></label>
+          <label class="small">Gravidade (m/s²)</label>
+          <input id="gravity" type="number" step="0.1" value="9.8">
+          <label class="small">Viscosidade</label>
+          <input id="viscosity" type="range" min="0" max="0.1" step="0.005" value="0.02">
+          <span id="viscosityDisplay" class="muted">0.02</span>
+          <label class="small">Resistência do Ar</label>
+          <input id="airResistance" type="range" min="0" max="0.05" step="0.001" value="0.01">
+          <span id="airResistanceDisplay" class="muted">0.01</span>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div class="tab-content" id="charts-tab">
+    <div class="charts-container" style="padding:12px 18px;">
+      <div class="chart-panel">
+        <h3 style="margin:0 0 8px 0">Forças Atuantes</h3>
+        <div class="chart-container"><canvas id="forcesChart"></canvas></div>
+      </div>
+
+      <div class="chart-panel" style="margin-top:10px">
+        <h3 style="margin:0 0 8px 0">Posição vs Tempo</h3>
+        <div class="chart-container"><canvas id="positionChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="explanation-tab">
+    <div class="explanation-container">
+      <div class="explanation-content">
+        <h2>Como Usar o Simulador</h2>
+        <p>Este simulador permite explorar o Princípio de Arquimedes de forma interativa:</p>
+        
+        <div class="concept-card">
+          <h3>Adicionar Objetos</h3>
+          <p>Use o painel de objetos no canto superior direito para arrastar objetos para a piscina, ou use o botão "Adicionar Objeto" com as configurações desejadas.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Interação</h3>
+          <p>Arraste os objetos dentro da água para reposicioná-los. Observe como diferentes densidades afetam o comportamento dos objetos na água.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Controles de Densidade, Massa e Volume</h3>
+          <p>Agora você pode escolher entre:</p>
+          <ul>
+            <li><strong>Calcular por densidade</strong>: A massa é calculada automaticamente a partir da densidade e volume</li>
+            <li><strong>Definir massa diretamente</strong>: Você define a massa e a densidade é calculada automaticamente</li>
+            <li><strong>Calcular por tamanho</strong>: O volume é calculado automaticamente a partir do tamanho</li>
+            <li><strong>Definir volume diretamente</strong>: Você define o volume e o tamanho é ajustado automaticamente</li>
+          </ul>
+        </div>
+        
+        <p>Experimente diferentes configurações e observe como o empuxo atua sobre os objetos!</p>
+      </div>
+
+      <div class="explanation-content">
+        <h2>O Princípio de Arquimedes</h2>
+        <p>O Princípio de Arquimedes estabelece que:</p>
+        <div class="formula">
+          "Todo corpo imerso em um fluido sofre a ação de uma força vertical para cima, 
+          cuja intensidade é igual ao peso do fluido deslocado pelo corpo."
+        </div>
+        
+        <div class="concept-card">
+          <h3>Força de Empuxo</h3>
+          <p>A força de empuxo (E) é calculada pela fórmula:</p>
+          <div class="formula">E = ρ · V · g</div>
+          <p>Onde:</p>
+          <ul>
+            <li><span class="highlight">ρ</span> é a densidade do fluido (kg/m³)</li>
+            <li><span class="highlight">V</span> é o volume do fluido deslocado (m³)</li>
+            <li><span class="highlight">g</span> é a aceleração da gravidade (m/s²)</li>
+          </ul>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Comportamento dos Objetos</h3>
+          <p>O comportamento de um objeto na água depende da relação entre sua densidade e a densidade da água:</p>
+          <ul>
+            <li><span class="highlight">Se densidade do objeto < densidade da água</span>: O objeto flutua</li>
+            <li><span class="highlight">Se densidade do objeto = densidade da água</span>: O objeto fica em equilíbrio submerso</li>
+            <li><span class="highlight">Se densidade do objeto > densidade da água</span>: O objeto afunda</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Aplicações do Princípio</h2>
+        
+        <div class="concept-card">
+          <h3>Navegação</h3>
+          <p>Os navios flutuam porque seu peso total é igual ao empuxo exercido pela água. A forma do casco desloca um volume de água cujo peso é igual ao peso do navio.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Submarinos</h3>
+          <p>Submarinos controlam sua flutuação alterando sua densidade média através de tanques de lastro, que podem ser preenchidos com água ou ar.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Hidrômetros</h3>
+          <p>Instrumentos que medem a densidade de líquidos baseiam-se no Princípio de Arquimedes. Quanto maior a densidade do líquido, maior o empuxo sobre o instrumento.</p>
+        </div>
+        
+        <div class="example">
+          <h3>Exemplo Prático</h3>
+          <p>Um objeto com volume de 0.5 m³ e densidade de 600 kg/m³ é colocado na água (densidade = 1000 kg/m³):</p>
+          <p>Peso do objeto = 600 × 0.5 × 9.8 = 2940 N</p>
+          <p>Empuxo = 1000 × 0.5 × 9.8 = 4900 N</p>
+          <p>Como o empuxo é maior que o peso, o objeto flutuará.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="help-button" id="helpButton">?</button>
+
+  <div class="help-panel" id="helpPanel">
+    <button class="close-btn" id="closeHelp">&times;</button>
+    <h2>💡 Como Usar o Simulador</h2>
+    
+    <h3>Adicionando Objetos</h3>
+    <p>Você pode adicionar objetos de duas formas:</p>
+    <ul>
+      <li><strong>Arraste</strong> objetos do painel lateral para a piscina</li>
+      <li>Use o botão <strong>"Adicionar Objeto"</strong> com as configurações desejadas</li>
+    </ul>
+    
+    <h3>Interagindo com Objetos</h3>
+    <p><strong>Arraste objetos</strong> dentro da água para reposicioná-los</p>
+    <p><strong>Observe as forças</strong> atuando em cada objeto</p>
+    
+    <h3>Configurações</h3>
+    <ul>
+      <li><strong>Densidade do objeto:</strong> Controla se o objeto flutua ou afunda</li>
+      <li><strong>Massa do objeto:</strong> Pode ser definida diretamente ou calculada a partir da densidade</li>
+      <li><strong>Volume do objeto:</strong> Pode ser definido diretamente ou calculado a partir do tamanho</li>
+      <li><strong>Densidade da água:</strong> Altera a força de empuxo</li>
+      <li><strong>Gravidade:</strong> Afeta tanto o peso quanto o empuxo</li>
+    </ul>
+    
+    <h3>Fórmula do Empuxo</h3>
+    <div class="formula">E = ρ · V · g</div>
+    <p>Onde ρ é densidade do fluido, V é volume deslocado e g é gravidade.</p>
+    
+    <p style="margin-top: 15px; font-style: italic; text-align: center;">
+      Experimente diferentes configurações e observe como o empuxo se comporta!
+    </p>
+  </div>
+
+  <footer>Simulador de Empuxo — Princípio de Arquimedes</footer>
+
+  <script>
+    // Canvas and context
+    const canvas = document.getElementById('poolCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Simulation parameters
+    const WATER_COLOR = '#1e3a8a';
+    const AIR_COLOR = '#0f1724';
+    const POOL_DEPTH = 2.5; // meters
+    const WATER_DENSITY = 1000; // kg/m³
+    const GRAVITY = 9.8; // m/s²
+
+    // Objects in the simulation
+    let objects = [];
+    let selectedObject = null;
+    let isDragging = false;
+    let dragOffset = { x: 0, y: 0 };
+    let lastTime = 0;
+    let paused = false;
+    let slowMotion = false;
+    let timeScale = 1.0;
+    
+    // Visual effects
+    let touchIndicators = [];
+    let waterDisturbances = [];
+    let objectHighlights = [];
+    let particles = [];
+    
+    // Data for charts
+    let chartData = {
+      time: [],
+      weightForce: [],
+      buoyancyForce: [],
+      netForce: [],
+      position: []
+    };
+    
+    // Chart instances
+    let forcesChart = null;
+    let positionChart = null;
+
+    // Resize canvas properly for high-dpi
+    function resizeCanvas() {
+      const ratio = devicePixelRatio || 1;
+      const container = canvas.parentElement;
+      canvas.width = container.clientWidth * ratio;
+      canvas.height = container.clientHeight * ratio;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    }
+
+    // Initialize the simulation
+    function init() {
+      resizeCanvas();
+      window.addEventListener('resize', resizeCanvas);
+      
+      // Add event listeners for object panel
+      document.querySelectorAll('.object-item').forEach(item => {
+        item.addEventListener('mousedown', startDragFromPanel);
+        item.addEventListener('touchstart', startDragFromPanel, { passive: false });
+      });
+      
+      // Add event listeners for canvas
+      canvas.addEventListener('mousedown', handleCanvasMouseDown);
+      canvas.addEventListener('mousemove', handleCanvasMouseMove);
+      canvas.addEventListener('mouseup', handleCanvasMouseUp);
+      canvas.addEventListener('mouseleave', handleCanvasMouseUp);
+      
+      canvas.addEventListener('touchstart', handleCanvasTouchStart, { passive: false });
+      canvas.addEventListener('touchmove', handleCanvasTouchMove, { passive: false });
+      canvas.addEventListener('touchend', handleCanvasTouchEnd);
+      
+      // Add button listeners
+      document.getElementById('addObject').addEventListener('click', addObjectFromControls);
+      document.getElementById('clearObjects').addEventListener('click', clearObjects);
+      document.getElementById('randomScenario').addEventListener('click', createRandomScenario);
+      
+      // Add control listeners
+      document.getElementById('objectDensity').addEventListener('input', updateDensityDisplay);
+      document.getElementById('objectMass').addEventListener('input', updateMassDisplay);
+      document.getElementById('objectSize').addEventListener('input', updateSizeDisplay);
+      document.getElementById('objectVolume').addEventListener('input', updateVolumeDisplay);
+      document.getElementById('viscosity').addEventListener('input', updateViscosityDisplay);
+      document.getElementById('airResistance').addEventListener('input', updateAirResistanceDisplay);
+      document.getElementById('waterTemperature').addEventListener('input', updateTemperatureDisplay);
+      
+      // Add mass mode listeners
+      document.querySelectorAll('input[name="massMode"]').forEach(radio => {
+        radio.addEventListener('change', handleMassModeChange);
+      });
+      
+      // Add volume mode listeners
+      document.querySelectorAll('input[name="volumeMode"]').forEach(radio => {
+        radio.addEventListener('change', handleVolumeModeChange);
+      });
+      
+      // Floating controls
+      document.getElementById('pauseBtn').addEventListener('click', togglePause);
+      document.getElementById('slowMotionBtn').addEventListener('click', toggleSlowMotion);
+      document.getElementById('resetCameraBtn').addEventListener('click', resetCamera);
+      
+      // Panel toggle
+      document.querySelector('.panel-toggle').addEventListener('click', toggleObjectPanel);
+      
+      // Initialize displays
+      updateDensityDisplay();
+      updateMassDisplay();
+      updateSizeDisplay();
+      updateVolumeDisplay();
+      updateViscosityDisplay();
+      updateAirResistanceDisplay();
+      updateTemperatureDisplay();
+      
+      // Initialize charts
+      initCharts();
+      
+      // Create initial objects
+      createInitialObjects();
+      
+      // Start animation loop
+      requestAnimationFrame(animate);
+    }
+
+    // Create initial objects for demonstration
+    function createInitialObjects() {
+      const width = canvas.width / (devicePixelRatio || 1);
+      const height = canvas.height / (devicePixelRatio || 1);
+      
+      // Add a few objects with different densities
+      addObject('sphere', 500, 0.6, width * 0.3, height * 0.3);
+      addObject('cube', 1200, 0.5, width * 0.7, height * 0.4);
+      addObject('cylinder', 800, 0.7, width * 0.5, height * 0.2);
+    }
+
+    // Create random scenario
+    function createRandomScenario() {
+      clearObjects();
+      
+      const width = canvas.width / (devicePixelRatio || 1);
+      const height = canvas.height / (devicePixelRatio || 1);
+      const types = ['sphere', 'cube', 'cylinder', 'cone'];
+      
+      // Create 3-5 random objects
+      const numObjects = Math.floor(Math.random() * 3) + 3;
+      
+      for (let i = 0; i < numObjects; i++) {
+        const type = types[Math.floor(Math.random() * types.length)];
+        const density = Math.floor(Math.random() * 2500) + 100;
+        const size = Math.random() * 0.8 + 0.3;
+        const x = Math.random() * (width - 100) + 50;
+        const y = Math.random() * (height - 200) + 50;
+        
+        addObject(type, density, size, x, y);
+      }
+      
+      // Randomize water density
+      document.getElementById('waterDensity').value = Math.floor(Math.random() * 500) + 800;
+      
+      // Create visual effect
+      createWaterDisturbance(width/2, height/2, 100);
+    }
+
+    // Toggle object panel visibility
+    function toggleObjectPanel() {
+      const panel = document.querySelector('.objects-panel');
+      const toggle = document.querySelector('.panel-toggle');
+      
+      panel.classList.toggle('collapsed');
+      toggle.textContent = panel.classList.contains('collapsed') ? '▶' : '◀';
+    }
+
+    // Toggle pause state
+    function togglePause() {
+      paused = !paused;
+      document.getElementById('pauseBtn').textContent = paused ? '▶️' : '⏸️';
+    }
+
+    // Toggle slow motion
+    function toggleSlowMotion() {
+      slowMotion = !slowMotion;
+      timeScale = slowMotion ? 0.3 : 1.0;
+      document.getElementById('slowMotionBtn').style.background = slowMotion ? 
+        'rgba(255, 165, 0, 0.8)' : 'rgba(15, 23, 36, 0.8)';
+    }
+
+    // Reset camera view
+    function resetCamera() {
+      // This would normally adjust the view, but in this simple implementation
+      // we'll just create a visual feedback
+      createWaterDisturbance(canvas.width/2, canvas.height/2, 150);
+    }
+
+    // Create water disturbance effect
+    function createWaterDisturbance(x, y, radius) {
+      waterDisturbances.push({
+        x: x,
+        y: y,
+        radius: radius,
+        startTime: Date.now(),
+        duration: 1000
+      });
+    }
+
+    // Create object highlight effect
+    function createObjectHighlight(object) {
+      const scale = getScaleFactor();
+      const pixelSize = object.size * scale;
+      
+      objectHighlights.push({
+        x: object.x,
+        y: object.y,
+        radius: pixelSize * 0.7,
+        startTime: Date.now(),
+        duration: 2000,
+        object: object
+      });
+    }
+
+    // Create touch indicator
+    function createTouchIndicator(x, y) {
+      touchIndicators.push({
+        x: x,
+        y: y,
+        startTime: Date.now(),
+        duration: 500
+      });
+    }
+
+    // Create particles
+    function createParticles(x, y, count, color) {
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x: x,
+          y: y,
+          vx: (Math.random() - 0.5) * 4,
+          vy: (Math.random() - 0.5) * 4,
+          radius: Math.random() * 3 + 1,
+          color: color,
+          life: 1.0,
+          decay: 0.02 + Math.random() * 0.02
+        });
+      }
+    }
+
+    // Handle mass mode change
+    function handleMassModeChange() {
+      const mode = document.querySelector('input[name="massMode"]:checked').value;
+      
+      if (mode === 'density') {
+        document.getElementById('densityControl').style.display = 'block';
+        document.getElementById('massControl').style.display = 'none';
+        
+        // Update selected object if exists
+        if (selectedObject) {
+          selectedObject.useDensity = true;
+          selectedObject.density = parseFloat(document.getElementById('objectDensity').value);
+          selectedObject.updateMassFromDensity();
+        }
+      } else {
+        document.getElementById('densityControl').style.display = 'none';
+        document.getElementById('massControl').style.display = 'block';
+        
+        // Update selected object if exists
+        if (selectedObject) {
+          selectedObject.useDensity = false;
+          selectedObject.mass = parseFloat(document.getElementById('objectMass').value);
+          selectedObject.updateDensityFromMass();
+        }
+      }
+    }
+
+    // Handle volume mode change
+    function handleVolumeModeChange() {
+      const mode = document.querySelector('input[name="volumeMode"]:checked').value;
+      
+      if (mode === 'size') {
+        document.getElementById('sizeControl').style.display = 'block';
+        document.getElementById('volumeControl').style.display = 'none';
+        
+        // Update selected object if exists
+        if (selectedObject) {
+          selectedObject.useSize = true;
+          selectedObject.size = parseFloat(document.getElementById('objectSize').value);
+          selectedObject.updateVolumeFromSize();
+        }
+      } else {
+        document.getElementById('sizeControl').style.display = 'none';
+        document.getElementById('volumeControl').style.display = 'block';
+        
+        // Update selected object if exists
+        if (selectedObject) {
+          selectedObject.useSize = false;
+          selectedObject.volume = parseFloat(document.getElementById('objectVolume').value);
+          selectedObject.updateSizeFromVolume();
+        }
+      }
+    }
+
+    // Initialize charts
+    function initCharts() {
+      const forcesCtx = document.getElementById('forcesChart').getContext('2d');
+      const positionCtx = document.getElementById('positionChart').getContext('2d');
+      
+      forcesChart = new Chart(forcesCtx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: 'Peso (N)',
+              data: [],
+              borderColor: '#ff4444',
+              backgroundColor: 'rgba(255, 68, 68, 0.1)',
+              tension: 0.4,
+              fill: true
+            },
+            {
+              label: 'Empuxo (N)',
+              data: [],
+              borderColor: '#44ff44',
+              backgroundColor: 'rgba(68, 255, 68, 0.1)',
+              tension: 0.4,
+              fill: true
+            },
+            {
+              label: 'Força Resultante (N)',
+              data: [],
+              borderColor: '#ffff00',
+              backgroundColor: 'rgba(255, 255, 0, 0.1)',
+              tension: 0.4,
+              fill: true
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Tempo (s)'
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Força (N)'
+              }
+            }
+          }
+        }
+      });
+      
+      positionChart = new Chart(positionCtx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: 'Posição Y (m)',
+              data: [],
+              borderColor: '#00bfff',
+              backgroundColor: 'rgba(0, 191, 255, 0.1)',
+              tension: 0.4,
+              fill: true
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Tempo (s)'
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Posição (m)',
+                reverse: true
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Update charts with new data
+    function updateCharts(time, weightForce, buoyancyForce, netForce, position) {
+      // Limit data points to prevent performance issues
+      if (chartData.time.length > 100) {
+        chartData.time.shift();
+        chartData.weightForce.shift();
+        chartData.buoyancyForce.shift();
+        chartData.netForce.shift();
+        chartData.position.shift();
+      }
+      
+      chartData.time.push(time.toFixed(1));
+      chartData.weightForce.push(weightForce);
+      chartData.buoyancyForce.push(buoyancyForce);
+      chartData.netForce.push(netForce);
+      chartData.position.push(position);
+      
+      if (forcesChart) {
+        forcesChart.data.labels = chartData.time;
+        forcesChart.data.datasets[0].data = chartData.weightForce;
+        forcesChart.data.datasets[1].data = chartData.buoyancyForce;
+        forcesChart.data.datasets[2].data = chartData.netForce;
+        forcesChart.update('none');
+      }
+      
+      if (positionChart) {
+        positionChart.data.labels = chartData.time;
+        positionChart.data.datasets[0].data = chartData.position;
+        positionChart.update('none');
+      }
+    }
+
+    // Object class
+    class BuoyancyObject {
+      constructor(type, density, size, x, y, useDensity = true, mass = null, useSize = true, volume = null) {
+        this.type = type;
+        this.useDensity = useDensity;
+        this.useSize = useSize;
+        
+        // Initialize size and volume
+        if (useSize) {
+          this.size = size;
+          this.volume = this.calculateVolume();
+        } else {
+          this.volume = volume;
+          this.size = this.calculateSize();
+        }
+        
+        // Initialize density and mass
+        if (useDensity) {
+          this.density = density;
+          this.mass = this.density * this.volume;
+        } else {
+          this.mass = mass;
+          this.density = this.mass / this.volume;
+        }
+        
+        this.x = x; // canvas coordinates
+        this.y = y; // canvas coordinates
+        this.vx = 0; // velocity x
+        this.vy = 0; // velocity y
+        this.color = this.generateColor();
+        this.inWater = false;
+        this.submergedVolume = 0;
+        this.buoyancyForce = 0;
+        this.weightForce = this.mass * GRAVITY;
+        this.isDragging = false;
+        this.lastUpdateTime = 0;
+        this.trail = []; // For showing object trail
+        this.maxTrailLength = 20;
+      }
+      
+      calculateVolume() {
+        switch(this.type) {
+          case 'sphere':
+            return (4/3) * Math.PI * Math.pow(this.size/2, 3);
+          case 'cube':
+            return Math.pow(this.size, 3);
+          case 'cylinder':
+            return Math.PI * Math.pow(this.size/2, 2) * this.size;
+          case 'cone':
+            return (1/3) * Math.PI * Math.pow(this.size/2, 2) * this.size;
+          default:
+            return Math.pow(this.size, 3);
+        }
+      }
+      
+      calculateSize() {
+        switch(this.type) {
+          case 'sphere':
+            return Math.cbrt(this.volume * 3 / (4 * Math.PI)) * 2;
+          case 'cube':
+            return Math.cbrt(this.volume);
+          case 'cylinder':
+            // For cylinder, we assume height = diameter
+            return Math.cbrt(this.volume * 4 / Math.PI);
+          case 'cone':
+            // For cone, we assume height = base diameter
+            return Math.cbrt(this.volume * 3 * 4 / Math.PI);
+          default:
+            return Math.cbrt(this.volume);
+        }
+      }
+      
+      generateColor() {
+        // Generate color based on density
+        const densityRatio = this.density / 3000; // Max density 3000 kg/m³
+        const r = Math.floor(100 + densityRatio * 155);
+        const g = Math.floor(150 - densityRatio * 100);
+        const b = Math.floor(200 - densityRatio * 100);
+        return `rgb(${r}, ${g}, ${b})`;
+      }
+      
+      updateMassFromDensity() {
+        this.mass = this.density * this.volume;
+        this.weightForce = this.mass * GRAVITY;
+        this.color = this.generateColor();
+      }
+      
+      updateDensityFromMass() {
+        this.density = this.mass / this.volume;
+        this.weightForce = this.mass * GRAVITY;
+        this.color = this.generateColor();
+      }
+      
+      updateVolumeFromSize() {
+        this.volume = this.calculateVolume();
+        
+        if (this.useDensity) {
+          this.mass = this.density * this.volume;
+        } else {
+          this.density = this.mass / this.volume;
+        }
+        
+        this.weightForce = this.mass * GRAVITY;
+        this.color = this.generateColor();
+      }
+      
+      updateSizeFromVolume() {
+        this.size = this.calculateSize();
+        
+        if (this.useDensity) {
+          this.mass = this.density * this.volume;
+        } else {
+          this.density = this.mass / this.volume;
+        }
+        
+        this.weightForce = this.mass * GRAVITY;
+        this.color = this.generateColor();
+      }
+      
+      update(waterLevel, waterDensity, gravity, viscosity, airResistance, deltaTime) {
+        // Skip physics update if object is being dragged
+        if (this.isDragging) {
+          this.vx = 0;
+          this.vy = 0;
+          return {
+            weightForce: this.weightForce,
+            buoyancyForce: this.buoyancyForce,
+            netForce: this.buoyancyForce - this.weightForce,
+            position: this.y / getScaleFactor()
+          };
+        }
+        
+        const waterY = getWaterLevelY();
+        const objectBottom = this.y + this.getHeight()/2;
+        const objectTop = this.y - this.getHeight()/2;
+        
+        // Check if object is in water
+        this.inWater = objectBottom > waterY;
+        
+        if (this.inWater) {
+          // Calculate submerged volume based on how much of the object is underwater
+          const submergedHeight = Math.min(this.getHeight(), objectBottom - waterY);
+          this.submergedVolume = this.calculateSubmergedVolume(submergedHeight);
+          
+          // Calculate buoyancy force
+          this.buoyancyForce = waterDensity * this.submergedVolume * gravity;
+        } else {
+          this.submergedVolume = 0;
+          this.buoyancyForce = 0;
+        }
+        
+        // Calculate net force
+        const netForce = this.buoyancyForce - this.weightForce;
+        
+        // Apply acceleration (F = ma -> a = F/m)
+        const ay = netForce / this.mass;
+        
+        // Update velocity with damping (viscosity)
+        this.vy += ay * deltaTime * timeScale;
+        
+        // Apply viscosity damping only when in water
+        if (this.inWater) {
+          this.vy *= (1 - viscosity);
+        } else {
+          // Apply air resistance when not in water
+          this.vy *= (1 - airResistance);
+        }
+        
+        // Update position
+        this.y += this.vy * deltaTime * 60 * timeScale; // Scale to approximate real time
+        
+        // Update trail for visualization
+        if (document.getElementById('showTrails').checked) {
+          this.trail.push({x: this.x, y: this.y});
+          if (this.trail.length > this.maxTrailLength) {
+            this.trail.shift();
+          }
+        }
+        
+        // Boundary checks - ground
+        const groundLevel = canvas.height / (devicePixelRatio || 1);
+        if (objectBottom >= groundLevel) {
+          this.y = groundLevel - this.getHeight()/2;
+          this.vy = 0;
+          // Create particles on impact
+          if (Math.abs(this.vy) > 0.5) {
+            createParticles(this.x, groundLevel, 10, this.color);
+          }
+        }
+        
+        // Boundary checks - water surface (prevent objects from jumping out of water)
+        if (objectTop < waterY && this.vy < 0 && !this.inWater) {
+          this.y = waterY + this.getHeight()/2;
+          this.vy = 0;
+        }
+        
+        // If object is completely above water and moving up, slow it down (air resistance)
+        if (!this.inWater && this.vy < 0) {
+          this.vy *= 0.98;
+        }
+        
+        // Return data for charts
+        return {
+          weightForce: this.weightForce,
+          buoyancyForce: this.buoyancyForce,
+          netForce: netForce,
+          position: this.y / getScaleFactor()
+        };
+      }
+      
+      calculateSubmergedVolume(submergedHeight) {
+        const totalHeight = this.getHeight();
+        const submergedRatio = submergedHeight / totalHeight;
+        
+        switch(this.type) {
+          case 'sphere':
+            // Approximation for submerged volume of a sphere
+            if (submergedHeight >= this.size) return this.volume;
+            const r = this.size/2;
+            const h = submergedHeight;
+            return (Math.PI * h * h * (3*r - h)) / 3;
+          case 'cube':
+            return this.volume * submergedRatio;
+          case 'cylinder':
+            return this.volume * submergedRatio;
+          case 'cone':
+            // For cone, the volume scales with the cube of the height ratio
+            return this.volume * Math.pow(submergedRatio, 3);
+          default:
+            return this.volume * submergedRatio;
+        }
+      }
+      
+      getHeight() {
+        switch(this.type) {
+          case 'sphere':
+            return this.size;
+          case 'cube':
+            return this.size;
+          case 'cylinder':
+            return this.size;
+          case 'cone':
+            return this.size;
+          default:
+            return this.size;
+        }
+      }
+      
+      getWidth() {
+        switch(this.type) {
+          case 'sphere':
+            return this.size;
+          case 'cube':
+            return this.size;
+          case 'cylinder':
+            return this.size;
+          case 'cone':
+            return this.size;
+          default:
+            return this.size;
+        }
+      }
+      
+      draw(ctx) {
+        const scale = getScaleFactor();
+        const pixelSize = this.size * scale;
+        const x = this.x;
+        const y = this.y;
+        
+        // Draw trail if enabled
+        if (document.getElementById('showTrails').checked && this.trail.length > 1) {
+          ctx.strokeStyle = this.color + '40'; // Semi-transparent
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(this.trail[0].x, this.trail[0].y);
+          for (let i = 1; i < this.trail.length; i++) {
+            ctx.lineTo(this.trail[i].x, this.trail[i].y);
+          }
+          ctx.stroke();
+        }
+        
+        ctx.save();
+        
+        // Add glow effect when selected
+        if (this === selectedObject) {
+          ctx.shadowColor = this.color;
+          ctx.shadowBlur = 15;
+        }
+        
+        ctx.fillStyle = this.color;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        
+        switch(this.type) {
+          case 'sphere':
+            ctx.beginPath();
+            ctx.arc(x, y, pixelSize/2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            break;
+          case 'cube':
+            ctx.fillRect(x - pixelSize/2, y - pixelSize/2, pixelSize, pixelSize);
+            ctx.strokeRect(x - pixelSize/2, y - pixelSize/2, pixelSize, pixelSize);
+            break;
+          case 'cylinder':
+            ctx.beginPath();
+            ctx.ellipse(x, y - pixelSize/4, pixelSize/2, pixelSize/8, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.rect(x - pixelSize/2, y - pixelSize/4, pixelSize, pixelSize/2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.ellipse(x, y + pixelSize/4, pixelSize/2, pixelSize/8, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            break;
+          case 'cone':
+            ctx.beginPath();
+            ctx.moveTo(x, y - pixelSize/2);
+            ctx.lineTo(x - pixelSize/2, y + pixelSize/2);
+            ctx.lineTo(x + pixelSize/2, y + pixelSize/2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            break;
+        }
+        
+        // Draw force vectors if enabled
+        if (document.getElementById('showVectors').checked) {
+          // Weight force (downwards)
+          ctx.strokeStyle = '#ff4444';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(x, y + pixelSize/2 + 5);
+          ctx.lineTo(x, y + pixelSize/2 + 5 + this.weightForce * 0.01);
+          ctx.stroke();
+          
+          // Arrowhead for weight force
+          ctx.beginPath();
+          ctx.moveTo(x - 3, y + pixelSize/2 + 5 + this.weightForce * 0.01);
+          ctx.lineTo(x, y + pixelSize/2 + 5 + this.weightForce * 0.01 + 5);
+          ctx.lineTo(x + 3, y + pixelSize/2 + 5 + this.weightForce * 0.01);
+          ctx.fillStyle = '#ff4444';
+          ctx.fill();
+          
+          // Buoyancy force (upwards)
+          if (this.inWater) {
+            ctx.strokeStyle = '#44ff44';
+            ctx.beginPath();
+            ctx.moveTo(x, y - pixelSize/2 - 5);
+            ctx.lineTo(x, y - pixelSize/2 - 5 - this.buoyancyForce * 0.01);
+            ctx.stroke();
+            
+            // Arrowhead for buoyancy force
+            ctx.beginPath();
+            ctx.moveTo(x - 3, y - pixelSize/2 - 5 - this.buoyancyForce * 0.01);
+            ctx.lineTo(x, y - pixelSize/2 - 5 - this.buoyancyForce * 0.01 - 5);
+            ctx.lineTo(x + 3, y - pixelSize/2 - 5 - this.buoyancyForce * 0.01);
+            ctx.fillStyle = '#44ff44';
+            ctx.fill();
+          }
+          
+          // Draw net force vector if there's a significant difference
+          const netForce = this.buoyancyForce - this.weightForce;
+          if (Math.abs(netForce) > 0.1) {
+            ctx.strokeStyle = netForce > 0 ? '#ffff00' : '#ff8800';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x + pixelSize/2 + 10, y);
+            ctx.lineTo(x + pixelSize/2 + 10 + netForce * 0.005, y);
+            ctx.stroke();
+            
+            // Arrowhead for net force
+            ctx.beginPath();
+            if (netForce > 0) {
+              ctx.moveTo(x + pixelSize/2 + 10 + netForce * 0.005, y - 3);
+              ctx.lineTo(x + pixelSize/2 + 10 + netForce * 0.005 + 5, y);
+              ctx.lineTo(x + pixelSize/2 + 10 + netForce * 0.005, y + 3);
+            } else {
+              ctx.moveTo(x + pixelSize/2 + 10 + netForce * 0.005, y - 3);
+              ctx.lineTo(x + pixelSize/2 + 10 + netForce * 0.005 - 5, y);
+              ctx.lineTo(x + pixelSize/2 + 10 + netForce * 0.005, y + 3);
+            }
+            ctx.fillStyle = netForce > 0 ? '#ffff00' : '#ff8800';
+            ctx.fill();
+          }
+        }
+        
+        // Draw info if enabled and object is selected
+        if (document.getElementById('showInfo').checked && this === selectedObject) {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+          ctx.fillRect(x - 70, y - pixelSize/2 - 110, 140, 100);
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '12px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(`Densidade: ${this.density.toFixed(1)} kg/m³`, x, y - pixelSize/2 - 90);
+          ctx.fillText(`Massa: ${this.mass.toFixed(2)} kg`, x, y - pixelSize/2 - 75);
+          ctx.fillText(`Volume: ${this.volume.toFixed(3)} m³`, x, y - pixelSize/2 - 60);
+          ctx.fillText(`Tamanho: ${this.size.toFixed(2)} m`, x, y - pixelSize/2 - 45);
+          ctx.fillText(`Empuxo: ${this.buoyancyForce.toFixed(1)} N`, x, y - pixelSize/2 - 30);
+          ctx.fillText(`Peso: ${this.weightForce.toFixed(1)} N`, x, y - pixelSize/2 - 15);
+        }
+        
+        ctx.restore();
+      }
+      
+      containsPoint(px, py) {
+        const scale = getScaleFactor();
+        const pixelSize = this.size * scale;
+        const dx = px - this.x;
+        const dy = py - this.y;
+        
+        switch(this.type) {
+          case 'sphere':
+            return Math.sqrt(dx*dx + dy*dy) <= pixelSize/2;
+          case 'cube':
+            return Math.abs(dx) <= pixelSize/2 && Math.abs(dy) <= pixelSize/2;
+          case 'cylinder':
+            return Math.abs(dx) <= pixelSize/2 && Math.abs(dy) <= pixelSize/2;
+          case 'cone':
+            // Simple rectangular check for cone
+            return Math.abs(dx) <= pixelSize/2 && Math.abs(dy) <= pixelSize/2;
+          default:
+            return Math.abs(dx) <= pixelSize/2 && Math.abs(dy) <= pixelSize/2;
+        }
+      }
+    }
+
+    // Helper functions
+    function getScaleFactor() {
+      return canvas.width / (devicePixelRatio || 1) / 10;
+    }
+
+    function getWaterLevelY() {
+      const waterDepth = parseFloat(document.getElementById('waterDepth').value);
+      const scale = getScaleFactor();
+      const poolHeight = canvas.height / (devicePixelRatio || 1);
+      return poolHeight - (waterDepth * scale);
+    }
+
+    // Drawing functions
+    function drawPool() {
+      const width = canvas.width / (devicePixelRatio || 1);
+      const height = canvas.height / (devicePixelRatio || 1);
+      const waterY = getWaterLevelY();
+      
+      // Draw pool background (air area)
+      ctx.fillStyle = AIR_COLOR;
+      ctx.fillRect(0, 0, width, waterY);
+      
+      // Draw water
+      ctx.fillStyle = WATER_COLOR;
+      ctx.fillRect(0, waterY, width, height - waterY);
+      
+      // Draw grid if enabled
+      if (document.getElementById('showGrid').checked) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 1;
+        const gridSize = 50;
+        for (let x = 0; x < width; x += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+          ctx.stroke();
+        }
+        for (let y = 0; y < height; y += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+          ctx.stroke();
+        }
+      }
+      
+      // Draw water surface with a simple wave effect
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, waterY);
+      
+      const time = Date.now() / 1000;
+      for (let x = 0; x < width; x += 10) {
+        const wave = Math.sin(x * 0.05 + time * 2) * 2;
+        ctx.lineTo(x, waterY + wave);
+      }
+      ctx.stroke();
+      
+      // Draw labels for air and water areas
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.font = '14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('AR', width / 2, waterY / 2);
+      ctx.fillText('ÁGUA', width / 2, waterY + (height - waterY) / 2);
+      
+      // Draw pool border
+      ctx.strokeStyle = '#374151';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(0, 0, width, height);
+    }
+
+    // Draw visual effects
+    function drawVisualEffects() {
+      const currentTime = Date.now();
+      
+      // Draw water disturbances
+      for (let i = waterDisturbances.length - 1; i >= 0; i--) {
+        const disturbance = waterDisturbances[i];
+        const elapsed = currentTime - disturbance.startTime;
+        if (elapsed > disturbance.duration) {
+          waterDisturbances.splice(i, 1);
+          continue;
+        }
+        
+        const progress = elapsed / disturbance.duration;
+        const radius = disturbance.radius * progress;
+        const alpha = 1 - progress;
+        
+        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.3})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(disturbance.x, disturbance.y, radius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      
+      // Draw object highlights
+      for (let i = objectHighlights.length - 1; i >= 0; i--) {
+        const highlight = objectHighlights[i];
+        const elapsed = currentTime - highlight.startTime;
+        if (elapsed > highlight.duration) {
+          objectHighlights.splice(i, 1);
+          continue;
+        }
+        
+        const progress = elapsed / highlight.duration;
+        const alpha = 0.7 - (progress * 0.7);
+        
+        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(highlight.x, highlight.y, highlight.radius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      
+      // Draw touch indicators
+      for (let i = touchIndicators.length - 1; i >= 0; i--) {
+        const indicator = touchIndicators[i];
+        const elapsed = currentTime - indicator.startTime;
+        if (elapsed > indicator.duration) {
+          touchIndicators.splice(i, 1);
+          continue;
+        }
+        
+        const progress = elapsed / indicator.duration;
+        const radius = 25 * progress;
+        const alpha = 1 - progress;
+        
+        ctx.strokeStyle = `rgba(138, 43, 226, ${alpha})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(indicator.x, indicator.y, radius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      
+      // Draw particles
+      if (document.getElementById('showParticles').checked) {
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= p.decay;
+          
+          if (p.life <= 0) {
+            particles.splice(i, 1);
+            continue;
+          }
+          
+          ctx.fillStyle = p.color + Math.floor(p.life * 255).toString(16).padStart(2, '0');
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    // Animation loop
+    function animate(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      const deltaTime = (timestamp - lastTime) / 1000; // Convert to seconds
+      lastTime = timestamp;
+      
+      // Cap deltaTime to prevent large jumps
+      const cappedDeltaTime = Math.min(deltaTime, 0.1);
+      
+      drawPool();
+      
+      // Update and draw objects if not paused
+      if (!paused) {
+        // Get current simulation parameters
+        const waterDensity = parseFloat(document.getElementById('waterDensity').value);
+        const gravity = parseFloat(document.getElementById('gravity').value);
+        const viscosity = parseFloat(document.getElementById('viscosity').value);
+        const airResistance = parseFloat(document.getElementById('airResistance').value);
+        const waterLevel = getWaterLevelY();
+        
+        // Update and draw objects
+        objects.forEach(obj => {
+          const data = obj.update(waterLevel, waterDensity, gravity, viscosity, airResistance, cappedDeltaTime);
+          obj.draw(ctx);
+          
+          // Update charts with data from the first object
+          if (obj === objects[0] && data) {
+            updateCharts(
+              chartData.time.length * 0.1, 
+              data.weightForce, 
+              data.buoyancyForce, 
+              data.netForce, 
+              data.position
+            );
+          }
+        });
+      } else {
+        // Just draw objects without updating
+        objects.forEach(obj => {
+          obj.draw(ctx);
+        });
+      }
+      
+      // Draw visual effects
+      drawVisualEffects();
+      
+      // Update info panel if an object is selected
+      if (selectedObject) {
+        document.getElementById('selectedObject').textContent = 
+          selectedObject.type.charAt(0).toUpperCase() + selectedObject.type.slice(1);
+        document.getElementById('densityValue').textContent = `${selectedObject.density.toFixed(1)} kg/m³`;
+        document.getElementById('volumeValue').textContent = `${selectedObject.volume.toFixed(3)} m³`;
+        document.getElementById('buoyancyValue').textContent = `${selectedObject.buoyancyForce.toFixed(1)} N`;
+      }
+      
+      requestAnimationFrame(animate);
+    }
+
+    // Object management
+    function addObject(type, density, size, x, y, useDensity = true, mass = null, useSize = true, volume = null) {
+      const newObj = new BuoyancyObject(type, density, size, x, y, useDensity, mass, useSize, volume);
+      objects.push(newObj);
+      selectedObject = newObj;
+      
+      // Create visual effect
+      createObjectHighlight(newObj);
+      createWaterDisturbance(x, y, 50);
+    }
+
+    function addObjectFromControls() {
+      const type = document.getElementById('objectType').value;
+      const x = canvas.width / (devicePixelRatio || 1) / 2;
+      const y = 100; // Start in air area
+      
+      const massMode = document.querySelector('input[name="massMode"]:checked').value;
+      const volumeMode = document.querySelector('input[name="volumeMode"]:checked').value;
+      
+      let density, mass, size, volume;
+      
+      if (massMode === 'density') {
+        density = parseFloat(document.getElementById('objectDensity').value);
+        mass = null;
+      } else {
+        density = 1000; // Default, will be recalculated
+        mass = parseFloat(document.getElementById('objectMass').value);
+      }
+      
+      if (volumeMode === 'size') {
+        size = parseFloat(document.getElementById('objectSize').value);
+        volume = null;
+      } else {
+        size = 1; // Default, will be recalculated
+        volume = parseFloat(document.getElementById('objectVolume').value);
+      }
+      
+      addObject(type, density, size, x, y, massMode === 'density', mass, volumeMode === 'size', volume);
+      
+      // Update controls to match the new object
+      updateObjectControls();
+    }
+
+    function clearObjects() {
+      objects = [];
+      selectedObject = null;
+      // Clear chart data
+      chartData = {
+        time: [],
+        weightForce: [],
+        buoyancyForce: [],
+        netForce: [],
+        position: []
+      };
+      
+      if (forcesChart) {
+        forcesChart.data.labels = [];
+        forcesChart.data.datasets.forEach(dataset => dataset.data = []);
+        forcesChart.update();
+      }
+      
+      if (positionChart) {
+        positionChart.data.labels = [];
+        positionChart.data.datasets.forEach(dataset => dataset.data = []);
+        positionChart.update();
+      }
+      
+      // Create visual effect
+      createWaterDisturbance(canvas.width/2, canvas.height/2, 100);
+    }
+
+    // Drag and drop functionality
+    function startDragFromPanel(e) {
+      e.preventDefault();
+      const type = this.getAttribute('data-type');
+      const density = parseFloat(this.getAttribute('data-density'));
+      const size = 0.8; // Default size
+      
+      // Create a new object at the mouse position
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      addObject(type, density, size, x, y);
+      selectedObject = objects[objects.length - 1];
+      selectedObject.isDragging = true;
+      isDragging = true;
+      
+      // Set drag offset
+      dragOffset.x = 0;
+      dragOffset.y = 0;
+      
+      // Create touch indicator
+      createTouchIndicator(x, y);
+      
+      // Update controls to match the new object
+      updateObjectControls();
+    }
+
+    function handleCanvasMouseDown(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      // Check if clicked on an object
+      for (let i = objects.length - 1; i >= 0; i--) {
+        if (objects[i].containsPoint(x, y)) {
+          selectedObject = objects[i];
+          selectedObject.isDragging = true;
+          isDragging = true;
+          
+          // Calculate drag offset
+          dragOffset.x = x - selectedObject.x;
+          dragOffset.y = y - selectedObject.y;
+          
+          // Stop object movement when dragging
+          selectedObject.vx = 0;
+          selectedObject.vy = 0;
+          
+          // Create touch indicator
+          createTouchIndicator(x, y);
+          
+          // Update controls to match the selected object
+          updateObjectControls();
+          
+          break;
+        }
+      }
+    }
+
+    function handleCanvasMouseMove(e) {
+      if (!isDragging || !selectedObject) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      // Update object position
+      selectedObject.x = x - dragOffset.x;
+      selectedObject.y = y - dragOffset.y;
+    }
+
+    function handleCanvasMouseUp() {
+      if (selectedObject) {
+        selectedObject.isDragging = false;
+        // Create water disturbance when object is released in water
+        if (selectedObject.inWater) {
+          createWaterDisturbance(selectedObject.x, selectedObject.y, 30);
+          createParticles(selectedObject.x, selectedObject.y, 5, selectedObject.color);
+        }
+      }
+      isDragging = false;
+    }
+
+    function handleCanvasTouchStart(e) {
+      e.preventDefault();
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        
+        // Check if touched on an object
+        for (let i = objects.length - 1; i >= 0; i--) {
+          if (objects[i].containsPoint(x, y)) {
+            selectedObject = objects[i];
+            selectedObject.isDragging = true;
+            isDragging = true;
+            
+            // Calculate drag offset
+            dragOffset.x = x - selectedObject.x;
+            dragOffset.y = y - selectedObject.y;
+            
+            // Stop object movement when dragging
+            selectedObject.vx = 0;
+            selectedObject.vy = 0;
+            
+            // Create touch indicator
+            createTouchIndicator(x, y);
+            
+            // Update controls to match the selected object
+            updateObjectControls();
+            
+            break;
+          }
+        }
+      }
+    }
+
+    function handleCanvasTouchMove(e) {
+      e.preventDefault();
+      if (!isDragging || !selectedObject || e.touches.length !== 1) return;
+      
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      
+      // Update object position
+      selectedObject.x = x - dragOffset.x;
+      selectedObject.y = y - dragOffset.y;
+    }
+
+    function handleCanvasTouchEnd() {
+      if (selectedObject) {
+        selectedObject.isDragging = false;
+        // Create water disturbance when object is released in water
+        if (selectedObject.inWater) {
+          createWaterDisturbance(selectedObject.x, selectedObject.y, 30);
+          createParticles(selectedObject.x, selectedObject.y, 5, selectedObject.color);
+        }
+      }
+      isDragging = false;
+    }
+
+    // Update object controls based on selected object
+    function updateObjectControls() {
+      if (selectedObject) {
+        // Update mass mode
+        if (selectedObject.useDensity) {
+          document.getElementById('calcByDensity').checked = true;
+          document.getElementById('densityControl').style.display = 'block';
+          document.getElementById('massControl').style.display = 'none';
+          
+          // Update density control
+          document.getElementById('objectDensity').value = selectedObject.density;
+          updateDensityDisplay();
+        } else {
+          document.getElementById('setMassDirectly').checked = true;
+          document.getElementById('densityControl').style.display = 'none';
+          document.getElementById('massControl').style.display = 'block';
+          
+          // Update mass control
+          document.getElementById('objectMass').value = selectedObject.mass;
+          updateMassDisplay();
+        }
+        
+        // Update volume mode
+        if (selectedObject.useSize) {
+          document.getElementById('calcBySize').checked = true;
+          document.getElementById('sizeControl').style.display = 'block';
+          document.getElementById('volumeControl').style.display = 'none';
+          
+          // Update size control
+          document.getElementById('objectSize').value = selectedObject.size;
+          updateSizeDisplay();
+        } else {
+          document.getElementById('setVolumeDirectly').checked = true;
+          document.getElementById('sizeControl').style.display = 'none';
+          document.getElementById('volumeControl').style.display = 'block';
+          
+          // Update volume control
+          document.getElementById('objectVolume').value = selectedObject.volume;
+          updateVolumeDisplay();
+        }
+        
+        // Update type control
+        document.getElementById('objectType').value = selectedObject.type;
+      }
+    }
+
+    // Control updates
+    function updateDensityDisplay() {
+      const density = document.getElementById('objectDensity').value;
+      document.getElementById('densityDisplay').textContent = `${density} kg/m³`;
+      
+      // Update selected object if exists
+      if (selectedObject && selectedObject.useDensity) {
+        selectedObject.density = parseFloat(density);
+        selectedObject.updateMassFromDensity();
+      }
+    }
+
+    function updateMassDisplay() {
+      const mass = document.getElementById('objectMass').value;
+      document.getElementById('massDisplay').textContent = `${mass} kg`;
+      
+      // Update selected object if exists
+      if (selectedObject && !selectedObject.useDensity) {
+        selectedObject.mass = parseFloat(mass);
+        selectedObject.updateDensityFromMass();
+      }
+    }
+
+    function updateSizeDisplay() {
+      const size = document.getElementById('objectSize').value;
+      document.getElementById('sizeDisplay').textContent = `${size} m`;
+      
+      // Update selected object if exists
+      if (selectedObject && selectedObject.useSize) {
+        selectedObject.size = parseFloat(size);
+        selectedObject.updateVolumeFromSize();
+      }
+    }
+
+    function updateVolumeDisplay() {
+      const volume = document.getElementById('objectVolume').value;
+      document.getElementById('volumeDisplay').textContent = `${volume} m³`;
+      
+      // Update selected object if exists
+      if (selectedObject && !selectedObject.useSize) {
+        selectedObject.volume = parseFloat(volume);
+        selectedObject.updateSizeFromVolume();
+      }
+    }
+
+    function updateViscosityDisplay() {
+      const viscosity = document.getElementById('viscosity').value;
+      document.getElementById('viscosityDisplay').textContent = viscosity;
+    }
+
+    function updateAirResistanceDisplay() {
+      const airResistance = document.getElementById('airResistance').value;
+      document.getElementById('airResistanceDisplay').textContent = airResistance;
+    }
+
+    function updateTemperatureDisplay() {
+      const temperature = document.getElementById('waterTemperature').value;
+      document.getElementById('temperatureDisplay').textContent = `${temperature}°C`;
+      
+      // Adjust water density based on temperature (simplified)
+      const baseDensity = 1000;
+      const densityChange = (20 - temperature) * 0.2; // Simple approximation
+      const newDensity = Math.max(800, Math.min(1200, baseDensity + densityChange));
+      
+      document.getElementById('waterDensity').value = Math.round(newDensity);
+    }
+
+    // Tab functionality
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const id = tab.getAttribute('data-tab');
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(id + '-tab').classList.add('active');
+      });
+    });
+
+    // Help panel functionality
+    const helpButton = document.getElementById('helpButton');
+    const helpPanel = document.getElementById('helpPanel');
+    const closeHelp = document.getElementById('closeHelp');
+
+    helpButton.addEventListener('click', () => {
+      helpPanel.classList.toggle('active');
+    });
+
+    closeHelp.addEventListener('click', () => {
+      helpPanel.classList.remove('active');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!helpPanel.contains(e.target) && e.target !== helpButton) {
+        helpPanel.classList.remove('active');
+      }
+    });
+
+    // Initialize the simulation
+    init();
+  </script>
+</body>
+</html>

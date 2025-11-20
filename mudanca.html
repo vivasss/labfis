@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Simulação Mudança de Fase — Moléculas + Diagrama de Fases</title>
+  <style>
+    :root {
+      --bg: #0f1724;
+      --panel: #0b1220;
+      --accent: #38bdf8;
+      --muted: #94a3b8;
+      --glass: rgba(255, 255, 255, 0.03);
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(180deg, #061025 0%, #071226 60%);
+      color: #e6eef8;
+      display: flex;
+      gap: 16px;
+      padding: 18px;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    .left,
+    .right {
+      background: linear-gradient(180deg, var(--panel), rgba(10, 14, 22, 0.6));
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 6px 24px rgba(2, 6, 23, 0.6);
+    }
+
+    .left {
+      flex: 1.6;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 420px;
+    }
+
+    .right {
+      width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0;
+      letter-spacing: 0.2px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .control {
+      background: var(--glass);
+      padding: 8px 10px;
+      border-radius: 8px;
+      min-width: 150px;
+    }
+
+    label {
+      font-size: 12px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    input[type=range] {
+      width: 100%;
+    }
+
+    input[type=number] {
+      width: 100%;
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      background: transparent;
+      color: inherit;
+    }
+
+    #simCanvas {
+      width: 100%;
+      height: 520px;
+      background:
+        radial-gradient(ellipse at 20% 10%, rgba(56, 189, 248, 0.04) 0%, transparent 6%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(0, 0, 0, 0.06));
+      border-radius: 10px;
+      display: block;
+    }
+
+    .legend {
+      display: flex;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      align-items: center;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* Diagrama à direita */
+    .panelTitle {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    #phaseSVG {
+      width: 100%;
+      height: 300px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), transparent);
+      border-radius: 8px;
+      display: block;
+    }
+
+    .info {
+      padding: 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    button {
+      background: var(--accent);
+      color: #04212b;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    small {
+      color: var(--muted);
+    }
+
+    /* Responsividade aprimorada */
+    @media(max-width:920px) {
+      body {
+        flex-direction: column;
+        padding: 12px;
+      }
+
+      .left {
+        min-width: auto;
+      }
+
+      .right {
+        width: auto;
+      }
+    }
+
+    @media(max-width:768px) {
+      body {
+        padding: 10px;
+      }
+
+      .left,
+      .right {
+        padding: 12px;
+      }
+
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .controls {
+        gap: 8px;
+      }
+
+      .control {
+        min-width: 100%;
+      }
+
+      button {
+        padding: 10px 14px;
+        min-height: 44px;
+      }
+
+      #simCanvas {
+        height: 400px;
+      }
+
+      #phaseSVG {
+        height: 250px;
+      }
+    }
+
+    @media(max-width:480px) {
+      body {
+        padding: 8px;
+      }
+
+      .left,
+      .right {
+        padding: 10px;
+      }
+
+      h1 {
+        font-size: clamp(14px, 4vw, 16px);
+      }
+
+      label {
+        font-size: 11px;
+      }
+
+      input[type=range] {
+        height: 8px;
+      }
+
+      input[type=number] {
+        padding: 8px;
+        font-size: 14px;
+      }
+
+      button {
+        padding: 10px 12px;
+        font-size: 13px;
+      }
+
+      #simCanvas {
+        height: 350px;
+      }
+
+      #phaseSVG {
+        height: 220px;
+      }
+
+      .info {
+        font-size: 12px;
+      }
+
+      small {
+        font-size: 11px;
+      }
+    }
+
+    @media(max-width:360px) {
+
+      .left,
+      .right {
+        padding: 8px;
+      }
+
+      #simCanvas {
+        height: 300px;
+      }
+
+      #phaseSVG {
+        height: 200px;
+      }
+    }
+
+    /* Orientação paisagem */
+    @media(max-height:500px) and (orientation:landscape) {
+      #simCanvas {
+        height: 280px;
+      }
+
+      #phaseSVG {
+        height: 180px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="left">
+    <header>
+      <h1>Simulação de Mudança de Fase — Moléculas</h1>
+      <div style="text-align:right">
+        <small>Interaja com Temperatura e Pressão</small>
+      </div>
+    </header>
+
+    <div class="controls">
+      <div class="control">
+        <label for="tempRange">Temperatura (K)</label>
+        <input id="tempRange" type="range" min="100" max="1200" value="300" />
+        <input id="tempNumber" type="number" min="100" max="1200" value="300" />
+      </div>
+
+      <div class="control">
+        <label for="pressRange">Pressão (kPa)</label>
+        <input id="pressRange" type="range" min="1" max="1000" value="101.3" step="0.1" />
+        <input id="pressNumber" type="number" min="1" max="1000" value="101.3" step="0.1" />
+      </div>
+
+      <div class="control" style="min-width:120px">
+        <label for="molecules">Quantidade</label>
+        <input id="molecules" type="range" min="20" max="600" value="180" />
+      </div>
+
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button id="toggleSim">Pausar</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+    </div>
+
+    <canvas id="simCanvas"></canvas>
+
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div class="legend">
+        <span class="dot" style="background:#60a5fa"></span><span>Moléculas</span>
+        <span style="width:12px"></span>
+        <span class="dot" style="background:#a78bfa"></span><span>Interações/cohesão</span>
+      </div>
+      <div style="text-align:right">
+        <small id="phaseText">Fase: —</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="right">
+    <div>
+      <div class="panelTitle">Diagrama de Fases simplificado (T × P)</div>
+      <svg id="phaseSVG" viewBox="0 0 420 300" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+        <!-- Background zones: solid (left), liquid (middle-bottom), gas (right-top) -->
+        <defs>
+          <linearGradient id="g1" x1="0" x2="1">
+            <stop offset="0" stop-color="#083344" stop-opacity="0.9" />
+            <stop offset="1" stop-color="#05202b" stop-opacity="0.7" />
+          </linearGradient>
+        </defs>
+        <rect x="0" y="0" width="420" height="300" fill="url(#g1)" rx="8" ry="8" />
+        <!-- approximate phase boundaries (simplified curves) -->
+        <path id="subl" d="M60 240 Q140 180 220 160" stroke="#72efdd" stroke-width="2" fill="none"
+          stroke-dasharray="4 4" opacity="0.6" />
+        <path id="liq" d="M80 200 Q180 150 320 90" stroke="#fbbf24" stroke-width="2" fill="none" stroke-dasharray="4 4"
+          opacity="0.6" />
+        <!-- Labels -->
+        <text x="20" y="40" fill="#9fd6e9" font-size="13">Pressão (kPa)</text>
+        <text x="320" y="290" fill="#9fd6e9" font-size="13">Temperatura (K)</text>
+        <text x="40" y="260" fill="#9ad5ff" font-size="14">Sólido</text>
+        <text x="180" y="200" fill="#f7d08a" font-size="14">Líquido</text>
+        <text x="300" y="120" fill="#b6ffda" font-size="14">Gasoso</text>
+
+        <!-- Axes -->
+        <line x1="40" y1="260" x2="380" y2="260" stroke="#ffffff22" />
+        <line x1="40" y1="260" x2="40" y2="20" stroke="#ffffff22" />
+
+        <!-- Tick marks on axes -->
+        <!-- temp ticks -->
+        <g id="tempTicks"></g>
+        <!-- pressure ticks -->
+        <g id="pressTicks"></g>
+
+        <!-- Triple point marker and critical point marker -->
+        <circle id="triple" cx="150" cy="200" r="5" fill="#f97316" stroke="#fff3" />
+        <text x="158" y="195" fill="#ffd7b5" font-size="12">Ponto Triplo</text>
+
+        <circle id="critical" cx="320" cy="80" r="6" fill="#60a5fa" stroke="#ffffff44" />
+        <text x="242" y="70" fill="#bfe4ff" font-size="12">Ponto Crítico</text>
+
+        <!-- Operational point -->
+        <circle id="opPoint" cx="240" cy="170" r="6" fill="#a78bfa" stroke="#fff" />
+      </svg>
+    </div>
+
+    <div class="info">
+      <div><strong>Temperatura:</strong> <span id="infoTemp">300 K</span></div>
+      <div><strong>Pressão:</strong> <span id="infoPress">101.3 kPa</span></div>
+      <div><strong>Fase calculada:</strong> <strong id="infoPhase">—</strong></div>
+    </div>
+
+    <div style="display:flex; gap:8px;">
+      <div style="flex:1">
+        <label style="font-size:12px; color:var(--muted); margin-bottom:6px; display:block;">Clique no diagrama para
+          ajustar T e P</label>
+        <small style="color:var(--muted)">Interaja diretamente no gráfico para ver como a fase muda</small>
+      </div>
+    </div>
+
+    <footer>
+      <small>Simulação simplificada — conceitos qualitativos</small>
+      <small>Simulação local</small>
+    </footer>
+  </div>
+
+  <script>
+    /* ======= Parâmetros físicos simplificados =======
+       Esta simulação usa limites qualitativos (não substitui dados reais).
+       - Trechos de curva são aproximados para demonstrar comportamento qualitativo.
+       - A função calcPhase(T,P) classifica fase com base em zonas definidas geometricamente.
+    */
+
+    /* ---------- DOM e canvas ---------- */
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+
+    function resizeCanvas() {
+      canvas.width = Math.floor(canvas.clientWidth * devicePixelRatio);
+      canvas.height = Math.floor(canvas.clientHeight * devicePixelRatio);
+      ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    /* ---------- Controles ---------- */
+    const tempRange = document.getElementById('tempRange');
+    const tempNumber = document.getElementById('tempNumber');
+    const pressRange = document.getElementById('pressRange');
+    const pressNumber = document.getElementById('pressNumber');
+    const moleculesRange = document.getElementById('molecules');
+    const toggleSim = document.getElementById('toggleSim');
+    const resetBtn = document.getElementById('resetBtn');
+    const phaseText = document.getElementById('phaseText');
+
+    const infoTemp = document.getElementById('infoTemp');
+    const infoPress = document.getElementById('infoPress');
+    const infoPhase = document.getElementById('infoPhase');
+    const opPoint = document.getElementById('opPoint');
+    const phaseSVG = document.getElementById('phaseSVG');
+
+    tempRange.addEventListener('input', e => tempNumber.value = e.target.value);
+    tempNumber.addEventListener('input', e => tempRange.value = e.target.value);
+    pressRange.addEventListener('input', e => pressNumber.value = e.target.value);
+    pressNumber.addEventListener('input', e => pressRange.value = e.target.value);
+    moleculesRange.addEventListener('input', () => resetParticles());
+
+    tempRange.addEventListener('change', updateStateFromControls);
+    pressRange.addEventListener('change', updateStateFromControls);
+    tempNumber.addEventListener('change', updateStateFromControls);
+    pressNumber.addEventListener('change', updateStateFromControls);
+
+    /* ---------- Partículas (moléculas) ---------- */
+    let particles = [];
+    let running = true;
+    let lastTime = 0;
+
+    function createParticle(x, y, vx, vy) {
+      return { x, y, vx, vy, r: 3 + Math.random() * 2, coh: Math.random() * 1.0 };
+    }
+
+    function resetParticles() {
+      particles = [];
+      const n = parseInt(moleculesRange.value, 10);
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      // populate region with different local densities
+      for (let i = 0; i < n; i++) {
+        const x = Math.random() * w;
+        const y = Math.random() * h;
+        const v = 0.5 + Math.random() * 1.6;
+        const angle = Math.random() * Math.PI * 2;
+        particles.push(createParticle(x, y, Math.cos(angle) * v, Math.sin(angle) * v));
+      }
+    }
+    resetParticles();
+
+    /* ---------- Modelo qualitativo de coesão e velocidade ---------- */
+    function computeMolecularParams(T, P) {
+      // Coesão média decresce com T e aumenta com P
+      const coh = Math.max(0, Math.min(1, (1000 - (T - 100)) / 900)) * Math.min(1, P / 300);
+      // velocidade média cresce com T, reduz com P (mais colisões) e com coesão
+      const vel = Math.max(0.1, Math.min(6, (T - 100) / 200 + 0.6 - P / 500 - coh * 0.8));
+      return { coh, vel };
+    }
+
+    /* ---------- Fase "geométrica" no diagrama T×P (simples) ---------- */
+    function calcPhase(T, P) {
+      // Usamos regiões fictícias:
+      // - Sólido: baixa T, qualquer P moderada/alta
+      // - Líquido: faixa média de T e P suficiente
+      // - Gasoso: alta T e baixa-moderada P
+      // Também definimos um "ponto triplo" e "crítico" para efeitos visuais.
+      const triple = { T: 170, P: 6 }; // posição conceitual
+      const critical = { T: 647, P: 220 }; // valores ilustrativos (T crítico água ~647K)
+      // simples decisões:
+      if (T < triple.T && P > triple.P * 0.8) return 'Sólido';
+      if (T < 420 && P > 150 && T > 150) return 'Líquido';
+      if (T > 420 && P < 500) return 'Gasoso';
+      // fallback heuristics
+      if (P < 50 && T > 200) return 'Gasoso';
+      if (P > 200 && T < 500) return 'Líquido';
+      return 'Líquido';
+    }
+
+    /* ---------- Atualização do ponto no SVG (mapear T,P para coords) ---------- */
+    function mapTPtoSVG(T, P) {
+      // SVG área útil: x: 40..380  => Temp 100..1200
+      //             y: 260..20  => Press 1..1000 (invertido)
+      const xmin = 40, xmax = 380, ymin = 20, ymax = 260;
+      const tmin = 100, tmax = 1200, pmin = 1, pmax = 1000;
+      const x = xmin + ((T - tmin) / (tmax - tmin)) * (xmax - xmin);
+      const y = ymax - ((P - pmin) / (pmax - pmin)) * (ymax - ymin);
+      return { x, y };
+    }
+
+    /* ---------- Render loop (moléculas) ---------- */
+    function drawBackground() {
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      ctx.fillStyle = '#071227';
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    function updateParticles(dt, params) {
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      // cohesive attraction: when coh high, particles are pulled together gently
+      const { coh, vel } = params;
+      // region attraction center to simulate condensed phase cluster
+      const cx = w * 0.5, cy = h * 0.55;
+      for (let p of particles) {
+        // thermal motion
+        p.vx += (Math.random() - 0.5) * 0.6 * dt * vel;
+        p.vy += (Math.random() - 0.5) * 0.6 * dt * vel;
+        // cohesive pull
+        const dx = cx - p.x, dy = cy - p.y;
+        p.vx += dx * (0.0006 * coh) * dt;
+        p.vy += dy * (0.0006 * coh) * dt;
+        // simple collision with walls
+        p.x += p.vx * dt * 60;
+        p.y += p.vy * dt * 60;
+        if (p.x < p.r) { p.x = p.r; p.vx *= -0.6; }
+        if (p.x > w - p.r) { p.x = w - p.r; p.vx *= -0.6; }
+        if (p.y < p.r) { p.y = p.r; p.vy *= -0.6; }
+        if (p.y > h - p.r) { p.y = h - p.r; p.vy *= -0.6; }
+        // reduce velocity slightly by cohesion (damping in dense phases)
+        p.vx *= (1 - 0.03 * coh);
+        p.vy *= (1 - 0.03 * coh);
+      }
+    }
+
+    function renderParticles(params) {
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      ctx.clearRect(0, 0, w, h);
+      drawBackground();
+      // draw soft overlay to show condensed region when coh high
+      if (params.coh > 0.35) {
+        const g = ctx.createRadialGradient(w * 0.5, h * 0.55, 30, w * 0.5, h * 0.55, Math.max(w, h));
+        g.addColorStop(0, 'rgba(167,139,250,0.08)');
+        g.addColorStop(1, 'rgba(7,14,22,0)');
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, w, h);
+      }
+      for (let p of particles) {
+        // color and size reflect local cohesion and speed
+        const speed = Math.hypot(p.vx, p.vy);
+        const colMix = Math.min(1, params.coh * 1.5 + speed / 6);
+        const r = p.r * (1 + params.coh * 1.4 - Math.min(0.6, speed / 6));
+        const blue = Math.floor(90 + (1 - colMix) * 120);
+        const purple = Math.floor(160 + colMix * 80);
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(${blue},${Math.floor(120 + colMix * 60)},${purple},0.95)`;
+        ctx.arc(p.x, p.y, Math.max(1, r), 0, Math.PI * 2);
+        ctx.fill();
+        // subtle outline
+        ctx.strokeStyle = `rgba(255,255,255,${0.02 + colMix * 0.06})`;
+        ctx.lineWidth = 0.6;
+        ctx.stroke();
+      }
+    }
+
+    /* main loop */
+    function loop(ts) {
+      if (!lastTime) lastTime = ts;
+      const dt = Math.min(0.06, (ts - lastTime) / 1000);
+      lastTime = ts;
+      if (running) {
+        const T = parseFloat(tempRange.value);
+        const P = parseFloat(pressRange.value);
+        const params = computeMolecularParams(T, P);
+        updateParticles(dt, params);
+        renderParticles(params);
+        // update textual info
+        updateInfo(T, P);
+      }
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+
+    /* ---------- UI and interaction helpers ---------- */
+    function updateInfo(T, P) {
+      infoTemp.textContent = `${Math.round(T * 10) / 10} K`;
+      infoPress.textContent = `${Math.round(P * 10) / 10} kPa`;
+      const phase = calcPhase(T, P);
+      infoPhase.textContent = phase;
+      phaseText.textContent = `Fase: ${phase}`;
+      // update SVG op point
+      const pos = mapTPtoSVG(T, P);
+      opPoint.setAttribute('cx', pos.x);
+      opPoint.setAttribute('cy', pos.y);
+    }
+
+    toggleSim.addEventListener('click', () => {
+      running = !running;
+      toggleSim.textContent = running ? 'Pausar' : 'Executar';
+    });
+
+    resetBtn.addEventListener('click', () => {
+      tempRange.value = 300; tempNumber.value = 300;
+      pressRange.value = 101.3; pressNumber.value = 101.3;
+      moleculesRange.value = 180;
+      resetParticles();
+      updateStateFromControls();
+    });
+
+    function updateStateFromControls() {
+      const T = parseFloat(tempRange.value);
+      const P = parseFloat(pressRange.value);
+      // update info and particles' velocities to reflect immediate change
+      const params = computeMolecularParams(T, P);
+      for (let p of particles) {
+        // scale velocities toward new thermal velocity
+        const s = Math.hypot(p.vx, p.vy) + 0.001;
+        const target = params.vel * (0.6 + Math.random() * 0.8);
+        const factor = 0.4;
+        p.vx += (p.vx / s) * (target - s) * factor;
+        p.vy += (p.vy / s) * (target - s) * factor;
+      }
+      updateInfo(T, P);
+    }
+    updateStateFromControls();
+
+    /* ---------- Interação no diagrama SVG para ajustar T e P ---------- */
+    phaseSVG.addEventListener('click', (ev) => {
+      const rect = phaseSVG.getBoundingClientRect();
+      const cx = ev.clientX - rect.left;
+      const cy = ev.clientY - rect.top;
+      // map back to T,P used pela sim (inverse of mapTPtoSVG)
+      const xmin = 40, xmax = 380, ymin = 20, ymax = 260;
+      const tmin = 100, tmax = 1200, pmin = 1, pmax = 1000;
+      const tx = (cx - xmin) / (xmax - xmin);
+      const py = (ymax - cy) / (ymax - ymin);
+      const T = Math.round((tmin + tx * (tmax - tmin)) * 10) / 10;
+      const P = Math.round((pmin + py * (pmax - pmin)) * 10) / 10;
+      // clamp
+      tempRange.value = Math.max(tmin, Math.min(tmax, T));
+      tempNumber.value = tempRange.value;
+      pressRange.value = Math.max(pmin, Math.min(pmax, P));
+      pressNumber.value = pressRange.value;
+      updateStateFromControls();
+    });
+
+    /* ---------- Inicial ticks (opcional) ---------- */
+    (function drawAxisTicks() {
+      const tempTicks = document.getElementById('tempTicks');
+      const pressTicks = document.getElementById('pressTicks');
+      const xmin = 40, xmax = 380, ymin = 20, ymax = 260;
+      const tmin = 100, tmax = 1200, pmin = 1, pmax = 1000;
+      // temp ticks
+      for (let i = 0; i <= 6; i++) {
+        const t = tmin + i * (tmax - tmin) / 6;
+        const x = xmin + ((t - tmin) / (tmax - tmin)) * (xmax - xmin);
+        const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        tick.setAttribute('x1', x); tick.setAttribute('x2', x);
+        tick.setAttribute('y1', 260); tick.setAttribute('y2', 266);
+        tick.setAttribute('stroke', '#ffffff22');
+        tempTicks.appendChild(tick);
+        const lab = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        lab.setAttribute('x', x - 10); lab.setAttribute('y', 283);
+        lab.setAttribute('fill', '#9fd6e9');
+        lab.setAttribute('font-size', '11');
+        lab.textContent = Math.round(t);
+        tempTicks.appendChild(lab);
+      }
+      // press ticks
+      for (let i = 0; i <= 6; i++) {
+        const p = pmin + i * (pmax - pmin) / 6;
+        const y = 260 - ((p - pmin) / (pmax - pmin)) * (260 - 20);
+        const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        tick.setAttribute('x1', 34); tick.setAttribute('x2', 40);
+        tick.setAttribute('y1', y); tick.setAttribute('y2', y);
+        tick.setAttribute('stroke', '#ffffff22');
+        pressTicks.appendChild(tick);
+        const lab = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        lab.setAttribute('x', 6); lab.setAttribute('y', y + 4);
+        lab.setAttribute('fill', '#9fd6e9');
+        lab.setAttribute('font-size', '11');
+        lab.textContent = Math.round(p);
+        pressTicks.appendChild(lab);
+      }
+    })();
+
+  </script>
+</body>
+
+</html>

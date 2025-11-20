@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabela Periódica Completa - 118 Elementos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --metal-alcalino: #FF6B6B;
+            --metal-alcalino-terroso: #FFD166;
+            --metal-transicao: #06D6A0;
+            --metal-pos-transicao: #118AB2;
+            --semimetal: #073B4C;
+            --nao-metal: #EF476F;
+            --halogenio: #7209B7;
+            --gas-nobre: #3A86FF;
+            --lantanideo: #8338EC;
+            --actinideo: #FB5607;
+            --bg: #071028;
+            --card: #0f1724;
+            --muted: #94a3b8;
+            --primary: #8a2be2;
+            --accent: #00bfff;
+            --success: #10b981;
+            --warning: #f59e0b;
+            color-scheme: dark;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: system-ui, 'Segoe UI', Roboto, Arial;
+            background: linear-gradient(180deg, #071028 0%, #071021 60%);
+            color: #e6eef8;
+            min-height: 100vh;
+            overflow-x: hidden;
+            touch-action: manipulation;
+            padding: 10px;
+            line-height: 1.6;
+        }
+
+        header {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        h1 {
+            font-size: 18px;
+            margin: 0;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGlow 3s infinite alternate;
+        }
+
+        .tab-container {
+            display: flex;
+            background: var(--card);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .tab {
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            font-weight: 700;
+            box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
+        }
+
+        .tab::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        .tab.active::after {
+            width: 100%;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 18px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .subtitle {
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+            color: var(--muted);
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+            padding: 0 5px;
+        }
+
+        .search-container {
+            display: flex;
+            max-width: 100%;
+            width: 100%;
+            position: relative;
+        }
+
+        #search {
+            padding: 12px 15px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px 0 0 8px;
+            font-size: 16px;
+            min-height: 48px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+        }
+
+        #search:focus {
+            outline: none;
+            border-color: var(--gas-nobre);
+            box-shadow: 0 0 10px rgba(58, 134, 255, 0.5);
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        #search-btn {
+            padding: 12px 15px;
+            background: linear-gradient(135deg, var(--gas-nobre), #2a5fc5);
+            color: white;
+            border: none;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            min-width: 60px;
+            min-height: 48px;
+            transition: all 0.3s ease;
+        }
+
+        #search-btn:hover {
+            background: linear-gradient(135deg, #2a5fc5, var(--gas-nobre));
+            box-shadow: 0 0 15px rgba(58, 134, 255, 0.7);
+            transform: translateY(-2px);
+        }
+
+        .filter-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .filter-btn {
+            padding: 10px 12px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            min-height: 44px;
+            flex: 1;
+            min-width: 120px;
+            color: var(--text-primary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .filter-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .filter-btn:hover::before {
+            left: 100%;
+        }
+
+        .filter-btn.active {
+            background-color: var(--gas-nobre);
+            color: white;
+            box-shadow: 0 0 10px rgba(58, 134, 255, 0.7);
+            border-color: var(--gas-nobre);
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin: 15px 0;
+            padding: 0 5px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            padding: 6px 10px;
+            border-radius: 4px;
+            color: white;
+            min-height: 32px;
+            transition: transform 0.3s ease;
+        }
+
+        .legend-item:hover {
+            transform: translateY(-3px);
+        }
+
+        .periodic-table-container {
+            overflow-x: auto;
+            margin: 15px 0;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .periodic-table-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 10px;
+            padding: 2px;
+            background: linear-gradient(135deg, var(--metal-alcalino), var(--gas-nobre), var(--metal-transicao));
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+            -webkit-mask-composite: xor;
+            animation: borderRotate 10s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes borderRotate {
+            0% {
+                background: linear-gradient(135deg, var(--metal-alcalino), var(--gas-nobre), var(--metal-transicao));
+            }
+            25% {
+                background: linear-gradient(135deg, var(--gas-nobre), var(--metal-transicao), var(--metal-alcalino));
+            }
+            50% {
+                background: linear-gradient(135deg, var(--metal-transicao), var(--metal-alcalino), var(--gas-nobre));
+            }
+            75% {
+                background: linear-gradient(135deg, var(--metal-alcalino), var(--metal-transicao), var(--gas-nobre));
+            }
+            100% {
+                background: linear-gradient(135deg, var(--metal-alcalino), var(--gas-nobre), var(--metal-transicao));
+            }
+        }
+
+        .periodic-table {
+            display: grid;
+            grid-template-columns: repeat(18, minmax(40px, 1fr));
+            grid-gap: 4px;
+            margin: 0 auto;
+            min-width: 800px;
+        }
+
+        .element {
+            aspect-ratio: 1/1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 4px;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            font-size: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            min-height: 40px;
+            touch-action: manipulation;
+            position: relative;
+            overflow: hidden;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .element::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .element:hover, .element:focus {
+            transform: scale(1.1) rotate(2deg);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 255, 255, 0.2);
+            z-index: 10;
+        }
+
+        .element:hover::before {
+            opacity: 1;
+        }
+
+        .element.hidden {
+            opacity: 0.3;
+            transform: scale(0.9);
+        }
+
+        .element-number {
+            font-size: 10px;
+            align-self: flex-start;
+            line-height: 1;
+        }
+
+        .element-symbol {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 2px 0;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            line-height: 1;
+        }
+
+        .element-name {
+            font-size: 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            width: 100%;
+            line-height: 1.1;
+            max-height: 16px;
+        }
+
+        .empty {
+            background-color: transparent;
+            border: none;
+            box-shadow: none;
+            cursor: default;
+        }
+
+        .empty:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Cores por categoria */
+        .metal-alcalino { 
+            background-color: var(--metal-alcalino);
+        }
+        .metal-alcalino-terroso { 
+            background-color: var(--metal-alcalino-terroso);
+        }
+        .metal-transicao { 
+            background-color: var(--metal-transicao);
+        }
+        .metal-pos-transicao { 
+            background-color: var(--metal-pos-transicao);
+        }
+        .semimetal { 
+            background-color: var(--semimetal);
+        }
+        .nao-metal { 
+            background-color: var(--nao-metal);
+        }
+        .halogenio { 
+            background-color: var(--halogenio);
+        }
+        .gas-nobre { 
+            background-color: var(--gas-nobre);
+        }
+        .lantanideo { 
+            background-color: var(--lantanideo);
+        }
+        .actinideo { 
+            background-color: var(--actinideo);
+        }
+
+        .lanthanides-actinides {
+            margin-top: 20px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .lanthanides-actinides::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 10px;
+            padding: 2px;
+            background: linear-gradient(135deg, var(--lantanideo), var(--actinideo));
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+            -webkit-mask-composite: xor;
+            animation: borderRotate2 8s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes borderRotate2 {
+            0% {
+                background: linear-gradient(135deg, var(--lantanideo), var(--actinideo));
+            }
+            50% {
+                background: linear-gradient(135deg, var(--actinideo), var(--lantanideo));
+            }
+            100% {
+                background: linear-gradient(135deg, var(--lantanideo), var(--actinideo));
+            }
+        }
+
+        .lanthanides-actinides h3 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+            font-size: clamp(1.1rem, 3vw, 1.4rem);
+            text-shadow: 0 0 10px rgba(131, 56, 236, 0.5);
+        }
+
+        .lanthanides, .actinides {
+            display: grid;
+            grid-template-columns: repeat(15, minmax(40px, 1fr));
+            grid-gap: 4px;
+            margin-bottom: 20px;
+            min-width: 700px;
+        }
+
+        /* Modal de informações */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, var(--card), #2a2a2a);
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 50px rgba(58, 134, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: modalAppear 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            transform: scale(0.8);
+            opacity: 0;
+        }
+
+        @keyframes modalAppear {
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #ccc;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+            transform: rotate(90deg);
+        }
+
+        .element-info {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .element-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .element-large {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            flex-shrink: 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .element-large::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: rotate(45deg);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% {
+                transform: translateX(-100%) translateY(-100%) rotate(45deg);
+            }
+            100% {
+                transform: translateX(100%) translateY(100%) rotate(45deg);
+            }
+        }
+
+        .element-large .symbol {
+            font-size: 32px;
+            z-index: 1;
+        }
+
+        .element-large .number {
+            font-size: 14px;
+            align-self: flex-start;
+            margin-left: 5px;
+            z-index: 1;
+        }
+
+        .element-large .name {
+            font-size: 12px;
+            z-index: 1;
+        }
+
+        .element-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .detail-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .detail-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .detail-value {
+            font-size: 16px;
+            color: var(--text-primary);
+        }
+
+        .element-description {
+            margin-top: 10px;
+            font-size: 15px;
+            line-height: 1.5;
+            color: var(--muted);
+        }
+
+        /* Botão de ajuda flutuante */
+        .help-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            transition: all 0.3s ease;
+            border: none;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .help-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(138, 43, 226, 0.5);
+        }
+
+        .help-button:active {
+            transform: scale(0.95);
+        }
+
+        /* Painel de ajuda */
+        .help-panel {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 320px;
+            max-height: 70vh;
+            background: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            overflow-y: auto;
+            transform: translateY(20px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .help-panel.active {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .help-panel h2 {
+            margin-bottom: 15px;
+            color: var(--accent);
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .help-panel h3 {
+            margin: 15px 0 8px;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .help-panel p {
+            margin-bottom: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .help-panel ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .help-panel li {
+            margin-bottom: 6px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .help-panel .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 20px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .help-panel .close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        footer {
+            padding: 12px 20px;
+            font-size: 13px;
+            color: var(--muted);
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            animation: fadeIn 1s ease-out;
+        }
+
+        /* Animações personalizadas */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes canvasAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes cardSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes textGlow {
+            0% {
+                text-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+            }
+            100% {
+                text-shadow: 0 0 15px rgba(0, 191, 255, 0.8), 0 0 20px rgba(138, 43, 226, 0.6);
+            }
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.7;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0.7;
+            }
+        }
+
+        /* Efeito de partículas */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            animation: particleFloat 15s infinite linear;
+        }
+
+        @keyframes particleFloat {
+            0% {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) translateX(100px);
+                opacity: 0;
+            }
+        }
+
+        /* Elementos aparecendo com animação */
+        .element-animated {
+            animation: elementAppear 0.5s ease-out forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes elementAppear {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Áudio oculto */
+        .audio-container {
+            display: none;
+        }
+
+        /* Botão Voltar para Tabela */
+        .back-to-table-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, var(--primary), #6a0dad);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .back-to-table-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+        }
+
+        .back-to-table-btn i {
+            font-size: 16px;
+        }
+
+        /* Responsividade */
+        @media (max-width: 1024px) {
+            .periodic-table {
+                grid-template-columns: repeat(18, minmax(35px, 1fr));
+            }
+            
+            .element-symbol {
+                font-size: 14px;
+            }
+            
+            .lanthanides, .actinides {
+                grid-template-columns: repeat(15, minmax(35px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .periodic-table {
+                grid-template-columns: repeat(18, minmax(30px, 1fr));
+            }
+            
+            .element-symbol {
+                font-size: 12px;
+            }
+            
+            .element-name {
+                font-size: 7px;
+            }
+            
+            .element-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .lanthanides, .actinides {
+                grid-template-columns: repeat(8, minmax(35px, 1fr));
+            }
+            
+            .element-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+            
+            .modal-content {
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .periodic-table {
+                grid-template-columns: repeat(18, minmax(25px, 1fr));
+                min-width: 500px;
+            }
+            
+            .element-symbol {
+                font-size: 10px;
+            }
+            
+            .element-number {
+                font-size: 8px;
+            }
+            
+            .element-name {
+                font-size: 6px;
+            }
+            
+            .lanthanides, .actinides {
+                grid-template-columns: repeat(5, minmax(30px, 1fr));
+                min-width: 200px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .search-container {
+                max-width: 100%;
+            }
+            
+            .filter-btn {
+                min-width: 100px;
+                font-size: 12px;
+                padding: 8px 10px;
+            }
+            
+            .legend-item {
+                font-size: 10px;
+                padding: 5px 8px;
+            }
+            
+            .element-large {
+                width: 70px;
+                height: 70px;
+            }
+            
+            .element-large .symbol {
+                font-size: 26px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .periodic-table {
+                grid-template-columns: repeat(18, minmax(22px, 1fr));
+            }
+            
+            .element-symbol {
+                font-size: 9px;
+            }
+            
+            .element-name {
+                font-size: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+    
+    <!-- Áudios para efeitos sonoros -->
+    <div class="audio-container">
+        <audio id="hover-sound" preload="auto">
+            <source src="https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3" type="audio/mpeg">
+        </audio>
+        <audio id="click-sound" preload="auto">
+            <source src="https://assets.mixkit.co/sfx/preview/mixkit-modern-technology-select-3127.mp3" type="audio/mpeg">
+        </audio>
+        <audio id="modal-sound" preload="auto">
+            <source src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3" type="audio/mpeg">
+        </audio>
+    </div>
+    
+    <div class="container">
+        <header>
+            <h1>Tabela Periódica Completa - 118 Elementos</h1>
+            <div class="tab-container">
+                <div class="tab active" data-tab="table">Tabela</div>
+                <div class="tab" data-tab="info">Informações</div>
+            </div>
+        </header>
+
+        <div class="tab-content active" id="table-tab">
+            <p class="subtitle">Todos os 118 elementos - Clique para ver informações detalhadas</p>
+
+            <div class="controls">
+                <div class="search-container">
+                    <input type="text" id="search" placeholder="Pesquisar elemento..." aria-label="Pesquisar elemento">
+                    <button id="search-btn" aria-label="Buscar"><i class="fas fa-search"></i></button>
+                </div>
+                <div class="filter-container">
+                    <button class="filter-btn active" data-category="all">Todos</button>
+                    <button class="filter-btn" data-category="metal-alcalino">Metais Alcalinos</button>
+                    <button class="filter-btn" data-category="metal-alcalino-terroso">Alcalino-Terrosos</button>
+                    <button class="filter-btn" data-category="metal-transicao">Metais de Transição</button>
+                    <button class="filter-btn" data-category="nao-metal">Não Metais</button>
+                    <button class="filter-btn" data-category="gas-nobre">Gases Nobres</button>
+                </div>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item metal-alcalino">Metais Alcalinos</div>
+                <div class="legend-item metal-alcalino-terroso">Metais Alcalino-Terrosos</div>
+                <div class="legend-item metal-transicao">Metais de Transição</div>
+                <div class="legend-item metal-pos-transicao">Metais Pós-Transição</div>
+                <div class="legend-item semimetal">Semimetais</div>
+                <div class="legend-item nao-metal">Não Metais</div>
+                <div class="legend-item halogenio">Halogênios</div>
+                <div class="legend-item gas-nobre">Gases Nobres</div>
+                <div class="legend-item lantanideo">Lantanídeos</div>
+                <div class="legend-item actinideo">Actinídeos</div>
+            </div>
+
+            <div class="periodic-table-container">
+                <div class="periodic-table" id="periodic-table" role="grid" aria-label="Tabela Periódica dos Elementos">
+                    <!-- Os elementos serão inseridos aqui via JavaScript -->
+                </div>
+            </div>
+
+            <div class="lanthanides-actinides">
+                <h3>Séries dos Lantanídeos e Actinídeos</h3>
+                <div class="lanthanides" id="lanthanides" role="grid" aria-label="Série dos Lantanídeos">
+                    <!-- Lantanídeos serão inseridos aqui -->
+                </div>
+                <div class="actinides" id="actinides" role="grid" aria-label="Série dos Actinídeos">
+                    <!-- Actinídeos serão inseridos aqui -->
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="info-tab">
+            <button class="back-to-table-btn" id="back-to-table">
+                <i class="fas fa-arrow-left"></i> Voltar para a Tabela
+            </button>
+            
+            <div class="help-panel" style="position: relative; transform: none; opacity: 1; visibility: visible; width: 100%; max-height: none; box-shadow: none; margin-bottom: 20px;">
+                <h2>💡 Sobre a Tabela Periódica</h2>
+                
+                <h3>Como Usar</h3>
+                <ul>
+                    <li><strong>Clique em qualquer elemento</strong> para ver informações detalhadas</li>
+                    <li><strong>Use a barra de pesquisa</strong> para encontrar elementos por nome, símbolo ou número atômico</li>
+                    <li><strong>Filtre por categoria</strong> para ver apenas elementos de um tipo específico</li>
+                </ul>
+                
+                <h3>Organização</h3>
+                <p>A tabela periódica organiza os elementos químicos em ordem crescente de número atômico, agrupando-os de acordo com suas propriedades químicas similares.</p>
+                
+                <h3>Categorias</h3>
+                <ul>
+                    <li><strong>Metais Alcalinos:</strong> Grupo 1, muito reativos</li>
+                    <li><strong>Metais Alcalino-Terrosos:</strong> Grupo 2, reativos</li>
+                    <li><strong>Metais de Transição:</strong> Grupos 3-12, com múltiplos estados de oxidação</li>
+                    <li><strong>Metais Pós-Transição:</strong> Com propriedades entre metais e não-metais</li>
+                    <li><strong>Semimetais:</strong> Propriedades intermediárias entre metais e não-metais</li>
+                    <li><strong>Não Metais:</strong> Maus condutores de calor e eletricidade</li>
+                    <li><strong>Halogênios:</strong> Grupo 17, muito reativos</li>
+                    <li><strong>Gases Nobres:</strong> Grupo 18, pouco reativos</li>
+                    <li><strong>Lantanídeos e Actinídeos:</strong> Elementos de transição interna</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botão de ajuda flutuante -->
+    <button class="help-button" id="helpButton">?</button>
+
+    <!-- Painel de ajuda -->
+    <div class="help-panel" id="helpPanel">
+        <button class="close-btn" id="closeHelp">&times;</button>
+        <h2>💡 Como Usar a Tabela Periódica</h2>
+        
+        <h3>Interação</h3>
+        <ul>
+            <li><strong>Clique em qualquer elemento</strong> para ver informações detalhadas</li>
+            <li><strong>Use a barra de pesquisa</strong> para encontrar elementos específicos</li>
+            <li><strong>Filtre por categoria</strong> para ver apenas elementos de um tipo</li>
+        </ul>
+        
+        <h3>Categorias de Elementos</h3>
+        <p>A tabela periódica organiza os elementos em categorias com propriedades químicas similares:</p>
+        <ul>
+            <li><strong>Metais Alcalinos:</strong> Grupo 1, muito reativos</li>
+            <li><strong>Metais Alcalino-Terrosos:</strong> Grupo 2, reativos</li>
+            <li><strong>Metais de Transição:</strong> Grupos 3-12</li>
+            <li><strong>Não Metais:</strong> Maus condutores</li>
+            <li><strong>Gases Nobres:</strong> Grupo 18, pouco reativos</li>
+        </ul>
+        
+        <p style="margin-top: 15px; font-style: italic; text-align: center;">
+            Explore os elementos e descubra suas propriedades!
+        </p>
+    </div>
+
+    <div class="modal" id="element-modal" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+        <div class="modal-content">
+            <span class="close-btn" id="close-modal" tabindex="0" role="button" aria-label="Fechar"><i class="fas fa-times"></i></span>
+            <div class="element-info" id="element-info">
+                <!-- As informações do elemento serão inseridas aqui -->
+            </div>
+        </div>
+    </div>
+
+    <footer>Tabela Periódica Interativa | Química e Ciências</footer>
+
+    <script>
+        // Dados completos dos 118 elementos da tabela periódica
+        const elementos = [
+            // Período 1
+            { numero: 1, simbolo: "H", nome: "Hidrogênio", massa: "1.008", categoria: "nao-metal", grupo: 1, periodo: 1, eletronegatividade: "2.20", descricao: "O hidrogênio é o elemento químico mais simples e mais abundante no universo." },
+            { numero: 2, simbolo: "He", nome: "Hélio", massa: "4.0026", categoria: "gas-nobre", grupo: 18, periodo: 1, eletronegatividade: "-", descricao: "O hélio é um gás nobre, incolor, inodoro, não tóxico e o segundo elemento mais abundante no universo." },
+            
+            // Período 2
+            { numero: 3, simbolo: "Li", nome: "Lítio", massa: "6.94", categoria: "metal-alcalino", grupo: 1, periodo: 2, eletronegatividade: "0.98", descricao: "O lítio é um metal alcalino macio, de coloração branco-prateada." },
+            { numero: 4, simbolo: "Be", nome: "Berílio", massa: "9.0122", categoria: "metal-alcalino-terroso", grupo: 2, periodo: 2, eletronegatividade: "1.57", descricao: "O berílio é um metal alcalino-terroso, duro e quebradiço na temperatura ambiente." },
+            { numero: 5, simbolo: "B", nome: "Boro", massa: "10.81", categoria: "semimetal", grupo: 13, periodo: 2, eletronegatividade: "2.04", descricao: "O boro é um semimetal com propriedades intermediárias entre metais e não metais." },
+            { numero: 6, simbolo: "C", nome: "Carbono", massa: "12.011", categoria: "nao-metal", grupo: 14, periodo: 2, eletronegatividade: "2.55", descricao: "O carbono é a base de toda a vida na Terra e forma mais compostos do que qualquer outro elemento." },
+            { numero: 7, simbolo: "N", nome: "Nitrogênio", massa: "14.007", categoria: "nao-metal", grupo: 15, periodo: 2, eletronegatividade: "3.04", descricao: "O nitrogênio é um gás que compõe cerca de 78% da atmosfera terrestre." },
+            { numero: 8, simbolo: "O", nome: "Oxigênio", massa: "15.999", categoria: "nao-metal", grupo: 16, periodo: 2, eletronegatividade: "3.44", descricao: "O oxigênio é essencial para a respiração da maioria dos seres vivos e compõe cerca de 21% da atmosfera." },
+            { numero: 9, simbolo: "F", nome: "Flúor", massa: "18.998", categoria: "halogenio", grupo: 17, periodo: 2, eletronegatividade: "3.98", descricao: "O flúor é o halogênio mais reativo e o elemento mais eletronegativo." },
+            { numero: 10, simbolo: "Ne", nome: "Neônio", massa: "20.180", categoria: "gas-nobre", grupo: 18, periodo: 2, eletronegatividade: "-", descricao: "O neônio é um gás nobre conhecido por sua luminescência característica quando submetido a descargas elétricas." },
+            
+            // Período 3
+            { numero: 11, simbolo: "Na", nome: "Sódio", massa: "22.990", categoria: "metal-alcalino", grupo: 1, periodo: 3, eletronegatividade: "0.93", descricao: "O sódio é um metal alcalino macio, de coloração branco-prateada, muito reativo." },
+            { numero: 12, simbolo: "Mg", nome: "Magnésio", massa: "24.305", categoria: "metal-alcalino-terroso", grupo: 2, periodo: 3, eletronegatividade: "1.31", descricao: "O magnésio é um metal alcalino-terroso leve, utilizado em ligas metálicas e na produção de fogos de artifício." },
+            { numero: 13, simbolo: "Al", nome: "Alumínio", massa: "26.982", categoria: "metal-pos-transicao", grupo: 13, periodo: 3, eletronegatividade: "1.61", descricao: "O alumínio é um metal leve, resistente à corrosão e o terceiro elemento mais abundante na crosta terrestre." },
+            { numero: 14, simbolo: "Si", nome: "Silício", massa: "28.085", categoria: "semimetal", grupo: 14, periodo: 3, eletronegatividade: "1.90", descricao: "O silício é um semimetal essencial para a indústria eletrônica e o segundo elemento mais abundante na crosta terrestre." },
+            { numero: 15, simbolo: "P", nome: "Fósforo", massa: "30.974", categoria: "nao-metal", grupo: 15, periodo: 3, eletronegatividade: "2.19", descricao: "O fósforo é um não metal essencial para a vida, presente no DNA, RNA e ATP." },
+            { numero: 16, simbolo: "S", nome: "Enxofre", massa: "32.06", categoria: "nao-metal", grupo: 16, periodo: 3, eletronegatividade: "2.58", descricao: "O enxofre é um não metal amarelo, encontrado em minerais e em compostos orgânicos." },
+            { numero: 17, simbolo: "Cl", nome: "Cloro", massa: "35.45", categoria: "halogenio", grupo: 17, periodo: 3, eletronegatividade: "3.16", descricao: "O cloro é um halogênio amplamente utilizado no tratamento de água e na produção de plásticos." },
+            { numero: 18, simbolo: "Ar", nome: "Argônio", massa: "39.948", categoria: "gas-nobre", grupo: 18, periodo: 3, eletronegatividade: "-", descricao: "O argônio é o gás nobre mais abundante na atmosfera terrestre." },
+            
+            // Período 4
+            { numero: 19, simbolo: "K", nome: "Potássio", massa: "39.098", categoria: "metal-alcalino", grupo: 1, periodo: 4, eletronegatividade: "0.82", descricao: "O potássio é um metal alcalino essencial para a função celular em organismos vivos." },
+            { numero: 20, simbolo: "Ca", nome: "Cálcio", massa: "40.078", categoria: "metal-alcalino-terroso", grupo: 2, periodo: 4, eletronegatividade: "1.00", descricao: "O cálcio é um metal alcalino-terroso essencial para a formação de ossos e dentes." },
+            { numero: 21, simbolo: "Sc", nome: "Escândio", massa: "44.956", categoria: "metal-transicao", grupo: 3, periodo: 4, eletronegatividade: "1.36", descricao: "O escândio é um metal de transição leve, utilizado em ligas de alumínio de alta performance." },
+            { numero: 22, simbolo: "Ti", nome: "Titânio", massa: "47.867", categoria: "metal-transicao", grupo: 4, periodo: 4, eletronegatividade: "1.54", descricao: "O titânio é um metal de transição forte, leve e resistente à corrosão." },
+            { numero: 23, simbolo: "V", nome: "Vanádio", massa: "50.942", categoria: "metal-transicao", grupo: 5, periodo: 4, eletronegatividade: "1.63", descricao: "O vanádio é um metal de transição duro, utilizado principalmente em ligas de aço." },
+            { numero: 24, simbolo: "Cr", nome: "Cromo", massa: "51.996", categoria: "metal-transicao", grupo: 6, periodo: 4, eletronegatividade: "1.66", descricao: "O cromo é um metal de transição conhecido por seu brilho e resistência à corrosão." },
+            { numero: 25, simbolo: "Mn", nome: "Manganês", massa: "54.938", categoria: "metal-transicao", grupo: 7, periodo: 4, eletronegatividade: "1.55", descricao: "O manganês é um metal de transição essencial para a produção de aço e enzimas importantes." },
+            { numero: 26, simbolo: "Fe", nome: "Ferro", massa: "55.845", categoria: "metal-transicao", grupo: 8, periodo: 4, eletronegatividade: "1.83", descricao: "O ferro é o metal mais utilizado no mundo, essencial para a produção de aço e a hemoglobina no sangue." },
+            { numero: 27, simbolo: "Co", nome: "Cobalto", massa: "58.933", categoria: "metal-transicao", grupo: 9, periodo: 4, eletronegatividade: "1.88", descricao: "O cobalto é um metal de transição utilizado em ligas resistentes ao calor e em baterias recarregáveis." },
+            { numero: 28, simbolo: "Ni", nome: "Níquel", massa: "58.693", categoria: "metal-transicao", grupo: 10, periodo: 4, eletronegatividade: "1.91", descricao: "O níquel é um metal de transição utilizado em ligas resistentes à corrosão e em baterias." },
+            { numero: 29, simbolo: "Cu", nome: "Cobre", massa: "63.546", categoria: "metal-transicao", grupo: 11, periodo: 4, eletronegatividade: "1.90", descricao: "O cobre é um metal de transição com excelente condutividade elétrica e térmica." },
+            { numero: 30, simbolo: "Zn", nome: "Zinco", massa: "65.38", categoria: "metal-transicao", grupo: 12, periodo: 4, eletronegatividade: "1.65", descricao: "O zinco é um metal de transição utilizado em galvanização e como componente de ligas." },
+            { numero: 31, simbolo: "Ga", nome: "Gálio", massa: "69.723", categoria: "metal-pos-transicao", grupo: 13, periodo: 4, eletronegatividade: "1.81", descricao: "O gálio é um metal pós-transição que derrete próximo à temperatura ambiente." },
+            { numero: 32, simbolo: "Ge", nome: "Germânio", massa: "72.630", categoria: "semimetal", grupo: 14, periodo: 4, eletronegatividade: "2.01", descricao: "O germânio é um semimetal utilizado em semicondutores e fibras ópticas." },
+            { numero: 33, simbolo: "As", nome: "Arsênio", massa: "74.922", categoria: "semimetal", grupo: 15, periodo: 4, eletronegatividade: "2.18", descricao: "O arsênio é um semimetal tóxico, utilizado em pesticidas e semicondutores." },
+            { numero: 34, simbolo: "Se", nome: "Selênio", massa: "78.971", categoria: "nao-metal", grupo: 16, periodo: 4, eletronegatividade: "2.55", descricao: "O selênio é um não metal essencial em pequenas quantidades para organismos vivos." },
+            { numero: 35, simbolo: "Br", nome: "Bromo", massa: "79.904", categoria: "halogenio", grupo: 17, periodo: 4, eletronegatividade: "2.96", descricao: "O bromo é o único halogênio líquido à temperatura ambiente, de coloração vermelha escura." },
+            { numero: 36, simbolo: "Kr", nome: "Criptônio", massa: "83.798", categoria: "gas-nobre", grupo: 18, periodo: 4, eletronegatividade: "3.00", descricao: "O criptônio é um gás nobre utilizado em lâmpadas fluorescentes e flashes fotográficos." },
+            
+            // Período 5
+            { numero: 37, simbolo: "Rb", nome: "Rubídio", massa: "85.468", categoria: "metal-alcalino", grupo: 1, periodo: 5, eletronegatividade: "0.82", descricao: "O rubídio é um metal alcalino macio e muito reativo, similar ao potássio." },
+            { numero: 38, simbolo: "Sr", nome: "Estrôncio", massa: "87.62", categoria: "metal-alcalino-terroso", grupo: 2, periodo: 5, eletronegatividade: "0.95", descricao: "O estrôncio é um metal alcalino-terroso utilizado em fogos de artifício (cor vermelha)." },
+            { numero: 39, simbolo: "Y", nome: "Ítrio", massa: "88.906", categoria: "metal-transicao", grupo: 3, periodo: 5, eletronegatividade: "1.22", descricao: "O ítrio é um metal de transição utilizado em supercondutores e LEDs." },
+            { numero: 40, simbolo: "Zr", nome: "Zircônio", massa: "91.224", categoria: "metal-transicao", grupo: 4, periodo: 5, eletronegatividade: "1.33", descricao: "O zircônio é um metal de transição resistente à corrosão, utilizado em reatores nucleares." },
+            { numero: 41, simbolo: "Nb", nome: "Nióbio", massa: "92.906", categoria: "metal-transicao", grupo: 5, periodo: 5, eletronegatividade: "1.6", descricao: "O nióbio é um metal de transição utilizado em supercondutores e ligas de aço." },
+            { numero: 42, simbolo: "Mo", nome: "Molibdênio", massa: "95.95", categoria: "metal-transicao", grupo: 6, periodo: 5, eletronegatividade: "2.16", descricao: "O molibdênio é um metal de transição essencial para algumas enzimas e utilizado em ligas de aço." },
+            { numero: 43, simbolo: "Tc", nome: "Tecnécio", massa: "98", categoria: "metal-transicao", grupo: 7, periodo: 5, eletronegatividade: "1.9", descricao: "O tecnécio é o elemento mais leve que não possui isótopos estáveis, utilizado em medicina nuclear." },
+            { numero: 44, simbolo: "Ru", nome: "Rutênio", massa: "101.07", categoria: "metal-transicao", grupo: 8, periodo: 5, eletronegatividade: "2.2", descricao: "O rutênio é um metal de transição utilizado em ligas de platina e como catalisador." },
+            { numero: 45, simbolo: "Rh", nome: "Ródio", massa: "102.91", categoria: "metal-transicao", grupo: 9, periodo: 5, eletronegatividade: "2.28", descricao: "O ródio é um metal de transição raro, utilizado em conversores catalíticos e joias." },
+            { numero: 46, simbolo: "Pd", nome: "Paládio", massa: "106.42", categoria: "metal-transicao", grupo: 10, periodo: 5, eletronegatividade: "2.20", descricao: "O paládio é um metal de transição utilizado em conversores catalíticos e joias." },
+            { numero: 47, simbolo: "Ag", nome: "Prata", massa: "107.87", categoria: "metal-transicao", grupo: 11, periodo: 5, eletronegatividade: "1.93", descricao: "A prata é um metal de transição com a maior condutividade elétrica e térmica entre todos os metais." },
+            { numero: 48, simbolo: "Cd", nome: "Cádmio", massa: "112.41", categoria: "metal-transicao", grupo: 12, periodo: 5, eletronegatividade: "1.69", descricao: "O cádmio é um metal de transição tóxico, utilizado em baterias e pigmentos." },
+            { numero: 49, simbolo: "In", nome: "Índio", massa: "114.82", categoria: "metal-pos-transicao", grupo: 13, periodo: 5, eletronegatividade: "1.78", descricao: "O índio é um metal pós-transição utilizado em telas touchscreen e painéis solares." },
+            { numero: 50, simbolo: "Sn", nome: "Estanho", massa: "118.71", categoria: "metal-pos-transicao", grupo: 14, periodo: 5, eletronegatividade: "1.96", descricao: "O estanho é um metal pós-transição utilizado em soldas e como revestimento protetor." },
+            { numero: 51, simbolo: "Sb", nome: "Antimônio", massa: "121.76", categoria: "semimetal", grupo: 15, periodo: 5, eletronegatividade: "2.05", descricao: "O antimônio é um semimetal utilizado em retardantes de chama e ligas." },
+            { numero: 52, simbolo: "Te", nome: "Telúrio", massa: "127.60", categoria: "semimetal", grupo: 16, periodo: 5, eletronegatividade: "2.1", descricao: "O telúrio é um semimetal utilizado em ligas metálicas e painéis solares." },
+            { numero: 53, simbolo: "I", nome: "Iodo", massa: "126.90", categoria: "halogenio", grupo: 17, periodo: 5, eletronegatividade: "2.66", descricao: "O iodo é um halogênio essencial para a produção de hormônios tireoidianos." },
+            { numero: 54, simbolo: "Xe", nome: "Xenônio", massa: "131.29", categoria: "gas-nobre", grupo: 18, periodo: 5, eletronegatividade: "2.6", descricao: "O xenônio é um gás nobre utilizado em lâmpadas de flash e anestésicos." },
+            
+            // Período 6
+            { numero: 55, simbolo: "Cs", nome: "Césio", massa: "132.91", categoria: "metal-alcalino", grupo: 1, periodo: 6, eletronegatividade: "0.79", descricao: "O césio é um metal alcalino extremamente reativo, utilizado em relógios atômicos." },
+            { numero: 56, simbolo: "Ba", nome: "Bário", massa: "137.33", categoria: "metal-alcalino-terroso", grupo: 2, periodo: 6, eletronegatividade: "0.89", descricao: "O bário é um metal alcalino-terroso utilizado em contrastes para radiografia." },
+            { numero: 57, simbolo: "La", nome: "Lantânio", massa: "138.91", categoria: "lantanideo", grupo: 3, periodo: 6, eletronegatividade: "1.1", descricao: "O lantânio é o primeiro elemento da série dos lantanídeos, utilizado em baterias recarregáveis." },
+            { numero: 72, simbolo: "Hf", nome: "Háfnio", massa: "178.49", categoria: "metal-transicao", grupo: 4, periodo: 6, eletronegatividade: "1.3", descricao: "O háfnio é um metal de transição utilizado em barras de controle de reatores nucleares." },
+            { numero: 73, simbolo: "Ta", nome: "Tântalo", massa: "180.95", categoria: "metal-transicao", grupo: 5, periodo: 6, eletronegatividade: "1.5", descricao: "O tântalo é um metal de transição resistente à corrosão, utilizado em componentes eletrônicos." },
+            { numero: 74, simbolo: "W", nome: "Tungstênio", massa: "183.84", categoria: "metal-transicao", grupo: 6, periodo: 6, eletronegatividade: "2.36", descricao: "O tungstênio é um metal de transição com o ponto de fusão mais alto de todos os elementos." },
+            { numero: 75, simbolo: "Re", nome: "Rênio", massa: "186.21", categoria: "metal-transicao", grupo: 7, periodo: 6, eletronegatividade: "1.9", descricao: "O rênio é um metal de transição raro, utilizado em superligas para turbinas." },
+            { numero: 76, simbolo: "Os", nome: "Ósmio", massa: "190.23", categoria: "metal-transicao", grupo: 8, periodo: 6, eletronegatividade: "2.2", descricao: "O ósmio é o elemento natural mais denso, utilizado em ligas duras e pontas de caneta." },
+            { numero: 77, simbolo: "Ir", nome: "Irídio", massa: "192.22", categoria: "metal-transicao", grupo: 9, periodo: 6, eletronegatividade: "2.20", descricao: "O irídio é um metal de transição muito denso e resistente à corrosão." },
+            { numero: 78, simbolo: "Pt", nome: "Platina", massa: "195.08", categoria: "metal-transicao", grupo: 10, periodo: 6, eletronegatividade: "2.28", descricao: "A platina é um metal de transição precioso, utilizado em joias e catalisadores." },
+            { numero: 79, simbolo: "Au", nome: "Ouro", massa: "196.97", categoria: "metal-transicao", grupo: 11, periodo: 6, eletronegatividade: "2.54", descricao: "O ouro é um metal de transição precioso, utilizado em joias, eletrônicos e como reserva de valor." },
+            { numero: 80, simbolo: "Hg", nome: "Mercúrio", massa: "200.59", categoria: "metal-transicao", grupo: 12, periodo: 6, eletronegatividade: "2.00", descricao: "O mercúrio é o único metal líquido à temperatura ambiente, tóxico para organismos vivos." },
+            { numero: 81, simbolo: "Tl", nome: "Tálio", massa: "204.38", categoria: "metal-pos-transicao", grupo: 13, periodo: 6, eletronegatividade: "1.62", descricao: "O tálio é um metal pós-transição muito tóxico, utilizado em detectores de infravermelho." },
+            { numero: 82, simbolo: "Pb", nome: "Chumbo", massa: "207.2", categoria: "metal-pos-transicao", grupo: 14, periodo: 6, eletronegatividade: "1.87", descricao: "O chumbo é um metal pós-transição tóxico, anteriormente utilizado em gasolina e tintas." },
+            { numero: 83, simbolo: "Bi", nome: "Bismuto", massa: "208.98", categoria: "metal-pos-transicao", grupo: 15, periodo: 6, eletronegatividade: "2.02", descricao: "O bismuto é um metal pós-transição com baixa toxicidade, utilizado em medicamentos e cosméticos." },
+            { numero: 84, simbolo: "Po", nome: "Polônio", massa: "209", categoria: "metal-pos-transicao", grupo: 16, periodo: 6, eletronegatividade: "2.0", descricao: "O polônio é um elemento radioativo raro e extremamente tóxico." },
+            { numero: 85, simbolo: "At", nome: "Astato", massa: "210", categoria: "halogenio", grupo: 17, periodo: 6, eletronegatividade: "2.2", descricao: "O astato é um halogênio radioativo raro, o elemento mais raro na natureza." },
+            { numero: 86, simbolo: "Rn", nome: "Radônio", massa: "222", categoria: "gas-nobre", grupo: 18, periodo: 6, eletronegatividade: "2.2", descricao: "O radônio é um gás nobre radioativo, perigoso quando acumulado em ambientes fechados." },
+            
+            // Período 7
+            { numero: 87, simbolo: "Fr", nome: "Frâncio", massa: "223", categoria: "metal-alcalino", grupo: 1, periodo: 7, eletronegatividade: "0.7", descricao: "O frâncio é um metal alcalino extremamente raro e radioativo." },
+            { numero: 88, simbolo: "Ra", nome: "Rádio", massa: "226", categoria: "metal-alcalino-terroso", grupo: 2, periodo: 7, eletronegatividade: "0.9", descricao: "O rádio é um metal alcalino-terroso radioativo, anteriormente utilizado em pinturas luminescentes." },
+            { numero: 89, simbolo: "Ac", nome: "Actínio", massa: "227", categoria: "actinideo", grupo: 3, periodo: 7, eletronegatividade: "1.1", descricao: "O actínio é o primeiro elemento da série dos actinídeos, radioativo e raro." },
+            { numero: 104, simbolo: "Rf", nome: "Rutherfórdio", massa: "267", categoria: "metal-transicao", grupo: 4, periodo: 7, eletronegatividade: "-", descricao: "O rutherfórdio é um elemento sintético radioativo." },
+            { numero: 105, simbolo: "Db", nome: "Dúbnio", massa: "268", categoria: "metal-transicao", grupo: 5, periodo: 7, eletronegatividade: "-", descricao: "O dúbnio é um elemento sintético radioativo." },
+            { numero: 106, simbolo: "Sg", nome: "Seabórgio", massa: "269", categoria: "metal-transicao", grupo: 6, periodo: 7, eletronegatividade: "-", descricao: "O seabórgio é um elemento sintético radioativo." },
+            { numero: 107, simbolo: "Bh", nome: "Bóhrio", massa: "270", categoria: "metal-transicao", grupo: 7, periodo: 7, eletronegatividade: "-", descricao: "O bóhrio é um elemento sintético radioativo." },
+            { numero: 108, simbolo: "Hs", nome: "Hássio", massa: "269", categoria: "metal-transicao", grupo: 8, periodo: 7, eletronegatividade: "-", descricao: "O hássio é um elemento sintético radioativo." },
+            { numero: 109, simbolo: "Mt", nome: "Meitnério", massa: "278", categoria: "metal-transicao", grupo: 9, periodo: 7, eletronegatividade: "-", descricao: "O meitnério é um elemento sintético radioativo." },
+            { numero: 110, simbolo: "Ds", nome: "Darmstádtio", massa: "281", categoria: "metal-transicao", grupo: 10, periodo: 7, eletronegatividade: "-", descricao: "O darmstádtio é um elemento sintético radioativo." },
+            { numero: 111, simbolo: "Rg", nome: "Roentgênio", massa: "282", categoria: "metal-transicao", grupo: 11, periodo: 7, eletronegatividade: "-", descricao: "O roentgênio é um elemento sintético radioativo." },
+            { numero: 112, simbolo: "Cn", nome: "Copernício", massa: "285", categoria: "metal-transicao", grupo: 12, periodo: 7, eletronegatividade: "-", descricao: "O copernício é um elemento sintético radioativo." },
+            { numero: 113, simbolo: "Nh", nome: "Nihônio", massa: "286", categoria: "metal-pos-transicao", grupo: 13, periodo: 7, eletronegatividade: "-", descricao: "O nihônio é um elemento sintético radioativo." },
+            { numero: 114, simbolo: "Fl", nome: "Fleróvio", massa: "289", categoria: "metal-pos-transicao", grupo: 14, periodo: 7, eletronegatividade: "-", descricao: "O fleróvio é um elemento sintético radioativo." },
+            { numero: 115, simbolo: "Mc", nome: "Moscóvio", massa: "290", categoria: "metal-pos-transicao", grupo: 15, periodo: 7, eletronegatividade: "-", descricao: "O moscóvio é um elemento sintético radioativo." },
+            { numero: 116, simbolo: "Lv", nome: "Livermório", massa: "293", categoria: "metal-pos-transicao", grupo: 16, periodo: 7, eletronegatividade: "-", descricao: "O livermório é um elemento sintético radioativo." },
+            { numero: 117, simbolo: "Ts", nome: "Tenessino", massa: "294", categoria: "halogenio", grupo: 17, periodo: 7, eletronegatividade: "-", descricao: "O tenessino é um elemento sintético radioativo." },
+            { numero: 118, simbolo: "Og", nome: "Oganessônio", massa: "294", categoria: "gas-nobre", grupo: 18, periodo: 7, eletronegatividade: "-", descricao: "O oganessônio é um elemento sintético radioativo." }
+        ];
+
+        // Lantanídeos
+        const lantanideos = [
+            { numero: 58, simbolo: "Ce", nome: "Cério", massa: "140.12", categoria: "lantanideo", grupo: -1, periodo: -1, eletronegatividade: "1.12", descricao: "O cério é o mais abundante dos lantanídeos, utilizado em catalisadores e ligas." },
+            { numero: 59, simbolo: "Pr", nome: "Praseodímio", massa: "140.91", categoria: "lantanideo", grupo: -1, periodo: -1, eletronegatividade: "1.13", descricao: "O praseodímio é um lantanídeo utilizado em ligas e vidros especiais." },
+            { numero: 60, simbolo: "Nd", nome: "Neodímio", massa: "144.24", categoria: "lantanideo", grupo: -1, periodo: -1, eletronegatividade: "1.14", descricao: "O neodímio é um lantanídeo utilizado em ímãs fortes e lasers." },
+            { numero: 61, simbolo: "Pm", nome: "Promécio", massa: "145", categoria: "lantanideo", grupo: -1, periodo: -1, eletronegatividade: "1.13", descricao: "O promécio é um lantanídeo radioativo, utilizado em baterias nucleares." },
+            { numero: 62, simbolo: "Sm", nome: "Samário", massa: "150.36", categoria: "lantanideo", grupo: -1, periodo: -1, eletronegatividade: "1.17", descricao: "O samário é um lantanídeo utilizado em ímãs e captura de nêutrons." },
+            { numero: 63, simbolo: "Eu", nome: "Európio", massa: "151.96", categoria: "lantanideo", grupo: -1, periodo: -1, eletronegatividade: "1.2", descricao: "O európio é um lantanídeo utilizado em telas de televisão e lasers." },
+            { numero: 64, simbolo: "Gd", nome: "Gadolínio", massa: "157.25", categoria: "lantanideo", grupo: -1, periodo: -1, eletronegatividade: "1.2", descricao: "O gadolínio é um lantanídeo utilizado em ressonância magnética e mídias de armazenamento." },
+            { numero: 65, simbolo: "Tb", nome: "Térbio", massa: "158.93", categoria: "lantanideo", grupo: -1, periodo: -1, eletronegatividade: "1.2", descricao: "O térbio é um lantanídeo utilizado em dispositivos eletrônicos e como dopante." },
+            { numero: 66, simbolo: "Dy", nome: "Disprósio", massa: "162.50", categoria: "lantanideo", grupo: -1, periodo: -1, eletronegatividade: "1.22", descricao: "O disprósio é um lantanídeo utilizado em ímãs fortes e reatores nucleares." },
+            { numero: 67, simbolo: "Ho", nome: "Hólmio", massa: "164.93", categoria: "lantanideo", grupo: -1, periodo: -1, eletronegatividade: "1.23", descricao: "O hólmio é um lantanídeo utilizado em lasers e equipamentos científicos." },
+            { numero: 68, simbolo: "Er", nome: "Érbio", massa: "167.26", categoria: "lantanideo", grupo: -1, periodo: -1, eletronegatividade: "1.24", descricao: "O érbio é um lantanídeo utilizado em fibras ópticas e lasers." },
+            { numero: 69, simbolo: "Tm", nome: "Túlio", massa: "168.93", categoria: "lantanideo", grupo: -1, periodo: -1, eletronegatividade: "1.25", descricao: "O túlio é o lantanídeo mais raro, utilizado em dispositivos de raios-X portáteis." },
+            { numero: 70, simbolo: "Yb", nome: "Itérbio", massa: "173.05", categoria: "lantanideo", grupo: -1, periodo: -1, eletronegatividade: "1.1", descricao: "O itérbio é um lantanídeo utilizado em aços inoxidáveis e lasers." },
+            { numero: 71, simbolo: "Lu", nome: "Lutécio", massa: "174.97", categoria: "lantanideo", grupo: -1, periodo: -1, eletronegatividade: "1.27", descricao: "O lutécio é o último lantanídeo, utilizado em catalisadores de craqueamento de petróleo." }
+        ];
+
+        // Actinídeos
+        const actinideos = [
+            { numero: 90, simbolo: "Th", nome: "Tório", massa: "232.04", categoria: "actinideo", grupo: -1, periodo: -1, eletronegatividade: "1.3", descricao: "O tório é um actinídeo utilizado como combustível nuclear potencial." },
+            { numero: 91, simbolo: "Pa", nome: "Protactínio", massa: "231.04", categoria: "actinideo", grupo: -1, periodo: -1, eletronegatividade: "1.5", descricao: "O protactínio é um actinídeo raro e altamente radioativo." },
+            { numero: 92, simbolo: "U", nome: "Urânio", massa: "238.03", categoria: "actinideo", grupo: -1, periodo: -1, eletronegatividade: "1.38", descricao: "O urânio é o actinídeo mais conhecido, utilizado como combustível nuclear." },
+            { numero: 93, simbolo: "Np", nome: "Netúnio", massa: "237", categoria: "actinideo", grupo: -1, periodo: -1, eletronegatividade: "1.36", descricao: "O netúnio é um actinídeo sintético, primeiro elemento transurânico descoberto." },
+            { numero: 94, simbolo: "Pu", nome: "Plutônio", massa: "244", categoria: "actinideo", grupo: -1, periodo: -1, eletronegatividade: "1.28", descricao: "O plutônio é um actinídeo utilizado em armas nucleares e como combustível." },
+            { numero: 95, simbolo: "Am", nome: "Amerício", massa: "243", categoria: "actinideo", grupo: -1, periodo: -1, eletronegatividade: "1.3", descricao: "O amerício é um actinídeo sintético, utilizado em detectores de fumaça." },
+            { numero: 96, simbolo: "Cm", nome: "Cúrio", massa: "247", categoria: "actinideo", grupo: -1, periodo: -1, eletronegatividade: "1.3", descricao: "O cúrio é um actinídeo sintético, utilizado em fontes de energia para naves espaciais." },
+            { numero: 97, simbolo: "Bk", nome: "Berquélio", massa: "247", categoria: "actinideo", grupo: -1, periodo: -1, eletronegatividade: "1.3", descricao: "O berquélio é um actinídeo sintético, raro e de difícil produção." },
+            { numero: 98, simbolo: "Cf", nome: "Califórnio", massa: "251", categoria: "actinideo", grupo: -1, periodo: -1, eletronegatividade: "1.3", descricao: "O califórnio é um actinídeo sintético, utilizado como fonte de nêutrons." },
+            { numero: 99, simbolo: "Es", nome: "Einstênio", massa: "252", categoria: "actinideo", grupo: -1, periodo: -1, eletronegatividade: "1.3", descricao: "O einstênio é um actinídeo sintético, produzido em quantidades mínimas." },
+            { numero: 100, simbolo: "Fm", nome: "Férmio", massa: "257", categoria: "actinideo", grupo: -1, periodo: -1, eletronegatividade: "1.3", descricao: "O férmio é um actinídeo sintético, não possui aplicações práticas significativas." },
+            { numero: 101, simbolo: "Md", nome: "Mendelévio", massa: "258", categoria: "actinideo", grupo: -1, periodo: -1, eletronegatividade: "1.3", descricao: "O mendelévio é um actinídeo sintético, produzido em quantidades muito pequenas." },
+            { numero: 102, simbolo: "No", nome: "Nobélio", massa: "259", categoria: "actinideo", grupo: -1, periodo: -1, eletronegatividade: "1.3", descricao: "O nobélio é um actinídeo sintético, primeiro elemento identificado por físicos suecos." },
+            { numero: 103, simbolo: "Lr", nome: "Laurêncio", massa: "262", categoria: "actinideo", grupo: -1, periodo: -1, eletronegatividade: "1.3", descricao: "O laurêncio é o último actinídeo, sintético e de vida curta." }
+        ];
+
+        // Posições vazias na tabela periódica
+        const posicoesVazias = [
+            // Período 1
+            { grupo: 2, periodo: 1 }, { grupo: 3, periodo: 1 }, { grupo: 4, periodo: 1 }, { grupo: 5, periodo: 1 }, 
+            { grupo: 6, periodo: 1 }, { grupo: 7, periodo: 1 }, { grupo: 8, periodo: 1 }, { grupo: 9, periodo: 1 }, 
+            { grupo: 10, periodo: 1 }, { grupo: 11, periodo: 1 }, { grupo: 12, periodo: 1 }, { grupo: 13, periodo: 1 }, 
+            { grupo: 14, periodo: 1 }, { grupo: 15, periodo: 1 }, { grupo: 16, periodo: 1 }, { grupo: 17, periodo: 1 },
+            
+            // Período 2
+            { grupo: 3, periodo: 2 }, { grupo: 4, periodo: 2 }, { grupo: 5, periodo: 2 }, { grupo: 6, periodo: 2 }, 
+            { grupo: 7, periodo: 2 }, { grupo: 8, periodo: 2 }, { grupo: 9, periodo: 2 }, { grupo: 10, periodo: 2 }, 
+            { grupo: 11, periodo: 2 }, { grupo: 12, periodo: 2 },
+            
+            // Período 3
+            { grupo: 3, periodo: 3 }, { grupo: 4, periodo: 3 }, { grupo: 5, periodo: 3 }, { grupo: 6, periodo: 3 }, 
+            { grupo: 7, periodo: 3 }, { grupo: 8, periodo: 3 }, { grupo: 9, periodo: 3 }, { grupo: 10, periodo: 3 }, 
+            { grupo: 11, periodo: 3 }, { grupo: 12, periodo: 3 },
+            
+            // Período 6 (espaço para lantanídeos)
+            { grupo: 4, periodo: 6 }, { grupo: 5, periodo: 6 }, { grupo: 6, periodo: 6 }, { grupo: 7, periodo: 6 }, 
+            { grupo: 8, periodo: 6 }, { grupo: 9, periodo: 6 }, { grupo: 10, periodo: 6 }, { grupo: 11, periodo: 6 }, 
+            { grupo: 12, periodo: 6 }, { grupo: 13, periodo: 6 }, { grupo: 14, periodo: 6 }, { grupo: 15, periodo: 6 }, 
+            { grupo: 16, periodo: 6 }, { grupo: 17, periodo: 6 }, { grupo: 18, periodo: 6 }
+        ];
+
+        // Função para criar partículas de fundo
+        function criarParticulas() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 50;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Posição aleatória
+                const left = Math.random() * 100;
+                const delay = Math.random() * 15;
+                const duration = 15 + Math.random() * 10;
+                
+                particle.style.left = `${left}%`;
+                particle.style.animationDelay = `${delay}s`;
+                particle.style.animationDuration = `${duration}s`;
+                
+                // Tamanho aleatório
+                const size = 2 + Math.random() * 3;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                
+                // Cor aleatória baseada nas categorias
+                const colors = [
+                    'rgba(255, 107, 107, 0.7)',   // metal-alcalino
+                    'rgba(255, 209, 102, 0.7)',   // metal-alcalino-terroso
+                    'rgba(6, 214, 160, 0.7)',     // metal-transicao
+                    'rgba(58, 134, 255, 0.7)',    // gas-nobre
+                    'rgba(239, 71, 111, 0.7)',    // nao-metal
+                    'rgba(131, 56, 236, 0.7)'     // lantanideo
+                ];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.background = color;
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Função para criar a tabela periódica
+        function criarTabelaPeriodica() {
+            const tabela = document.getElementById('periodic-table');
+            tabela.innerHTML = '';
+            
+            // Para cada período (linha) de 1 a 7
+            for (let periodo = 1; periodo <= 7; periodo++) {
+                // Para cada grupo (coluna) de 1 a 18
+                for (let grupo = 1; grupo <= 18; grupo++) {
+                    // Verificar se esta posição é vazia
+                    const ehVazia = posicoesVazias.some(pos => pos.grupo === grupo && pos.periodo === periodo);
+                    
+                    if (ehVazia) {
+                        const elementoVazio = document.createElement('div');
+                        elementoVazio.className = 'element empty';
+                        elementoVazio.setAttribute('aria-hidden', 'true');
+                        tabela.appendChild(elementoVazio);
+                        continue;
+                    }
+                    
+                    // Encontrar o elemento nesta posição
+                    const elemento = elementos.find(el => el.grupo === grupo && el.periodo === periodo);
+                    
+                    if (elemento) {
+                        const elementoDiv = document.createElement('div');
+                        elementoDiv.className = `element ${elemento.categoria}`;
+                        elementoDiv.innerHTML = `
+                            <div class="element-number">${elemento.numero}</div>
+                            <div class="element-symbol">${elemento.simbolo}</div>
+                            <div class="element-name">${elemento.nome}</div>
+                        `;
+                        elementoDiv.setAttribute('role', 'gridcell');
+                        elementoDiv.setAttribute('tabindex', '0');
+                        elementoDiv.setAttribute('aria-label', `${elemento.nome}, número atômico ${elemento.numero}`);
+                        
+                        // Adicionar efeitos sonoros
+                        elementoDiv.addEventListener('mouseenter', tocarSomHover);
+                        elementoDiv.addEventListener('click', () => {
+                            tocarSomClique();
+                            mostrarInformacoes(elemento);
+                        });
+                        elementoDiv.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                tocarSomClique();
+                                mostrarInformacoes(elemento);
+                            }
+                        });
+                        tabela.appendChild(elementoDiv);
+                    } else {
+                        const elementoVazio = document.createElement('div');
+                        elementoVazio.className = 'element empty';
+                        elementoVazio.setAttribute('aria-hidden', 'true');
+                        tabela.appendChild(elementoVazio);
+                    }
+                }
+            }
+            
+            // Adicionar lantanídeos e actinídeos
+            criarLantanideosActinideos();
+        }
+
+        // Função para criar as séries dos lantanídeos e actinídeos
+        function criarLantanideosActinideos() {
+            const lantanidesContainer = document.getElementById('lanthanides');
+            const actinidesContainer = document.getElementById('actinides');
+            
+            lantanidesContainer.innerHTML = '';
+            actinidesContainer.innerHTML = '';
+            
+            // Adicionar lantanídeos
+            lantanideos.forEach(elemento => {
+                const elementoDiv = document.createElement('div');
+                elementoDiv.className = `element ${elemento.categoria}`;
+                elementoDiv.innerHTML = `
+                    <div class="element-number">${elemento.numero}</div>
+                    <div class="element-symbol">${elemento.simbolo}</div>
+                    <div class="element-name">${elemento.nome}</div>
+                `;
+                elementoDiv.setAttribute('role', 'gridcell');
+                elementoDiv.setAttribute('tabindex', '0');
+                elementoDiv.setAttribute('aria-label', `${elemento.nome}, número atômico ${elemento.numero}`);
+                
+                // Adicionar efeitos sonoros
+                elementoDiv.addEventListener('mouseenter', tocarSomHover);
+                elementoDiv.addEventListener('click', () => {
+                    tocarSomClique();
+                    mostrarInformacoes(elemento);
+                });
+                elementoDiv.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        tocarSomClique();
+                        mostrarInformacoes(elemento);
+                    }
+                });
+                lantanidesContainer.appendChild(elementoDiv);
+            });
+            
+            // Adicionar actinídeos
+            actinideos.forEach(elemento => {
+                const elementoDiv = document.createElement('div');
+                elementoDiv.className = `element ${elemento.categoria}`;
+                elementoDiv.innerHTML = `
+                    <div class="element-number">${elemento.numero}</div>
+                    <div class="element-symbol">${elemento.simbolo}</div>
+                    <div class="element-name">${elemento.nome}</div>
+                `;
+                elementoDiv.setAttribute('role', 'gridcell');
+                elementoDiv.setAttribute('tabindex', '0');
+                elementoDiv.setAttribute('aria-label', `${elemento.nome}, número atômico ${elemento.numero}`);
+                
+                // Adicionar efeitos sonoros
+                elementoDiv.addEventListener('mouseenter', tocarSomHover);
+                elementoDiv.addEventListener('click', () => {
+                    tocarSomClique();
+                    mostrarInformacoes(elemento);
+                });
+                elementoDiv.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        tocarSomClique();
+                        mostrarInformacoes(elemento);
+                    }
+                });
+                actinidesContainer.appendChild(elementoDiv);
+            });
+        }
+
+        // Função para mostrar informações do elemento
+        function mostrarInformacoes(elemento) {
+            const modal = document.getElementById('element-modal');
+            const infoDiv = document.getElementById('element-info');
+            
+            infoDiv.innerHTML = `
+                <div class="element-header">
+                    <div class="element-large ${elemento.categoria}">
+                        <div class="number">${elemento.numero}</div>
+                        <div class="symbol">${elemento.simbolo}</div>
+                        <div class="name">${elemento.nome}</div>
+                    </div>
+                    <div>
+                        <h2 id="modal-title">${elemento.nome}</h2>
+                        <p class="element-description">${elemento.descricao}</p>
+                    </div>
+                </div>
+                <div class="element-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Número Atômico</div>
+                        <div class="detail-value">${elemento.numero}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Símbolo</div>
+                        <div class="detail-value">${elemento.simbolo}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Massa Atômica</div>
+                        <div class="detail-value">${elemento.massa}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Categoria</div>
+                        <div class="detail-value">${obterNomeCategoria(elemento.categoria)}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Eletronegatividade</div>
+                        <div class="detail-value">${elemento.eletronegatividade}</div>
+                    </div>
+                    ${elemento.grupo > 0 ? `
+                    <div class="detail-item">
+                        <div class="detail-label">Grupo</div>
+                        <div class="detail-value">${elemento.grupo}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Período</div>
+                        <div class="detail-value">${elemento.periodo}</div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            
+            // Tocar som ao abrir o modal
+            tocarSomModal();
+            
+            // Foco no botão de fechar para melhor acessibilidade
+            document.getElementById('close-modal').focus();
+        }
+
+        // Função para obter o nome completo da categoria
+        function obterNomeCategoria(categoria) {
+            const categorias = {
+                'metal-alcalino': 'Metal Alcalino',
+                'metal-alcalino-terroso': 'Metal Alcalino-Terroso',
+                'metal-transicao': 'Metal de Transição',
+                'metal-pos-transicao': 'Metal Pós-Transição',
+                'semimetal': 'Semimetal',
+                'nao-metal': 'Não Metal',
+                'halogenio': 'Halogênio',
+                'gas-nobre': 'Gás Nobre',
+                'lantanideo': 'Lantanídeo',
+                'actinideo': 'Actinídeo'
+            };
+            
+            return categorias[categoria] || categoria;
+        }
+
+        // Função para filtrar elementos
+        function filtrarElementos() {
+            const termo = document.getElementById('search').value.toLowerCase();
+            
+            if (termo === '') {
+                criarTabelaPeriodica();
+                return;
+            }
+            
+            const todosElementos = [...elementos, ...lantanideos, ...actinideos];
+            const elementosFiltrados = todosElementos.filter(elemento => 
+                elemento.nome.toLowerCase().includes(termo) || 
+                elemento.simbolo.toLowerCase().includes(termo) ||
+                elemento.numero.toString().includes(termo)
+            );
+            
+            const tabela = document.getElementById('periodic-table');
+            tabela.innerHTML = '';
+            
+            elementosFiltrados.forEach(elemento => {
+                const elementoDiv = document.createElement('div');
+                elementoDiv.className = `element ${elemento.categoria}`;
+                elementoDiv.innerHTML = `
+                    <div class="element-number">${elemento.numero}</div>
+                    <div class="element-symbol">${elemento.simbolo}</div>
+                    <div class="element-name">${elemento.nome}</div>
+                `;
+                elementoDiv.setAttribute('role', 'gridcell');
+                elementoDiv.setAttribute('tabindex', '0');
+                elementoDiv.setAttribute('aria-label', `${elemento.nome}, número atômico ${elemento.numero}`);
+                
+                // Adicionar efeitos sonoros
+                elementoDiv.addEventListener('mouseenter', tocarSomHover);
+                elementoDiv.addEventListener('click', () => {
+                    tocarSomClique();
+                    mostrarInformacoes(elemento);
+                });
+                elementoDiv.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        tocarSomClique();
+                        mostrarInformacoes(elemento);
+                    }
+                });
+                tabela.appendChild(elementoDiv);
+            });
+        }
+
+        // Função para filtrar por categoria
+        function filtrarPorCategoria(categoria) {
+            const todosElementos = document.querySelectorAll('.element:not(.empty)');
+            
+            todosElementos.forEach(elemento => {
+                if (categoria === 'all' || elemento.classList.contains(categoria)) {
+                    elemento.classList.remove('hidden');
+                } else {
+                    elemento.classList.add('hidden');
+                }
+            });
+        }
+
+        // Funções para efeitos sonoros
+        function tocarSomHover() {
+            const som = document.getElementById('hover-sound');
+            som.currentTime = 0;
+            som.volume = 0.3;
+            som.play().catch(e => console.log("Erro ao reproduzir som de hover: ", e));
+        }
+
+        function tocarSomClique() {
+            const som = document.getElementById('click-sound');
+            som.currentTime = 0;
+            som.volume = 0.5;
+            som.play().catch(e => console.log("Erro ao reproduzir som de clique: ", e));
+        }
+
+        function tocarSomModal() {
+            const som = document.getElementById('modal-sound');
+            som.currentTime = 0;
+            som.volume = 0.4;
+            som.play().catch(e => console.log("Erro ao reproduzir som do modal: ", e));
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            criarParticulas();
+            criarTabelaPeriodica();
+            
+            // Event listeners para abas
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // Remover classe active de todas as abas
+                    document.querySelectorAll('.tab').forEach(t => {
+                        t.classList.remove('active');
+                    });
+                    
+                    // Adicionar classe active à aba clicada
+                    this.classList.add('active');
+                    
+                    // Esconder todos os conteúdos de aba
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    
+                    // Mostrar o conteúdo da aba clicada
+                    document.getElementById(tabId + '-tab').classList.add('active');
+                });
+            });
+
+            // Event listener para o botão "Voltar para a Tabela"
+            document.getElementById('back-to-table').addEventListener('click', function() {
+                // Ativar a aba "Tabela"
+                document.querySelector('.tab[data-tab="table"]').click();
+            });
+
+            // Help panel functionality
+            const helpButton = document.getElementById('helpButton');
+            const helpPanel = document.getElementById('helpPanel');
+            const closeHelp = document.getElementById('closeHelp');
+
+            helpButton.addEventListener('click', () => {
+                helpPanel.classList.toggle('active');
+            });
+
+            closeHelp.addEventListener('click', () => {
+                helpPanel.classList.remove('active');
+            });
+
+            // Close help panel when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!helpPanel.contains(e.target) && e.target !== helpButton) {
+                    helpPanel.classList.remove('active');
+                }
+            });
+            
+            // Event listeners
+            document.getElementById('close-modal').addEventListener('click', function() {
+                document.getElementById('element-modal').style.display = 'none';
+                document.body.style.overflow = 'auto';
+                tocarSomClique();
+            });
+            
+            document.getElementById('close-modal').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    document.getElementById('element-modal').style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                    tocarSomClique();
+                }
+            });
+            
+            document.getElementById('search').addEventListener('input', filtrarElementos);
+            document.getElementById('search-btn').addEventListener('click', () => {
+                filtrarElementos();
+                tocarSomClique();
+            });
+            
+            // Permitir busca com Enter
+            document.getElementById('search').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    filtrarElementos();
+                    tocarSomClique();
+                }
+            });
+            
+            // Fechar modal ao clicar fora
+            window.addEventListener('click', function(event) {
+                const modal = document.getElementById('element-modal');
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                    tocarSomClique();
+                }
+            });
+            
+            // Fechar modal com ESC
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    document.getElementById('element-modal').style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                    tocarSomClique();
+                }
+            });
+            
+            // Filtros por categoria
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    filtrarPorCategoria(this.dataset.category);
+                    tocarSomClique();
+                });
+                
+                // Permitir ativação com Enter
+                btn.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        filtrarPorCategoria(this.dataset.category);
+                        tocarSomClique();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

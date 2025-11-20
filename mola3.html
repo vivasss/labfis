@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Simulação de Molas em Série</title>
+  <style>
+    :root {
+      --bg: #071028;
+      --card: #0f1724;
+      --muted: #94a3b8;
+      --primary: #8a2be2;
+      --accent: #00bfff;
+      --success: #10b981;
+      --warning: #f59e0b;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: all 0.3s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, 'Segoe UI', Roboto, Arial;
+      background: linear-gradient(180deg, #071028 0%, #071021 60%);
+      color: #e6eef8;
+      min-height: 100vh;
+      overflow-x: hidden;
+      touch-action: manipulation;
+      position: relative;
+    }
+
+    header {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      animation: fadeIn 0.8s ease-out;
+      position: relative;
+      z-index: 10;
+    }
+
+    h1 {
+      font-size: clamp(16px, 5vw, 20px);
+      margin: 0;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: textGlow 3s infinite alternate;
+    }
+
+    .tab-container {
+      display: flex;
+      background: var(--card);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      flex: 1;
+      max-width: 300px;
+    }
+
+    .tab {
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      font-size: clamp(12px, 3vw, 14px);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      flex: 1;
+      text-align: center;
+    }
+
+    .tab:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .tab.active {
+      background: var(--primary);
+      font-weight: 700;
+      box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
+    }
+
+    .tab::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 3px;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    .tab.active::after {
+      width: 100%;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 18px;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 18px;
+      height: calc(100vh - 134px);
+      padding: 0 18px 18px;
+      animation: slideUp 0.6s ease-out;
+      position: relative;
+    }
+
+    .simulation-container {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .simulation-container::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(138, 43, 226, 0.05) 0%, transparent 70%);
+      animation: rotate 20s linear infinite;
+      pointer-events: none;
+    }
+
+    #simCanvas {
+      width: 100%;
+      height: 560px;
+      border-radius: 8px;
+      background: transparent;
+      display: block;
+      animation: canvasAppear 1s ease-out;
+      touch-action: none;
+    }
+
+    .info-panel {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .info-card {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      border-left: 3px solid var(--primary);
+      position: relative;
+      overflow: hidden;
+      animation: cardSlideIn 0.5s ease-out;
+    }
+
+    .info-card:nth-child(2) {
+      border-left-color: var(--accent);
+      animation-delay: 0.1s;
+    }
+
+    .info-card:nth-child(3) {
+      border-left-color: var(--success);
+      animation-delay: 0.2s;
+    }
+
+    .info-card:nth-child(4) {
+      border-left-color: var(--warning);
+      animation-delay: 0.3s;
+    }
+
+    .info-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .info-card:hover::before {
+      left: 100%;
+    }
+
+    .info-card .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .info-card .value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .controls {
+      background: var(--card);
+      padding: 16px;
+      border-radius: 12px;
+      height: 100%;
+      overflow-y: auto;
+      animation: slideInRight 0.6s ease-out;
+    }
+
+    .controls::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .controls::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    .controls::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 3px;
+    }
+
+    .group {
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .group:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .group:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+
+    .group:nth-child(4) {
+      animation-delay: 0.3s;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .small {
+      font-size: 12px;
+    }
+
+    input[type='range'] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type='range']::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+      transition: all 0.2s ease;
+    }
+
+    input[type='range']::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 10px rgba(138, 43, 226, 0.8);
+    }
+
+    input[type='number'],
+    select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.02);
+      color: inherit;
+      margin-bottom: 8px;
+      transition: all 0.3s ease;
+    }
+
+    input[type='number']:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background: linear-gradient(90deg, var(--primary), #6a0dad);
+      border: 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      min-height: 44px; /* Tamanho mínimo para toque em dispositivos móveis */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.secondary {
+      background: linear-gradient(90deg, #444, #666);
+    }
+
+    button.secondary:hover {
+      box-shadow: 0 5px 15px rgba(102, 102, 102, 0.4);
+    }
+
+    .muted {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .touch-hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      max-width: 80%;
+      z-index: 5;
+      animation: pulse 2s infinite;
+    }
+
+    /* Botão de ajuda flutuante */
+    .help-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      transition: all 0.3s ease;
+      border: none;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .help-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 25px rgba(138, 43, 226, 0.5);
+    }
+
+    .help-button:active {
+      transform: scale(0.95);
+    }
+
+    /* Painel de ajuda */
+    .help-panel {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 320px;
+      max-height: 70vh;
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      overflow-y: auto;
+      transform: translateY(20px);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    .help-panel.active {
+      transform: translateY(0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .help-panel h2 {
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .help-panel h3 {
+      margin: 15px 0 8px;
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+
+    .help-panel p {
+      margin-bottom: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .help-panel ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    .help-panel li {
+      margin-bottom: 6px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .help-panel .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .help-panel .close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    footer {
+      padding: 12px 20px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+      animation: fadeIn 1s ease-out;
+    }
+
+    /* Botão de menu para dispositivos móveis */
+    .menu-toggle {
+      display: none;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      background: var(--card);
+      border-radius: 50%;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      z-index: 1001;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .menu-toggle span {
+      display: block;
+      width: 25px;
+      height: 3px;
+      background: var(--accent);
+      margin: 5px 0;
+      transition: all 0.3s ease;
+    }
+
+    .menu-toggle.active span:nth-child(1) {
+      transform: rotate(45deg) translate(5px, 5px);
+    }
+
+    .menu-toggle.active span:nth-child(2) {
+      opacity: 0;
+    }
+
+    .menu-toggle.active span:nth-child(3) {
+      transform: rotate(-45deg) translate(7px, -6px);
+    }
+
+    /* Painel de controle móvel */
+    .mobile-controls {
+      position: fixed;
+      top: 0;
+      right: -100%;
+      width: 80%;
+      max-width: 380px;
+      height: 100%;
+      background: var(--card);
+      z-index: 1000;
+      transition: right 0.3s ease;
+      overflow-y: auto;
+      padding: 70px 20px 20px;
+    }
+
+    .mobile-controls.active {
+      right: 0;
+    }
+
+    .mobile-controls .close-controls {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    /* Indicador de desempenho */
+    .performance-indicator {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      color: var(--accent);
+      z-index: 100;
+      display: none;
+    }
+
+    /* Animações personalizadas */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes canvasAppear {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes cardSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes textGlow {
+      0% {
+        text-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+      }
+      100% {
+        text-shadow: 0 0 15px rgba(0, 191, 255, 0.8), 0 0 20px rgba(138, 43, 226, 0.6);
+      }
+    }
+
+    @keyframes rotate {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: 0.7;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0.7;
+      }
+    }
+
+    /* Responsividade */
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+        height: auto;
+        padding-bottom: 18px;
+      }
+      
+      #simCanvas {
+        height: 420px;
+      }
+      
+      .info-panel {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .help-panel {
+        width: 280px;
+        right: 10px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .info-panel {
+        grid-template-columns: 1fr;
+      }
+      
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .tab-container {
+        width: 100%;
+        max-width: none;
+      }
+      
+      .tab {
+        flex: 1;
+        text-align: center;
+        padding: 12px 8px;
+      }
+      
+      .simulation-container {
+        padding: 8px;
+      }
+      
+      #simCanvas {
+        height: 60vh;
+        min-height: 400px;
+      }
+      
+      .controls {
+        display: none;
+      }
+      
+      .menu-toggle {
+        display: flex;
+      }
+      
+      button {
+        padding: 12px 16px;
+        font-size: 16px;
+      }
+      
+      .help-button {
+        width: 50px;
+        height: 50px;
+        bottom: 15px;
+        right: 15px;
+        font-size: 20px;
+      }
+      
+      .help-panel {
+        width: calc(100% - 30px);
+        right: 15px;
+        bottom: 75px;
+      }
+      
+      .performance-indicator {
+        display: block;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #simCanvas {
+        height: 50vh;
+        min-height: 350px;
+      }
+      
+      .touch-hint {
+        font-size: 14px;
+        padding: 12px;
+      }
+      
+      .mobile-controls {
+        width: 90%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Simulação de Molas em Série</h1>
+    <div class="tab-container">
+      <div class="tab active" data-tab="simulation">Simulação</div>
+      <div class="tab" data-tab="explanation">Explicação</div>
+    </div>
+  </header>
+
+  <div class="tab-content active" id="simulation-tab">
+    <main>
+      <div class="simulation-container">
+        <canvas id="simCanvas"></canvas>
+        
+        <div class="touch-hint" id="touchHint">
+          <p>💡 Arraste os blocos para interagir com as molas</p>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-card">
+            <div class="label">Número de Molas</div>
+            <div class="value" id="springCountValue">3</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Energia Total</div>
+            <div class="value" id="energyValue">0.00 J</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Tempo</div>
+            <div class="value" id="timeValue">0.0 s</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Estado</div>
+            <div class="value" id="stateValue">Executando</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; display:flex; gap:10px; flex-wrap: wrap;">
+          <button id="startBtn">Iniciar</button>
+          <button id="pauseBtn" class="secondary">Pausar</button>
+          <button id="resetBtn" class="secondary">Resetar</button>
+        </div>
+      </div>
+
+      <aside class="controls" id="desktopControls">
+        <div class="group">
+          <label><strong>Sistema de Molas</strong></label>
+          <label class="small">Número de Molas</label>
+          <input id="springCount" type="range" min="1" max="5" step="1" value="3">
+          
+          <label class="small">Gravidade (m/s²)</label>
+          <input id="gravity" type="number" step="0.1" value="9.8">
+          
+          <label class="small">Amortecimento</label>
+          <input id="damping" type="number" step="0.001" value="0.02" min="0" max="1">
+          
+          <label class="small">Velocidade da Simulação</label>
+          <input id="speed" type="range" min="0.1" max="3" step="0.1" value="1.0">
+          <div style="text-align: center; font-size: 12px; color: var(--muted);" id="speedValue">1.0x</div>
+        </div>
+
+        <div class="group">
+          <label><strong>Parâmetros das Molas</strong></label>
+          <div id="springControls">
+            <!-- Controles dinâmicos para cada mola serão inseridos aqui -->
+          </div>
+        </div>
+
+        <div class="group">
+          <label><strong>Parâmetros dos Blocos</strong></label>
+          <div id="blockControls">
+            <!-- Controles dinâmicos para cada bloco serão inseridos aqui -->
+          </div>
+        </div>
+
+        <div class="group">
+          <label><strong>Visual</strong></label>
+          <label class="small"><input id="trail" type="checkbox" checked> Mostrar rastro</label>
+          <label class="small"><input id="grid" type="checkbox" checked> Mostrar grade</label>
+          <label class="small"><input id="touchHintToggle" type="checkbox"> Mostrar dicas</label>
+          <label class="small"><input id="performanceMode" type="checkbox"> Modo de desempenho</label>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div class="tab-content" id="explanation-tab">
+    <div class="explanation-container" style="padding:18px;">
+      <div class="explanation-content">
+        <h2>Sistema de Molas em Série</h2>
+        <p>Este simulador permite explorar o comportamento de um sistema de molas em série com diferentes configurações.</p>
+        
+        <div class="concept-card">
+          <h3>Como Usar</h3>
+          <p>Arraste os blocos para interagir diretamente com as molas. Ajuste os parâmetros nos controles laterais para ver como o sistema responde a diferentes configurações.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Física das Molas</h3>
+          <p>Cada mola obedece à Lei de Hooke: F = -k·x, onde F é a força restauradora, k é a constante elástica e x é a deformação da mola.</p>
+        </div>
+        
+        <div class="formula">
+          Força da Mola: F = -k · Δx
+        </div>
+        
+        <p>Onde:</p>
+        <ul>
+          <li><span class="highlight">F</span> é a força exercida pela mola</li>
+          <li><span class="highlight">k</span> é a constante elástica da mola</li>
+          <li><span class="highlight">Δx</span> é a deformação da mola em relação ao seu comprimento natural</li>
+        </ul>
+        
+        <div class="concept-card">
+          <h3>Energia no Sistema</h3>
+          <p>Em um sistema de molas, a energia é convertida entre energia potencial elástica e energia cinética dos blocos. Em um sistema ideal sem amortecimento, a energia total se conserva.</p>
+        </div>
+        
+        <div class="formula">
+          Energia Potencial: E<sub>p</sub> = ½ · k · x²
+        </div>
+        
+        <div class="formula">
+          Energia Cinética: E<sub>c</sub> = ½ · m · v²
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botão de menu para dispositivos móveis -->
+  <div class="menu-toggle" id="menuToggle">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+
+  <!-- Painel de controle móvel -->
+  <div class="mobile-controls" id="mobileControls">
+    <div class="close-controls" id="closeControls">&times;</div>
+    
+    <div class="group">
+      <label><strong>Sistema de Molas</strong></label>
+      <label class="small">Número de Molas</label>
+      <input id="springCountMobile" type="range" min="1" max="5" step="1" value="3">
+      
+      <label class="small">Gravidade (m/s²)</label>
+      <input id="gravityMobile" type="number" step="0.1" value="9.8">
+      
+      <label class="small">Amortecimento</label>
+      <input id="dampingMobile" type="number" step="0.001" value="0.02" min="0" max="1">
+      
+      <label class="small">Velocidade da Simulação</label>
+      <input id="speedMobile" type="range" min="0.1" max="3" step="0.1" value="1.0">
+      <div style="text-align: center; font-size: 12px; color: var(--muted);" id="speedValueMobile">1.0x</div>
+    </div>
+
+    <div class="group">
+      <label><strong>Parâmetros das Molas</strong></label>
+      <div id="springControlsMobile">
+        <!-- Controles dinâmicos para cada mola serão inseridos aqui -->
+      </div>
+    </div>
+
+    <div class="group">
+      <label><strong>Parâmetros dos Blocos</strong></label>
+      <div id="blockControlsMobile">
+        <!-- Controles dinâmicos para cada bloco serão inseridos aqui -->
+      </div>
+    </div>
+
+    <div class="group">
+      <label><strong>Visual</strong></label>
+      <label class="small"><input id="trailMobile" type="checkbox" checked> Mostrar rastro</label>
+      <label class="small"><input id="gridMobile" type="checkbox" checked> Mostrar grade</label>
+      <label class="small"><input id="touchHintToggleMobile" type="checkbox"> Mostrar dicas</label>
+      <label class="small"><input id="performanceModeMobile" type="checkbox"> Modo de desempenho</label>
+    </div>
+  </div>
+
+  <!-- Botão de ajuda flutuante -->
+  <button class="help-button" id="helpButton">?</button>
+
+  <!-- Painel de ajuda -->
+  <div class="help-panel" id="helpPanel">
+    <button class="close-btn" id="closeHelp">&times;</button>
+    <h2>💡 Como Usar o Simulador</h2>
+    
+    <h3>Interação Direta</h3>
+    <p>Você pode interagir diretamente com as molas:</p>
+    <ul>
+      <li><strong>Arraste os blocos</strong> para esticar ou comprimir as molas</li>
+      <li><strong>Solte os blocos</strong> para observar o movimento</li>
+    </ul>
+    
+    <h3>Controles</h3>
+    <ul>
+      <li><strong>Número de Molas:</strong> Ajusta quantas molas estão no sistema</li>
+      <li><strong>Gravidade:</strong> Controla a força da gravidade no sistema</li>
+      <li><strong>Amortecimento:</strong> Simula a perda de energia por atrito</li>
+      <li><strong>Velocidade:</strong> Controla a velocidade da simulação</li>
+    </ul>
+    
+    <h3>Parâmetros Individuais</h3>
+    <p>Cada mola e bloco tem parâmetros ajustáveis individualmente:</p>
+    <ul>
+      <li><strong>Constante Elástica (k):</strong> Rigidez da mola</li>
+      <li><strong>Comprimento Natural:</strong> Comprimento da mola sem deformação</li>
+      <li><strong>Massa:</strong> Massa de cada bloco</li>
+    </ul>
+    
+    <p style="margin-top: 15px; font-style: italic; text-align: center;">
+      Experimente diferentes configurações e observe como o sistema responde!
+    </p>
+  </div>
+
+  <!-- Indicador de desempenho -->
+  <div class="performance-indicator" id="performanceIndicator">
+    FPS: <span id="fpsValue">60</span>
+  </div>
+
+  <footer>Simulação de Molas em Série — HTML5 & Canvas</footer>
+
+  <script>
+    // Canvas and context
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Controls - Desktop
+    const springCount = document.getElementById('springCount');
+    const gravityInput = document.getElementById('gravity');
+    const dampingInput = document.getElementById('damping');
+    const speedInput = document.getElementById('speed');
+    const speedValue = document.getElementById('speedValue');
+    const springControls = document.getElementById('springControls');
+    const blockControls = document.getElementById('blockControls');
+    const trailChk = document.getElementById('trail');
+    const gridChk = document.getElementById('grid');
+    const touchHintToggle = document.getElementById('touchHintToggle');
+    const touchHint = document.getElementById('touchHint');
+    const performanceMode = document.getElementById('performanceMode');
+
+    // Controls - Mobile
+    const springCountMobile = document.getElementById('springCountMobile');
+    const gravityMobile = document.getElementById('gravityMobile');
+    const dampingMobile = document.getElementById('dampingMobile');
+    const speedMobile = document.getElementById('speedMobile');
+    const speedValueMobile = document.getElementById('speedValueMobile');
+    const springControlsMobile = document.getElementById('springControlsMobile');
+    const blockControlsMobile = document.getElementById('blockControlsMobile');
+    const trailChkMobile = document.getElementById('trailMobile');
+    const gridChkMobile = document.getElementById('gridMobile');
+    const touchHintToggleMobile = document.getElementById('touchHintToggleMobile');
+    const performanceModeMobile = document.getElementById('performanceModeMobile');
+
+    // Buttons
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    // Info displays
+    const springCountValue = document.getElementById('springCountValue');
+    const energyValue = document.getElementById('energyValue');
+    const timeValue = document.getElementById('timeValue');
+    const stateValue = document.getElementById('stateValue');
+
+    // Help elements
+    const helpButton = document.getElementById('helpButton');
+    const helpPanel = document.getElementById('helpPanel');
+    const closeHelp = document.getElementById('closeHelp');
+
+    // Mobile menu elements
+    const menuToggle = document.getElementById('menuToggle');
+    const mobileControls = document.getElementById('mobileControls');
+    const closeControls = document.getElementById('closeControls');
+
+    // Performance indicator
+    const performanceIndicator = document.getElementById('performanceIndicator');
+    const fpsValue = document.getElementById('fpsValue');
+
+    // Simulation state
+    let running = true;
+    let lastTime = null;
+    let trailPoints = [];
+    let simulationTime = 0;
+    let draggedBlock = null;
+    let dragOffset = { x: 0, y: 0 };
+    let touchHintTimeout = null;
+    let isPerformanceMode = false;
+    let fps = 60;
+    let frameCount = 0;
+    let lastFpsUpdate = 0;
+
+    // System parameters
+    let springs = [];
+    let blocks = [];
+    let gravity = parseFloat(gravityInput.value);
+    let damping = parseFloat(dampingInput.value);
+    let speed = parseFloat(speedInput.value);
+    let numSprings = parseInt(springCount.value);
+
+    // Check if device is mobile
+    function isMobileDevice() {
+      return window.innerWidth <= 768;
+    }
+
+    // Initialize the system
+    function initializeSystem() {
+      springs = [];
+      blocks = [];
+      
+      // Create springs and blocks
+      for (let i = 0; i < numSprings; i++) {
+        springs.push({
+          constant: 0.1 + i * 0.05, // Different constants for each spring
+          naturalLength: 80,
+          color: `hsl(${i * 60}, 70%, 60%)`
+        });
+        
+        blocks.push({
+          y: 150 + i * 100,
+          x: 200,
+          vy: 0,
+          vx: 0,
+          mass: 1.0,
+          color: `hsl(${i * 60 + 30}, 70%, 50%)`,
+          radius: 15 + i * 5 // Different sizes for each block
+        });
+      }
+      
+      // Update the controls
+      updateSpringControls();
+      updateBlockControls();
+      
+      // Reset simulation state
+      simulationTime = 0;
+      trailPoints = [];
+    }
+
+    // Update spring controls
+    function updateSpringControls() {
+      const isMobile = isMobileDevice();
+      const springControlsEl = isMobile ? springControlsMobile : springControls;
+      
+      springControlsEl.innerHTML = '';
+      
+      for (let i = 0; i < springs.length; i++) {
+        const spring = springs[i];
+        const controlGroup = document.createElement('div');
+        controlGroup.style.marginBottom = '10px';
+        controlGroup.style.padding = '8px';
+        controlGroup.style.border = '1px solid rgba(255,255,255,0.1)';
+        controlGroup.style.borderRadius = '6px';
+        
+        const controlIdPrefix = isMobile ? 'Mobile' : '';
+        
+        controlGroup.innerHTML = `
+          <label class="small"><strong>Mola ${i+1}</strong></label>
+          <label class="small">Constante Elástica (k${i+1})</label>
+          <input type="range" id="springConstant${controlIdPrefix}${i}" min="0.01" max="0.5" step="0.01" value="${spring.constant}">
+          <label class="small">Comprimento Natural</label>
+          <input type="range" id="springLength${controlIdPrefix}${i}" min="30" max="150" step="5" value="${spring.naturalLength}">
+        `;
+        
+        springControlsEl.appendChild(controlGroup);
+        
+        // Add event listeners
+        document.getElementById(`springConstant${controlIdPrefix}${i}`).addEventListener('input', (e) => {
+          springs[i].constant = parseFloat(e.target.value);
+          // Sync controls
+          if (isMobile) {
+            const desktopControl = document.getElementById(`springConstant${i}`);
+            if (desktopControl) desktopControl.value = e.target.value;
+          } else {
+            const mobileControl = document.getElementById(`springConstantMobile${i}`);
+            if (mobileControl) mobileControl.value = e.target.value;
+          }
+        });
+        
+        document.getElementById(`springLength${controlIdPrefix}${i}`).addEventListener('input', (e) => {
+          springs[i].naturalLength = parseFloat(e.target.value);
+          // Sync controls
+          if (isMobile) {
+            const desktopControl = document.getElementById(`springLength${i}`);
+            if (desktopControl) desktopControl.value = e.target.value;
+          } else {
+            const mobileControl = document.getElementById(`springLengthMobile${i}`);
+            if (mobileControl) mobileControl.value = e.target.value;
+          }
+        });
+      }
+    }
+
+    // Update block controls
+    function updateBlockControls() {
+      const isMobile = isMobileDevice();
+      const blockControlsEl = isMobile ? blockControlsMobile : blockControls;
+      
+      blockControlsEl.innerHTML = '';
+      
+      for (let i = 0; i < blocks.length; i++) {
+        const block = blocks[i];
+        const controlGroup = document.createElement('div');
+        controlGroup.style.marginBottom = '10px';
+        controlGroup.style.padding = '8px';
+        controlGroup.style.border = '1px solid rgba(255,255,255,0.1)';
+        controlGroup.style.borderRadius = '6px';
+        
+        const controlIdPrefix = isMobile ? 'Mobile' : '';
+        
+        controlGroup.innerHTML = `
+          <label class="small"><strong>Bloco ${i+1}</strong></label>
+          <label class="small">Massa</label>
+          <input type="range" id="blockMass${controlIdPrefix}${i}" min="0.5" max="3" step="0.1" value="${block.mass}">
+        `;
+        
+        blockControlsEl.appendChild(controlGroup);
+        
+        // Add event listener
+        document.getElementById(`blockMass${controlIdPrefix}${i}`).addEventListener('input', (e) => {
+          blocks[i].mass = parseFloat(e.target.value);
+          // Sync controls
+          if (isMobile) {
+            const desktopControl = document.getElementById(`blockMass${i}`);
+            if (desktopControl) desktopControl.value = e.target.value;
+          } else {
+            const mobileControl = document.getElementById(`blockMassMobile${i}`);
+            if (mobileControl) mobileControl.value = e.target.value;
+          }
+        });
+      }
+    }
+
+    // Resize canvas properly for high-dpi
+    function resizeCanvas(){
+      const ratio = devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * ratio;
+      canvas.height = rect.height * ratio;
+      ctx.setTransform(ratio,0,0,ratio,0,0);
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const id = tab.getAttribute('data-tab');
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(id + '-tab').classList.add('active');
+        
+        // Resize canvas when switching tabs
+        if (id === 'simulation') {
+          setTimeout(resizeCanvas, 100);
+        }
+      });
+    });
+
+    // Help panel functionality
+    helpButton.addEventListener('click', () => {
+      helpPanel.classList.toggle('active');
+    });
+
+    closeHelp.addEventListener('click', () => {
+      helpPanel.classList.remove('active');
+    });
+
+    // Close help panel when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!helpPanel.contains(e.target) && e.target !== helpButton) {
+        helpPanel.classList.remove('active');
+      }
+    });
+
+    // Mobile menu functionality
+    menuToggle.addEventListener('click', () => {
+      menuToggle.classList.toggle('active');
+      mobileControls.classList.toggle('active');
+    });
+
+    closeControls.addEventListener('click', () => {
+      menuToggle.classList.remove('active');
+      mobileControls.classList.remove('active');
+    });
+
+    // Sync mobile and desktop controls
+    function syncControls() {
+      const isMobile = isMobileDevice();
+      
+      // Sync spring count
+      if (isMobile) {
+        springCountMobile.value = springCount.value;
+      } else {
+        springCount.value = springCountMobile.value;
+      }
+      
+      // Sync gravity
+      if (isMobile) {
+        gravityMobile.value = gravityInput.value;
+      } else {
+        gravityInput.value = gravityMobile.value;
+      }
+      
+      // Sync damping
+      if (isMobile) {
+        dampingMobile.value = dampingInput.value;
+      } else {
+        dampingInput.value = dampingMobile.value;
+      }
+      
+      // Sync speed
+      if (isMobile) {
+        speedMobile.value = speedInput.value;
+        speedValueMobile.textContent = speedValue.textContent;
+      } else {
+        speedInput.value = speedMobile.value;
+        speedValue.textContent = speedValueMobile.textContent;
+      }
+      
+      // Sync visual options
+      if (isMobile) {
+        trailChkMobile.checked = trailChk.checked;
+        gridChkMobile.checked = gridChk.checked;
+        touchHintToggleMobile.checked = touchHintToggle.checked;
+        performanceModeMobile.checked = performanceMode.checked;
+      } else {
+        trailChk.checked = trailChkMobile.checked;
+        gridChk.checked = gridChkMobile.checked;
+        touchHintToggle.checked = touchHintToggleMobile.checked;
+        performanceMode.checked = performanceModeMobile.checked;
+      }
+    }
+
+    // Touch hint toggle
+    touchHintToggle.addEventListener('change', () => {
+      if (touchHintToggle.checked) {
+        touchHint.style.display = 'block';
+        // Auto-hide after 5 seconds
+        clearTimeout(touchHintTimeout);
+        touchHintTimeout = setTimeout(() => {
+          touchHint.style.display = 'none';
+          touchHintToggle.checked = false;
+        }, 5000);
+      } else {
+        touchHint.style.display = 'none';
+      }
+    });
+
+    touchHintToggleMobile.addEventListener('change', () => {
+      touchHintToggle.checked = touchHintToggleMobile.checked;
+      if (touchHintToggleMobile.checked) {
+        touchHint.style.display = 'block';
+        // Auto-hide after 5 seconds
+        clearTimeout(touchHintTimeout);
+        touchHintTimeout = setTimeout(() => {
+          touchHint.style.display = 'none';
+          touchHintToggle.checked = false;
+          touchHintToggleMobile.checked = false;
+        }, 5000);
+      } else {
+        touchHint.style.display = 'none';
+      }
+    });
+
+    // Performance mode toggle
+    performanceMode.addEventListener('change', () => {
+      isPerformanceMode = performanceMode.checked;
+      performanceModeMobile.checked = isPerformanceMode;
+      
+      // Adjust canvas quality based on performance mode
+      if (isPerformanceMode) {
+        canvas.style.imageRendering = 'optimizeSpeed';
+      } else {
+        canvas.style.imageRendering = 'auto';
+      }
+    });
+
+    performanceModeMobile.addEventListener('change', () => {
+      isPerformanceMode = performanceModeMobile.checked;
+      performanceMode.checked = isPerformanceMode;
+      
+      // Adjust canvas quality based on performance mode
+      if (isPerformanceMode) {
+        canvas.style.imageRendering = 'optimizeSpeed';
+      } else {
+        canvas.style.imageRendering = 'auto';
+      }
+    });
+
+    // Touch interaction handlers
+    function handleTouchStart(e) {
+      e.preventDefault();
+      
+      if (e.touches.length === 1) {
+        // Single touch - check if we're touching a block
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
+        const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+        
+        // Check if we're touching any block
+        for (let i = 0; i < blocks.length; i++) {
+          const block = blocks[i];
+          const distance = Math.sqrt((x - block.x) ** 2 + (y - block.y) ** 2);
+          
+          if (distance < block.radius * 1.5) {
+            draggedBlock = block;
+            dragOffset.x = x - block.x;
+            dragOffset.y = y - block.y;
+            running = false;
+            break;
+          }
+        }
+      }
+    }
+
+    function handleTouchMove(e) {
+      e.preventDefault();
+      
+      if (draggedBlock && e.touches.length === 1) {
+        // Drag the block
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
+        const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+        
+        draggedBlock.x = x - dragOffset.x;
+        draggedBlock.y = y - dragOffset.y;
+        draggedBlock.vx = 0;
+        draggedBlock.vy = 0;
+        
+        renderOnce();
+      }
+    }
+
+    function handleTouchEnd(e) {
+      if (e.touches.length === 0) {
+        // All touches ended
+        if (draggedBlock) {
+          draggedBlock = null;
+          running = true;
+        }
+      }
+    }
+
+    // Add touch event listeners
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd);
+    canvas.addEventListener('touchcancel', handleTouchEnd);
+
+    // Mouse interaction for desktop
+    let isMouseDown = false;
+
+    canvas.addEventListener('mousedown', (e) => {
+      isMouseDown = true;
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+      
+      // Check if we're touching any block
+      for (let i = 0; i < blocks.length; i++) {
+        const block = blocks[i];
+        const distance = Math.sqrt((x - block.x) ** 2 + (y - block.y) ** 2);
+        
+        if (distance < block.radius * 1.5) {
+          draggedBlock = block;
+          dragOffset.x = x - block.x;
+          dragOffset.y = y - block.y;
+          running = false;
+          break;
+        }
+      }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (draggedBlock && isMouseDown) {
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+        
+        draggedBlock.x = x - dragOffset.x;
+        draggedBlock.y = y - dragOffset.y;
+        draggedBlock.vx = 0;
+        draggedBlock.vy = 0;
+        
+        renderOnce();
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      isMouseDown = false;
+      if (draggedBlock) {
+        draggedBlock = null;
+        running = true;
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      isMouseDown = false;
+      if (draggedBlock) {
+        draggedBlock = null;
+        running = true;
+      }
+    });
+
+    // Update params from controls
+    function updateParams() {
+      const isMobile = isMobileDevice();
+      
+      if (isMobile) {
+        gravity = parseFloat(gravityMobile.value);
+        damping = parseFloat(dampingMobile.value);
+        speed = parseFloat(speedMobile.value);
+        speedValueMobile.textContent = speed.toFixed(1) + 'x';
+        
+        // Update spring count if changed
+        const newSpringCount = parseInt(springCountMobile.value);
+        if (newSpringCount !== numSprings) {
+          numSprings = newSpringCount;
+          springCountValue.textContent = numSprings;
+          initializeSystem();
+        }
+      } else {
+        gravity = parseFloat(gravityInput.value);
+        damping = parseFloat(dampingInput.value);
+        speed = parseFloat(speedInput.value);
+        speedValue.textContent = speed.toFixed(1) + 'x';
+        
+        // Update spring count if changed
+        const newSpringCount = parseInt(springCount.value);
+        if (newSpringCount !== numSprings) {
+          numSprings = newSpringCount;
+          springCountValue.textContent = numSprings;
+          initializeSystem();
+        }
+      }
+    }
+
+    // Attach input listeners - Desktop
+    [
+      gravityInput, dampingInput, speedInput, springCount
+    ].forEach(el => el.addEventListener('input', () => {
+      updateParams();
+      syncControls();
+    }));
+
+    // Attach input listeners - Mobile
+    [
+      gravityMobile, dampingMobile, speedMobile, springCountMobile
+    ].forEach(el => el.addEventListener('input', () => {
+      updateParams();
+      syncControls();
+    }));
+
+    // Buttons
+    startBtn.onclick = () => { 
+      running = true; 
+      stateValue.textContent = 'Executando';
+      lastTime = null; 
+    };
+    
+    pauseBtn.onclick = () => { 
+      running = !running; 
+      stateValue.textContent = running ? 'Executando' : 'Pausado';
+    };
+    
+    resetBtn.onclick = () => { 
+      resetSimulation(); 
+    };
+
+    function resetSimulation(){
+      initializeSystem();
+      simulationTime = 0;
+      running = true;
+      stateValue.textContent = 'Executando';
+      renderOnce();
+    }
+
+    // Physics update
+    function updatePhysics(dt) {
+      // Apply gravity to all blocks
+      for (let i = 0; i < blocks.length; i++) {
+        blocks[i].vy += gravity * dt * speed;
+      }
+      
+      // Calculate spring forces
+      for (let i = 0; i < springs.length; i++) {
+        const spring = springs[i];
+        const blockAbove = i === 0 ? { x: canvas.width / (2 * (devicePixelRatio || 1)), y: 100 } : blocks[i-1];
+        const block = blocks[i];
+        
+        // Calculate distance between blocks
+        const dx = block.x - blockAbove.x;
+        const dy = block.y - blockAbove.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // Calculate spring force (Hooke's Law)
+        const deformation = distance - spring.naturalLength;
+        const forceMagnitude = spring.constant * deformation;
+        
+        // Normalize direction vector
+        if (distance > 0) {
+          const directionX = dx / distance;
+          const directionY = dy / distance;
+          
+          // Apply force to current block
+          const forceX = -forceMagnitude * directionX;
+          const forceY = -forceMagnitude * directionY;
+          
+          block.vx += forceX / block.mass * dt * speed;
+          block.vy += forceY / block.mass * dt * speed;
+          
+          // Apply opposite force to block above (if it's not the fixed point)
+          if (i > 0) {
+            blocks[i-1].vx += -forceX / blocks[i-1].mass * dt * speed;
+            blocks[i-1].vy += -forceY / blocks[i-1].mass * dt * speed;
+          }
+        }
+      }
+      
+      // Apply damping and update positions
+      for (let i = 0; i < blocks.length; i++) {
+        const block = blocks[i];
+        
+        // Apply damping
+        block.vx *= (1 - damping * dt * speed);
+        block.vy *= (1 - damping * dt * speed);
+        
+        // Update position
+        block.x += block.vx * dt * speed;
+        block.y += block.vy * dt * speed;
+        
+        // Add to trail if enabled
+        const trailEnabled = isMobileDevice() ? trailChkMobile.checked : trailChk.checked;
+        if (trailEnabled && running) {
+          trailPoints.push({ x: block.x, y: block.y, color: block.color });
+          if (trailPoints.length > 200) trailPoints.shift();
+        }
+      }
+    }
+
+    // Calculate total energy
+    function calculateEnergy() {
+      let totalEnergy = 0;
+      
+      // Kinetic energy (1/2 * m * v²)
+      for (let i = 0; i < blocks.length; i++) {
+        const block = blocks[i];
+        const speedSquared = block.vx * block.vx + block.vy * block.vy;
+        totalEnergy += 0.5 * block.mass * speedSquared;
+      }
+      
+      // Potential energy (springs - 1/2 * k * x²)
+      for (let i = 0; i < springs.length; i++) {
+        const spring = springs[i];
+        const blockAbove = i === 0 ? { x: canvas.width / (2 * (devicePixelRatio || 1)), y: 100 } : blocks[i-1];
+        const block = blocks[i];
+        
+        const dx = block.x - blockAbove.x;
+        const dy = block.y - blockAbove.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const deformation = distance - spring.naturalLength;
+        
+        // Elastic potential energy
+        totalEnergy += 0.5 * spring.constant * deformation * deformation;
+      }
+      
+      // Gravity potential energy (m * g * h)
+      // Considering that potential energy increases with height (y axis downwards)
+      const referenceHeight = canvas.height;
+      for (let i = 0; i < blocks.length; i++) {
+        const block = blocks[i];
+        // The higher the block (smaller y), the greater the potential energy
+        totalEnergy += block.mass * gravity * (referenceHeight - block.y);
+      }
+      
+      return totalEnergy;
+    }
+
+    // Update FPS counter
+    function updateFPS(timestamp) {
+      frameCount++;
+      
+      if (timestamp - lastFpsUpdate >= 1000) {
+        fps = frameCount;
+        frameCount = 0;
+        lastFpsUpdate = timestamp;
+        
+        if (isMobileDevice()) {
+          fpsValue.textContent = fps;
+        }
+      }
+    }
+
+    // Drawing the simulation
+    function renderOnce(){
+      // ensure canvas size matches CSS
+      resizeCanvas();
+
+      // Clear
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      // Visual grid
+      const gridEnabled = isMobileDevice() ? gridChkMobile.checked : gridChk.checked;
+      if (gridEnabled) {
+        ctx.save();
+        ctx.globalAlpha = 0.06;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        const gridSize = 60;
+        for (let x = 0; x < canvas.width; x += gridSize) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+        }
+        for (let y = 0; y < canvas.height; y += gridSize) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      // Draw trails
+      if (trailPoints.length > 1) {
+        // Draw trail for each block separately
+        for (let i = 0; i < blocks.length; i++) {
+          const blockTrail = trailPoints.filter((point, index) => index % blocks.length === i);
+          if (blockTrail.length > 1) {
+            ctx.beginPath();
+            ctx.moveTo(blockTrail[0].x, blockTrail[0].y);
+            
+            for (let j = 1; j < blockTrail.length; j++) {
+              ctx.lineTo(blockTrail[j].x, blockTrail[j].y);
+            }
+            
+            ctx.strokeStyle = blocks[i].color.replace(')', ', 0.6)').replace('hsl', 'hsla');
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Draw fixed point
+      const fixedPointX = canvas.width / (2 * (devicePixelRatio || 1));
+      const fixedPointY = 100;
+      
+      ctx.beginPath();
+      ctx.arc(fixedPointX, fixedPointY, 8, 0, Math.PI*2);
+      ctx.fillStyle = '#666';
+      ctx.fill();
+
+      // Draw springs and blocks
+      for (let i = 0; i < springs.length; i++) {
+        const spring = springs[i];
+        const blockAbove = i === 0 ? { x: fixedPointX, y: fixedPointY } : blocks[i-1];
+        const block = blocks[i];
+        
+        // Draw spring
+        drawSpring(blockAbove.x, blockAbove.y, block.x, block.y, spring.naturalLength, spring.color);
+        
+        // Draw block
+        ctx.beginPath();
+        ctx.arc(block.x, block.y, block.radius, 0, Math.PI*2);
+        ctx.fillStyle = block.color;
+        ctx.fill();
+        
+        // Draw block outline
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        // Draw block label
+        ctx.fillStyle = 'white';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Bloco ${i+1}`, block.x, block.y + 4);
+      }
+    }
+
+    // Draw a spring between two points
+    function drawSpring(x1, y1, x2, y2, naturalLength, color) {
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Only draw if distance is not zero
+      if (distance === 0) return;
+      
+      const angle = Math.atan2(dy, dx);
+      
+      // Reduce coil count in performance mode
+      const coils = isPerformanceMode ? 5 : 8;
+      const amplitude = 10;
+      const stretch = distance / naturalLength;
+      const adjustedAmplitude = amplitude * (1 - 0.3 * Math.min(1, Math.abs(stretch - 1)));
+      
+      ctx.save();
+      ctx.translate(x1, y1);
+      ctx.rotate(angle);
+      
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      
+      const segmentLength = distance / coils;
+      for (let i = 1; i <= coils; i++) {
+        const x = i * segmentLength;
+        const offset = (i % 2 === 0 ? -adjustedAmplitude : adjustedAmplitude);
+        ctx.lineTo(x, offset);
+      }
+      
+      ctx.lineTo(distance, 0);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      ctx.restore();
+    }
+
+    // Main draw loop
+    function loop(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      const dt = Math.min(0.03, (timestamp - lastTime) / 1000);
+      lastTime = timestamp;
+
+      if (running && !draggedBlock) {
+        updatePhysics(dt);
+        simulationTime += dt * speed;
+        
+        // Update info displays
+        timeValue.textContent = simulationTime.toFixed(1) + ' s';
+        energyValue.textContent = calculateEnergy().toFixed(2) + ' J';
+      }
+
+      // Update FPS counter
+      updateFPS(timestamp);
+
+      renderOnce();
+      requestAnimationFrame(loop);
+    }
+
+    // initial setup
+    function start() {
+      resizeCanvas();
+      initializeSystem();
+      updateParams(); // Set initial speed value display
+      syncControls(); // Sync mobile and desktop controls
+      renderOnce();
+      requestAnimationFrame(loop);
+      
+      // Auto-hide touch hint after 5 seconds
+      touchHintTimeout = setTimeout(() => {
+        touchHint.style.display = 'none';
+      }, 5000);
+    }
+
+    // Check for device type and adjust UI accordingly
+    function checkDeviceType() {
+      if (isMobileDevice()) {
+        // Show mobile menu button
+        menuToggle.style.display = 'flex';
+        
+        // Sync controls
+        syncControls();
+      } else {
+        // Hide mobile menu button
+        menuToggle.style.display = 'none';
+        
+        // Close mobile controls if open
+        menuToggle.classList.remove('active');
+        mobileControls.classList.remove('active');
+      }
+    }
+
+    // Initialize when DOM is loaded
+    window.addEventListener('DOMContentLoaded', () => {
+      checkDeviceType();
+      start();
+    });
+
+    // Check device type on resize
+    window.addEventListener('resize', () => {
+      checkDeviceType();
+      resizeCanvas();
+    });
+
+  </script>
+</body>
+</html>

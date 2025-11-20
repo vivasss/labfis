@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador de Vetores</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      background: #071026;
+      color: #e6eef8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 10px;
+      overflow-x: hidden;
+    }
+
+    header {
+      width: 100%;
+      max-width: 800px;
+      padding: 12px 15px;
+      background: #061226;
+      border-radius: 8px 8px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 0;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      font-size: clamp(16px, 4vw, 18px);
+      margin: 0;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background: #041224;
+      border-radius: 0 0 8px 8px;
+      padding: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    button {
+      background: #0b3b5a;
+      color: #e6eef8;
+      border: 1px solid #1d5676;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: clamp(12px, 3vw, 14px);
+      min-height: 36px;
+      flex: 1;
+      min-width: 120px;
+    }
+
+    button:hover {
+      background: #0d4a6e;
+    }
+
+    .toggle-on {
+      background: #1e7a3a;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      margin-bottom: 15px;
+      border: 1px solid #1d5676;
+      border-radius: 6px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 500px;
+      font-size: clamp(12px, 2.5vw, 14px);
+    }
+
+    th,
+    td {
+      border: 1px solid #1d5676;
+      padding: 6px;
+      text-align: center;
+    }
+
+    th {
+      background: #0b3b5a;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      max-width: 70px;
+      background: #0b3b5a;
+      color: #e6eef8;
+      border: 1px solid #1d5676;
+      padding: 4px;
+      border-radius: 4px;
+      text-align: center;
+      font-size: clamp(12px, 2.5vw, 14px);
+    }
+
+    input[type="color"] {
+      width: 32px;
+      height: 24px;
+      border: 1px solid #1d5676;
+      cursor: pointer;
+      border-radius: 4px;
+      background: #0b3b5a;
+    }
+
+    .canvas-container {
+      width: 100%;
+      position: relative;
+      margin-top: 15px;
+      border: 1px solid #1d5676;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    #canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: linear-gradient(180deg, #04121b, #082033);
+      touch-action: none;
+    }
+
+    #resumo {
+      margin-top: 15px;
+      font-weight: bold;
+      background: #0b3b5a;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #1d5676;
+      text-align: center;
+      font-size: clamp(12px, 3vw, 14px);
+    }
+
+    .del-btn {
+      background: #a83232;
+      border: 1px solid #c44;
+      padding: 4px 8px;
+      min-height: auto;
+      flex: none;
+      min-width: auto;
+    }
+
+    .del-btn:hover {
+      background: #c44;
+    }
+
+    .small {
+      font-size: clamp(11px, 2.5vw, 12px);
+      color: #bcd6ff;
+    }
+
+    .legend {
+      display: flex;
+      gap: 15px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .instructions {
+      margin-top: 15px;
+      padding: 10px;
+      background: #0b3b5a;
+      border-radius: 6px;
+      border: 1px solid #1d5676;
+      font-size: clamp(11px, 2.5vw, 13px);
+    }
+
+    .instructions p {
+      margin-bottom: 5px;
+    }
+
+    .touch-hint {
+      display: none;
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      z-index: 10;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 5px;
+      }
+
+      .container {
+        padding: 8px;
+      }
+
+      header {
+        padding: 10px;
+      }
+
+      .controls {
+        gap: 5px;
+      }
+
+      button {
+        padding: 8px 10px;
+        min-width: 100px;
+      }
+
+      th,
+      td {
+        padding: 4px;
+      }
+
+      .touch-hint {
+        display: block;
+      }
+    }
+
+    @media (max-width: 480px) {
+      button {
+        min-width: 80px;
+        padding: 6px 8px;
+      }
+
+      .table-container {
+        font-size: 12px;
+      }
+
+      input[type="number"] {
+        max-width: 60px;
+        padding: 3px;
+      }
+
+      .legend {
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Simulador de Vetores</h1>
+    <div class="small">Arraste os vetores diretamente no canvas para ajustar suas posições</div>
+  </header>
+
+  <div class="container">
+    <div class="controls">
+      <button id="add-btn">Adicionar Vetor</button>
+      <button id="clear-btn">Limpar Todos</button>
+    </div>
+
+    <div class="table-container">
+      <table id="vet-table">
+        <thead>
+          <tr>
+            <th>Vetor</th>
+            <th>Magn.</th>
+            <th>Ângulo (°)</th>
+            <th>X</th>
+            <th>Y</th>
+            <th>Cor</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div id="resumo">
+      Resultante → X: 0.00, Y: 0.00, |R|: 0.00, θ: 0.00°
+    </div>
+
+    <div class="canvas-container">
+      <canvas id="canvas"></canvas>
+      <div class="touch-hint">Toque e arraste os vetores para movê-los</div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-color" style="background: #ff4d4d;"></div>
+        <span class="small">Vetores Individuais</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #6bff7a;"></div>
+        <span class="small">Resultante</span>
+      </div>
+    </div>
+
+    <div class="instructions">
+      <p><strong>Instruções:</strong></p>
+      <p>- Clique em "Adicionar Vetor" para criar novos vetores</p>
+      <p>- Edite os valores diretamente na tabela ou arraste os vetores no canvas</p>
+      <p>- Clique no botão "✖" para remover um vetor</p>
+    </div>
+  </div>
+
+  <script>
+    const tableBody = document.querySelector('#vet-table tbody');
+    const addBtn = document.getElementById('add-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const resumo = document.getElementById('resumo');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Configuração responsiva do canvas
+    function setupCanvas() {
+      const container = canvas.parentElement;
+      const containerWidth = container.clientWidth;
+      const containerHeight = Math.min(containerWidth * 0.75, 450);
+
+      canvas.width = containerWidth;
+      canvas.height = containerHeight;
+
+      // Para alta resolução em dispositivos com pixel ratio alto
+      const dpr = window.devicePixelRatio || 1;
+      canvas.style.width = containerWidth + 'px';
+      canvas.style.height = containerHeight + 'px';
+      canvas.width = containerWidth * dpr;
+      canvas.height = containerHeight * dpr;
+      ctx.scale(dpr, dpr);
+
+      return { width: containerWidth, height: containerHeight };
+    }
+
+    let canvasSize = setupCanvas();
+    const center = {
+      x: canvasSize.width / 2,
+      y: canvasSize.height / 2
+    };
+
+    let dragging = null;
+    let colors = ['#ff4d4d', '#6bff7a', '#6fb8ff', '#ffd66b', '#d66bff', '#6bd6ff'];
+
+    function toRad(d) { return d * Math.PI / 180; }
+    function toDeg(r) { return r * 180 / Math.PI; }
+
+    function recalcAndDraw() {
+      // Redimensionar canvas se necessário
+      canvasSize = setupCanvas();
+      center.x = canvasSize.width / 2;
+      center.y = canvasSize.height / 2;
+
+      // Fundo do canvas
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvasSize.height);
+      gradient.addColorStop(0, '#04121b');
+      gradient.addColorStop(1, '#082033');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvasSize.width, canvasSize.height);
+
+      // Grade de referência
+      ctx.strokeStyle = '#1d5676';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+
+      // Tamanho da grade baseado no tamanho do canvas
+      const gridSize = Math.max(20, Math.min(50, canvasSize.width / 15));
+
+      // Linhas verticais
+      for (let x = center.x % gridSize; x < canvasSize.width; x += gridSize) {
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvasSize.height);
+      }
+
+      // Linhas horizontais
+      for (let y = center.y % gridSize; y < canvasSize.height; y += gridSize) {
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvasSize.width, y);
+      }
+      ctx.stroke();
+
+      // Eixos
+      ctx.strokeStyle = '#3a7ba8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, center.y);
+      ctx.lineTo(canvasSize.width, center.y);
+      ctx.moveTo(center.x, 0);
+      ctx.lineTo(center.x, canvasSize.height);
+      ctx.stroke();
+
+      // Desenhar vetores
+      let sumX = 0, sumY = 0;
+      Array.from(tableBody.children).forEach(tr => {
+        const mag = parseFloat(tr.querySelector('.mag').value) || 0;
+        const ang = parseFloat(tr.querySelector('.ang').value) || 0;
+        const xIn = parseFloat(tr.querySelector('.x').value) || 0;
+        const yIn = parseFloat(tr.querySelector('.y').value) || 0;
+        const color = tr.querySelector('.color').value;
+        const vx = xIn || mag * Math.cos(toRad(ang));
+        const vy = yIn || mag * Math.sin(toRad(ang));
+        sumX += vx;
+        sumY += vy;
+        drawArrow(center.x, center.y, center.x + vx, center.y - vy, color);
+      });
+
+      // Desenhar resultante
+      if (sumX !== 0 || sumY !== 0) {
+        drawArrow(center.x, center.y, center.x + sumX, center.y - sumY, '#6bff7a', 12);
+      }
+
+      // Atualizar resumo
+      const Rmag = Math.hypot(sumX, sumY);
+      let Rang = toDeg(Math.atan2(sumY, sumX));
+      if (Rang < 0) Rang += 360;
+      resumo.textContent =
+        `Resultante → X: ${sumX.toFixed(2)}, ` +
+        `Y: ${sumY.toFixed(2)}, ` +
+        `|R|: ${Rmag.toFixed(2)}, ` +
+        `θ: ${Rang.toFixed(2)}°`;
+    }
+
+    function drawArrow(x1, y1, x2, y2, color, headLen = 10) {
+      const dx = x2 - x1, dy = y2 - y1;
+      const ang = Math.atan2(dy, dx);
+
+      // Ajustar tamanho da seta baseado no tamanho do canvas
+      const arrowSize = Math.max(8, Math.min(12, canvasSize.width / 60));
+
+      // Desenhar linha do vetor
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = Math.max(2, canvasSize.width / 200);
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+
+      // Desenhar cabeça da seta
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - headLen * Math.cos(ang - Math.PI / 6), y2 - headLen * Math.sin(ang - Math.PI / 6));
+      ctx.lineTo(x2 - headLen * Math.cos(ang + Math.PI / 6), y2 - headLen * Math.sin(ang + Math.PI / 6));
+      ctx.closePath();
+      ctx.fill();
+
+      // Adicionar efeito de brilho
+      ctx.strokeStyle = color.replace(')', ', 0.5)').replace('rgb', 'rgba');
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+
+    function createRow() {
+      const idx = tableBody.children.length + 1;
+      const tr = document.createElement('tr');
+      const color = colors[(idx - 1) % colors.length];
+
+      tr.innerHTML = `
+    <td>V${idx}</td>
+    <td><input type="number" class="mag" step="0.1" value="50"></td>
+    <td><input type="number" class="ang" step="0.1" value="${(idx - 1) * 45}"></td>
+    <td><input type="number" class="x" step="0.1" value="0"></td>
+    <td><input type="number" class="y" step="0.1" value="0"></td>
+    <td><input type="color" class="color" value="${color}"></td>
+    <td><button class="del del-btn">✖</button></td>
+  `;
+
+      tableBody.appendChild(tr);
+
+      const [inpMag, inpAng, inpX, inpY, inpColor, delBtn] = [
+        tr.querySelector('.mag'),
+        tr.querySelector('.ang'),
+        tr.querySelector('.x'),
+        tr.querySelector('.y'),
+        tr.querySelector('.color'),
+        tr.querySelector('.del')
+      ];
+
+      // Inicializar valores X e Y baseados em magnitude e ângulo
+      function updateXY() {
+        const m = parseFloat(inpMag.value) || 0;
+        const a = parseFloat(inpAng.value) || 0;
+        inpX.value = (m * Math.cos(toRad(a))).toFixed(2);
+        inpY.value = (m * Math.sin(toRad(a))).toFixed(2);
+        recalcAndDraw();
+      }
+
+      function updateMA() {
+        const x = parseFloat(inpX.value) || 0;
+        const y = parseFloat(inpY.value) || 0;
+        const m = Math.hypot(x, y);
+        let a = toDeg(Math.atan2(y, x));
+        if (a < 0) a += 360;
+        inpMag.value = m.toFixed(2);
+        inpAng.value = a.toFixed(2);
+        recalcAndDraw();
+      }
+
+      // Event listeners
+      inpMag.addEventListener('input', updateXY);
+      inpAng.addEventListener('input', updateXY);
+      inpX.addEventListener('input', updateMA);
+      inpY.addEventListener('input', updateMA);
+      inpColor.addEventListener('input', recalcAndDraw);
+
+      delBtn.addEventListener('click', () => {
+        tr.remove();
+        renumberRows();
+        recalcAndDraw();
+      });
+
+      // Inicializar
+      updateXY();
+    }
+
+    function renumberRows() {
+      Array.from(tableBody.children).forEach((tr, i) => {
+        tr.children[0].textContent = `V${i + 1}`;
+      });
+    }
+
+    // Função para obter coordenadas do ponteiro/toque
+    function getPointerCoordinates(e) {
+      const rect = canvas.getBoundingClientRect();
+      let clientX, clientY;
+
+      if (e.type.includes('touch')) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+
+      const scaleX = canvasSize.width / rect.width;
+      const scaleY = canvasSize.height / rect.height;
+
+      return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY
+      };
+    }
+
+    // Interação com o canvas - Mouse e Toque
+    function handlePointerStart(e) {
+      e.preventDefault();
+      const { x: mx, y: my } = getPointerCoordinates(e);
+
+      // Verificar se clicou em algum vetor
+      for (let tr of tableBody.children) {
+        const xVal = parseFloat(tr.querySelector('.x').value) || 0;
+        const yVal = parseFloat(tr.querySelector('.y').value) || 0;
+        const px = center.x + xVal;
+        const py = center.y - yVal;
+
+        // Tamanho da área de toque baseado no tamanho da tela
+        const touchRadius = Math.max(15, canvasSize.width / 25);
+
+        if (Math.hypot(mx - px, my - py) < touchRadius) {
+          dragging = {
+            type: 'vector',
+            tr,
+            offset: { dx: px - mx, dy: py - my }
+          };
+          return;
+        }
+      }
+
+      // Verificar se clicou na resultante
+      let sumX = 0, sumY = 0;
+      Array.from(tableBody.children).forEach(tr => {
+        sumX += parseFloat(tr.querySelector('.x').value) || 0;
+        sumY += parseFloat(tr.querySelector('.y').value) || 0;
+      });
+
+      const tipX = center.x + sumX;
+      const tipY = center.y - sumY;
+
+      const touchRadius = Math.max(15, canvasSize.width / 25);
+      if (Math.hypot(mx - tipX, my - tipY) < touchRadius) {
+        dragging = {
+          type: 'result',
+          offset: { dx: tipX - mx, dy: tipY - my }
+        };
+      }
+    }
+
+    function handlePointerMove(e) {
+      if (!dragging) return;
+
+      e.preventDefault();
+      const { x: mx, y: my } = getPointerCoordinates(e);
+
+      if (dragging.type === 'vector') {
+        const { tr, offset } = dragging;
+        const vx = mx + offset.dx - center.x;
+        const vy = center.y - (my + offset.dy);
+
+        tr.querySelector('.x').value = vx.toFixed(2);
+        tr.querySelector('.y').value = vy.toFixed(2);
+
+        // Disparar evento para atualizar magnitude e ângulo
+        tr.querySelector('.x').dispatchEvent(new Event('input'));
+        tr.querySelector('.y').dispatchEvent(new Event('input'));
+      } else if (dragging.type === 'result') {
+        const newX = mx + dragging.offset.dx - center.x;
+        const newY = center.y - (my + dragging.offset.dy);
+
+        let sumX = 0, sumY = 0;
+        const rows = Array.from(tableBody.children);
+
+        rows.forEach(tr => {
+          sumX += parseFloat(tr.querySelector('.x').value) || 0;
+          sumY += parseFloat(tr.querySelector('.y').value) || 0;
+        });
+
+        const dx = newX - sumX;
+        const dy = newY - sumY;
+
+        // Distribuir a diferença igualmente entre todos os vetores
+        const shareX = dx / rows.length;
+        const shareY = dy / rows.length;
+
+        rows.forEach(tr => {
+          const inpX = tr.querySelector('.x');
+          const inpY = tr.querySelector('.y');
+
+          inpX.value = (parseFloat(inpX.value) || 0 + shareX).toFixed(2);
+          inpY.value = (parseFloat(inpY.value) || 0 + shareY).toFixed(2);
+
+          inpX.dispatchEvent(new Event('input'));
+          inpY.dispatchEvent(new Event('input'));
+        });
+      }
+    }
+
+    function handlePointerEnd() {
+      dragging = null;
+    }
+
+    // Event listeners para mouse
+    canvas.addEventListener('mousedown', handlePointerStart);
+    canvas.addEventListener('mousemove', handlePointerMove);
+    canvas.addEventListener('mouseup', handlePointerEnd);
+    canvas.addEventListener('mouseleave', handlePointerEnd);
+
+    // Event listeners para toque
+    canvas.addEventListener('touchstart', handlePointerStart, { passive: false });
+    canvas.addEventListener('touchmove', handlePointerMove, { passive: false });
+    canvas.addEventListener('touchend', handlePointerEnd);
+    canvas.addEventListener('touchcancel', handlePointerEnd);
+
+    // Event listeners dos botões
+    addBtn.addEventListener('click', createRow);
+    clearBtn.addEventListener('click', () => {
+      tableBody.innerHTML = '';
+      recalcAndDraw();
+    });
+
+    // Redesenhar quando a janela for redimensionada
+    window.addEventListener('resize', recalcAndDraw);
+
+    // Inicializar com dois vetores
+    createRow();
+    createRow();
+  </script>
+</body>
+
+</html>
