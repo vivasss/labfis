@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Audição Interativo</title>
+    <style>
+        :root {
+            --bg: #071028;
+            --card: #0f1724;
+            --muted: #94a3b8;
+            --primary: #4dd0e1;
+            --accent: #8a2be2;
+            --success: #10b981;
+            --warning: #f59e0b;
+            color-scheme: dark;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: system-ui, 'Segoe UI', Roboto, Arial;
+            background: linear-gradient(180deg, #071028 0%, #071021 60%);
+            color: #e6eef8;
+            min-height: 100vh;
+            overflow-x: hidden;
+            touch-action: manipulation;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            padding: 30px;
+            max-width: 900px;
+            width: 100%;
+            animation: slideIn 0.6s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2em;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGlow 3s infinite alternate;
+        }
+
+        @keyframes textGlow {
+            0% {
+                text-shadow: 0 0 5px rgba(77, 208, 225, 0.5);
+            }
+
+            100% {
+                text-shadow: 0 0 15px rgba(77, 208, 225, 0.8), 0 0 20px rgba(138, 43, 226, 0.6);
+            }
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--muted);
+            margin-bottom: 30px;
+            font-size: 1em;
+        }
+
+        .test-section {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .test-section h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .icon {
+            font-size: 1.2em;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+            margin-bottom: 10px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(77, 208, 225, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(77, 208, 225, 0.8);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(77, 208, 225, 0.5);
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(77, 208, 225, 0.8);
+        }
+
+        .value-display {
+            text-align: center;
+            font-size: 1.2em;
+            color: var(--primary);
+            font-weight: bold;
+            margin: 10px 0;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            border-left: 3px solid var(--accent);
+        }
+
+        button {
+            background: linear-gradient(90deg, var(--primary), #0b93a0);
+            border: 0;
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            font-size: 0.95em;
+            margin: 5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(77, 208, 225, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.stop-btn {
+            background: linear-gradient(90deg, #f59e0b, #dc2626);
+        }
+
+        button.stop-btn:hover {
+            box-shadow: 0 5px 15px rgba(245, 158, 11, 0.4);
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .info-box {
+            background: rgba(77, 208, 225, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            color: #e6eef8;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-left-color: var(--warning);
+            color: var(--warning);
+            font-weight: 600;
+        }
+
+        .frequency-presets {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .preset-btn {
+            padding: 10px 16px;
+            font-size: 0.85em;
+            background: linear-gradient(90deg, var(--accent), #6a1bb2);
+        }
+
+        .preset-btn:hover {
+            box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+        }
+
+        .stereo-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            gap: 15px;
+        }
+
+        .channel {
+            flex: 1;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            background: rgba(0, 0, 0, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .channel.left {
+            border-left: 4px solid var(--primary);
+        }
+
+        .channel.right {
+            border-left: 4px solid var(--accent);
+        }
+
+        .channel.active {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(77, 208, 225, 0.5);
+            animation: pulse 0.5s ease-in-out infinite;
+            background: rgba(77, 208, 225, 0.1);
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1.05);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .results {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+            border-radius: 12px;
+            padding: 25px;
+            margin-top: 25px;
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .results h3 {
+            color: var(--accent);
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .results ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .results li {
+            padding: 12px;
+            margin: 8px 0;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            color: #e6eef8;
+            font-size: 0.95em;
+            border-left: 3px solid var(--primary);
+        }
+
+        .results li::before {
+            content: "✓ ";
+            color: var(--success);
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.6em;
+            }
+
+            .test-section {
+                padding: 18px;
+            }
+
+            .frequency-presets {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            button {
+                padding: 10px 18px;
+                font-size: 0.9em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.4em;
+            }
+
+            .subtitle {
+                font-size: 0.9em;
+            }
+
+            .test-section h2 {
+                font-size: 1.2em;
+            }
+
+            .frequency-presets {
+                grid-template-columns: 1fr;
+            }
+
+            .stereo-indicator {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎧 Teste de Audição Interativo</h1>
+        <p class="subtitle">Teste sua capacidade auditiva com diferentes frequências e sons</p>
+
+        <div class="info-box warning">
+            ⚠️ <strong>ATENÇÃO:</strong> Use um volume confortável! Comece com volume baixo e aumente gradualmente.
+        </div>
+
+        <!-- Teste de Frequência -->
+        <div class="test-section">
+            <h2><span class="icon">🎵</span> Teste de Frequência</h2>
+            <div class="info-box">
+                O ouvido humano geralmente consegue ouvir frequências de 20 Hz a 20.000 Hz.
+                Com a idade, a capacidade de ouvir frequências altas diminui.
+            </div>
+
+            <div class="control-group">
+                <label for="frequency">Frequência: <span id="freqValue">440</span> Hz</label>
+                <input type="range" id="frequency" min="20" max="20000" value="440" step="1">
+                <div class="value-display" id="freqDisplay">440 Hz</div>
+            </div>
+
+            <div class="control-group">
+                <label for="volume">Volume: <span id="volValue">30</span>%</label>
+                <input type="range" id="volume" min="0" max="100" value="30" step="1">
+            </div>
+
+            <div class="button-group">
+                <button id="playTone">▶️ Tocar Tom</button>
+                <button id="stopTone" class="stop-btn">⏹️ Parar</button>
+            </div>
+
+            <div class="frequency-presets">
+                <button class="preset-btn" data-freq="20">20 Hz (Grave)</button>
+                <button class="preset-btn" data-freq="100">100 Hz</button>
+                <button class="preset-btn" data-freq="440">440 Hz (Lá)</button>
+                <button class="preset-btn" data-freq="1000">1000 Hz</button>
+                <button class="preset-btn" data-freq="5000">5000 Hz</button>
+                <button class="preset-btn" data-freq="10000">10 kHz</button>
+                <button class="preset-btn" data-freq="15000">15 kHz (Agudo)</button>
+                <button class="preset-btn" data-freq="18000">18 kHz</button>
+            </div>
+        </div>
+
+        <!-- Teste Estéreo -->
+        <div class="test-section">
+            <h2><span class="icon">🔊</span> Teste Estéreo (Esquerda/Direita)</h2>
+            <div class="info-box">
+                Este teste verifica se você consegue distinguir sons vindos da esquerda e da direita.
+                Use fones de ouvido para melhor resultado!
+            </div>
+
+            <div class="stereo-indicator">
+                <div class="channel left" id="leftChannel">⬅️ ESQUERDA</div>
+                <div class="channel right" id="rightChannel">DIREITA ➡️</div>
+            </div>
+
+            <div class="button-group">
+                <button id="playLeft">Tocar Esquerda</button>
+                <button id="playRight">Tocar Direita</button>
+                <button id="playBoth">Tocar Ambos</button>
+                <button id="playPan">Panorâmico</button>
+                <button id="stopStereo" class="stop-btn">⏹️ Parar</button>
+            </div>
+        </div>
+
+        <!-- Teste de Varredura -->
+        <div class="test-section">
+            <h2><span class="icon">📊</span> Varredura de Frequência</h2>
+            <div class="info-box">
+                Este teste varre todas as frequências automaticamente, do grave ao agudo.
+                Identifique qual é a frequência mais alta que você consegue ouvir.
+            </div>
+
+            <div class="control-group">
+                <label>Intervalo de Varredura:</label>
+                <div style="display: flex; gap: 15px; align-items: center;">
+                    <div style="flex: 1;">
+                        <label for="sweepStart" style="font-size: 0.9em;">Início: <span id="sweepStartVal">20</span>
+                            Hz</label>
+                        <input type="range" id="sweepStart" min="20" max="10000" value="20">
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="sweepEnd" style="font-size: 0.9em;">Fim: <span id="sweepEndVal">20000</span>
+                            Hz</label>
+                        <input type="range" id="sweepEnd" min="1000" max="20000" value="20000">
+                    </div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="sweepDuration">Duração: <span id="sweepDurVal">10</span> segundos</label>
+                <input type="range" id="sweepDuration" min="5" max="30" value="10" step="1">
+            </div>
+
+            <div class="value-display" id="currentFreq" style="display: none;">
+                Frequência Atual: <span id="currentFreqVal">0</span> Hz
+            </div>
+
+            <div class="button-group">
+                <button id="startSweep">▶️ Iniciar Varredura</button>
+                <button id="stopSweep" class="stop-btn">⏹️ Parar</button>
+            </div>
+        </div>
+
+        <!-- Resultados -->
+        <div class="results" id="results">
+            <h3>📋 Informações sobre Audição:</h3>
+            <ul>
+                <li><strong>Frequências Graves (20-250 Hz):</strong> Sons de baixa frequência, como trovões e batidas
+                    graves</li>
+                <li><strong>Frequências Médias (250-4000 Hz):</strong> A maioria das vozes humanas e instrumentos
+                    musicais</li>
+                <li><strong>Frequências Agudas (4000-20000 Hz):</strong> Sons agudos, como apitos e notas altas</li>
+                <li><strong>Perda Auditiva:</strong> Com a idade, geralmente perdemos a capacidade de ouvir frequências
+                    acima de 15.000 Hz</li>
+                <li><strong>Jovens:</strong> Podem ouvir até 20.000 Hz</li>
+                <li><strong>Adultos:</strong> Normalmente até 15.000-16.000 Hz</li>
+                <li><strong>Idosos:</strong> Frequentemente até 12.000-14.000 Hz</li>
+            </ul>
+        </div>
+
+        <div class="button-group" style="margin-top: 30px;">
+            <button id="showResults">📊 Mostrar Informações</button>
+        </div>
+    </div>
+
+    <script>
+        // Criar contexto de áudio
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioContext = null;
+        let oscillator = null;
+        let gainNode = null;
+        let panNode = null;
+        let sweepInterval = null;
+        let panInterval = null;
+
+        // Inicializar contexto de áudio
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new AudioContext();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        }
+
+        // Parar qualquer som tocando
+        function stopAllSounds() {
+            if (oscillator) {
+                try {
+                    oscillator.stop();
+                    oscillator.disconnect();
+                } catch (e) { }
+                oscillator = null;
+            }
+            if (sweepInterval) {
+                clearInterval(sweepInterval);
+                sweepInterval = null;
+            }
+            if (panInterval) {
+                clearInterval(panInterval);
+                panInterval = null;
+            }
+            document.getElementById('currentFreq').style.display = 'none';
+            document.getElementById('leftChannel').classList.remove('active');
+            document.getElementById('rightChannel').classList.remove('active');
+        }
+
+        // Elementos
+        const frequencySlider = document.getElementById('frequency');
+        const volumeSlider = document.getElementById('volume');
+        const freqValue = document.getElementById('freqValue');
+        const volValue = document.getElementById('volValue');
+        const freqDisplay = document.getElementById('freqDisplay');
+
+        // Atualizar displays
+        frequencySlider.addEventListener('input', (e) => {
+            const freq = e.target.value;
+            freqValue.textContent = freq;
+            freqDisplay.textContent = `${freq} Hz`;
+            if (oscillator) {
+                oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+            }
+        });
+
+        volumeSlider.addEventListener('input', (e) => {
+            const vol = e.target.value;
+            volValue.textContent = vol;
+            if (gainNode) {
+                gainNode.gain.setValueAtTime(vol / 100, audioContext.currentTime);
+            }
+        });
+
+        // Tocar tom
+        document.getElementById('playTone').addEventListener('click', () => {
+            initAudio();
+            stopAllSounds();
+
+            oscillator = audioContext.createOscillator();
+            gainNode = audioContext.createGain();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(frequencySlider.value, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(volumeSlider.value / 100, audioContext.currentTime);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.start();
+        });
+
+        document.getElementById('stopTone').addEventListener('click', stopAllSounds);
+
+        // Botões de preset
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const freq = btn.getAttribute('data-freq');
+                frequencySlider.value = freq;
+                freqValue.textContent = freq;
+                freqDisplay.textContent = `${freq} Hz`;
+                if (oscillator) {
+                    oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+                }
+            });
+        });
+
+        // Teste Estéreo
+        document.getElementById('playLeft').addEventListener('click', () => {
+            initAudio();
+            stopAllSounds();
+
+            oscillator = audioContext.createOscillator();
+            gainNode = audioContext.createGain();
+            panNode = audioContext.createStereoPanner();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            panNode.pan.setValueAtTime(-1, audioContext.currentTime);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(panNode);
+            panNode.connect(audioContext.destination);
+
+            oscillator.start();
+
+            document.getElementById('leftChannel').classList.add('active');
+        });
+
+        document.getElementById('playRight').addEventListener('click', () => {
+            initAudio();
+            stopAllSounds();
+
+            oscillator = audioContext.createOscillator();
+            gainNode = audioContext.createGain();
+            panNode = audioContext.createStereoPanner();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            panNode.pan.setValueAtTime(1, audioContext.currentTime);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(panNode);
+            panNode.connect(audioContext.destination);
+
+            oscillator.start();
+
+            document.getElementById('rightChannel').classList.add('active');
+        });
+
+        document.getElementById('playBoth').addEventListener('click', () => {
+            initAudio();
+            stopAllSounds();
+
+            oscillator = audioContext.createOscillator();
+            gainNode = audioContext.createGain();
+            panNode = audioContext.createStereoPanner();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            panNode.pan.setValueAtTime(0, audioContext.currentTime);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(panNode);
+            panNode.connect(audioContext.destination);
+
+            oscillator.start();
+
+            document.getElementById('leftChannel').classList.add('active');
+            document.getElementById('rightChannel').classList.add('active');
+        });
+
+        document.getElementById('playPan').addEventListener('click', () => {
+            initAudio();
+            stopAllSounds();
+
+            oscillator = audioContext.createOscillator();
+            gainNode = audioContext.createGain();
+            panNode = audioContext.createStereoPanner();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(panNode);
+            panNode.connect(audioContext.destination);
+
+            oscillator.start();
+
+            // Animação de panorâmica
+            let panValue = -1;
+            let direction = 1;
+            panInterval = setInterval(() => {
+                panValue += direction * 0.05;
+                if (panValue >= 1 || panValue <= -1) {
+                    direction *= -1;
+                }
+                panNode.pan.setValueAtTime(panValue, audioContext.currentTime);
+
+                // Ativar indicadores visuais
+                if (panValue < -0.3) {
+                    document.getElementById('leftChannel').classList.add('active');
+                    document.getElementById('rightChannel').classList.remove('active');
+                } else if (panValue > 0.3) {
+                    document.getElementById('rightChannel').classList.add('active');
+                    document.getElementById('leftChannel').classList.remove('active');
+                } else {
+                    document.getElementById('leftChannel').classList.add('active');
+                    document.getElementById('rightChannel').classList.add('active');
+                }
+            }, 50);
+        });
+
+        document.getElementById('stopStereo').addEventListener('click', stopAllSounds);
+
+        // Varredura de Frequência
+        const sweepStart = document.getElementById('sweepStart');
+        const sweepEnd = document.getElementById('sweepEnd');
+        const sweepDuration = document.getElementById('sweepDuration');
+
+        sweepStart.addEventListener('input', (e) => {
+            document.getElementById('sweepStartVal').textContent = e.target.value;
+        });
+
+        sweepEnd.addEventListener('input', (e) => {
+            document.getElementById('sweepEndVal').textContent = e.target.value;
+        });
+
+        sweepDuration.addEventListener('input', (e) => {
+            document.getElementById('sweepDurVal').textContent = e.target.value;
+        });
+
+        document.getElementById('startSweep').addEventListener('click', () => {
+            initAudio();
+            stopAllSounds();
+
+            const startFreq = parseFloat(sweepStart.value);
+            const endFreq = parseFloat(sweepEnd.value);
+            const duration = parseFloat(sweepDuration.value);
+
+            oscillator = audioContext.createOscillator();
+            gainNode = audioContext.createGain();
+
+            oscillator.type = 'sine';
+            gainNode.gain.setValueAtTime(volumeSlider.value / 100, audioContext.currentTime);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            // Varredura exponencial (soa mais natural)
+            oscillator.frequency.setValueAtTime(startFreq, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(endFreq, audioContext.currentTime + duration);
+
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + duration);
+
+            // Mostrar frequência atual
+            document.getElementById('currentFreq').style.display = 'block';
+            const steps = 100;
+            const stepDuration = (duration * 1000) / steps;
+            let currentStep = 0;
+
+            sweepInterval = setInterval(() => {
+                currentStep++;
+                const progress = currentStep / steps;
+                const logStart = Math.log(startFreq);
+                const logEnd = Math.log(endFreq);
+                const currentLogFreq = logStart + (logEnd - logStart) * progress;
+                const currentFreq = Math.exp(currentLogFreq);
+
+                document.getElementById('currentFreqVal').textContent = Math.round(currentFreq);
+
+                if (currentStep >= steps) {
+                    clearInterval(sweepInterval);
+                    setTimeout(() => {
+                        document.getElementById('currentFreq').style.display = 'none';
+                    }, 1000);
+                }
+            }, stepDuration);
+        });
+
+        document.getElementById('stopSweep').addEventListener('click', stopAllSounds);
+
+        // Mostrar resultados
+        document.getElementById('showResults').addEventListener('click', () => {
+            const results = document.getElementById('results');
+            results.classList.toggle('show');
+        });
+
+        // Parar todos os sons quando a página é fechada
+        window.addEventListener('beforeunload', stopAllSounds);
+    </script>
+</body>
+
+</html>

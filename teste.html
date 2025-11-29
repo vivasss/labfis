@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensor de Reconhecimento de Voz</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+        
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .status {
+            font-size: 1.2rem;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 25px 0;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-width: 200px;
+        }
+        
+        #registerBtn {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        #verifyBtn {
+            background: #2196F3;
+            color: white;
+        }
+        
+        #resetBtn {
+            background: #ff9800;
+            color: white;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .visualizer {
+            width: 100%;
+            height: 150px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, rgba(59, 130, 246, 0.5), transparent);
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.5s ease;
+        }
+        
+        .match {
+            background: rgba(76, 175, 80, 0.3);
+            border: 2px solid #4CAF50;
+        }
+        
+        .no-match {
+            background: rgba(244, 67, 54, 0.3);
+            border: 2px solid #f44336;
+        }
+        
+        .instructions {
+            margin-top: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: left;
+        }
+        
+        .instructions h2 {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .instructions ol {
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            button {
+                min-width: 150px;
+                padding: 12px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sensor de Reconhecimento de Voz</h1>
+        
+        <div class="status" id="status">
+            Clique em "Cadastrar Voz" para registrar sua voz
+        </div>
+        
+        <div class="visualizer">
+            <div class="wave" id="wave"></div>
+        </div>
+        
+        <div class="buttons">
+            <button id="registerBtn">
+                <span>🎙️</span> Cadastrar Voz
+            </button>
+            <button id="verifyBtn" disabled>
+                <span>🔍</span> Verificar Voz
+            </button>
+            <button id="resetBtn">
+                <span>🔄</span> Redefinir
+            </button>
+        </div>
+        
+        <div class="result" id="result"></div>
+        
+        <div class="instructions">
+            <h2>Como usar:</h2>
+            <ol>
+                <li>Clique em "Cadastrar Voz" e fale uma frase quando solicitado</li>
+                <li>Clique em "Verificar Voz" para verificar se a voz atual corresponde à cadastrada</li>
+                <li>Use "Redefinir" para limpar o cadastro atual</li>
+                <li>Para melhores resultados, use um ambiente silencioso e fale claramente</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const status = document.getElementById('status');
+            const result = document.getElementById('result');
+            const registerBtn = document.getElementById('registerBtn');
+            const verifyBtn = document.getElementById('verifyBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const wave = document.getElementById('wave');
+            
+            let registeredVoice = null;
+            let isRecording = false;
+            let audioContext;
+            let analyser;
+            let dataArray;
+            let bufferLength;
+            let animationId;
+            
+            // Inicializar áudio para visualização
+            function initAudio() {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256;
+                bufferLength = analyser.frequencyBinCount;
+                dataArray = new Uint8Array(bufferLength);
+            }
+            
+            // Iniciar visualização de áudio
+            function startVisualization(stream) {
+                if (!audioContext) {
+                    initAudio();
+                }
+                
+                const source = audioContext.createMediaStreamSource(stream);
+                source.connect(analyser);
+                
+                function draw() {
+                    animationId = requestAnimationFrame(draw);
+                    analyser.getByteFrequencyData(dataArray);
+                    
+                    wave.innerHTML = '';
+                    const barWidth = (wave.offsetWidth / bufferLength) * 2.5;
+                    let barHeight;
+                    let x = 0;
+                    
+                    for (let i = 0; i < bufferLength; i++) {
+                        barHeight = dataArray[i] / 2;
+                        
+                        const bar = document.createElement('div');
+                        bar.style.position = 'absolute';
+                        bar.style.bottom = '0';
+                        bar.style.left = x + 'px';
+                        bar.style.width = barWidth + 'px';
+                        bar.style.height = barHeight + 'px';
+                        bar.style.backgroundColor = `rgba(59, 130, 246, ${0.5 + (dataArray[i] / 255) * 0.5})`;
+                        bar.style.borderRadius = '2px 2px 0 0';
+                        
+                        wave.appendChild(bar);
+                        x += barWidth + 1;
+                    }
+                }
+                
+                draw();
+            }
+            
+            // Parar visualização de áudio
+            function stopVisualization() {
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                }
+                wave.innerHTML = '';
+            }
+            
+            // Verificar suporte à API de voz
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                status.textContent = 'Seu navegador não suporta reconhecimento de voz. Tente usar Chrome ou Edge.';
+                registerBtn.disabled = true;
+                verifyBtn.disabled = true;
+                return;
+            }
+            
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const recognition = new SpeechRecognition();
+            
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'pt-BR';
+            
+            // Evento de início da gravação
+            recognition.onstart = function() {
+                isRecording = true;
+                status.textContent = 'Ouvindo... Fale agora!';
+                status.classList.add('pulse');
+                registerBtn.disabled = true;
+                verifyBtn.disabled = true;
+            };
+            
+            // Evento de fim da gravação
+            recognition.onend = function() {
+                isRecording = false;
+                status.classList.remove('pulse');
+                stopVisualization();
+                
+                if (!registeredVoice) {
+                    status.textContent = 'Voz não cadastrada. Clique em "Cadastrar Voz".';
+                    registerBtn.disabled = false;
+                } else {
+                    status.textContent = 'Voz cadastrada. Clique em "Verificar Voz" para testar.';
+                    registerBtn.disabled = false;
+                    verifyBtn.disabled = false;
+                }
+            };
+            
+            // Resultado do reconhecimento
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript.toLowerCase();
+                const confidence = event.results[0][0].confidence;
+                
+                if (!registeredVoice) {
+                    // Cadastrar voz
+                    registeredVoice = {
+                        text: transcript,
+                        confidence: confidence,
+                        timestamp: new Date().toLocaleString()
+                    };
+                    
+                    status.textContent = `Voz cadastrada com sucesso! Frase: "${transtext}"`;
+                    verifyBtn.disabled = false;
+                    
+                    result.textContent = `Voz cadastrada: "${transcript}" (Confiança: ${(confidence * 100).toFixed(1)}%)`;
+                    result.className = 'result match';
+                } else {
+                    // Verificar voz
+                    const similarity = calculateSimilarity(registeredVoice.text, transcript);
+                    const confidenceMatch = Math.abs(registeredVoice.confidence - confidence) < 0.2;
+                    
+                    if (similarity > 0.7 && confidenceMatch) {
+                        result.textContent = `✓ Voz verificada com sucesso! (Similaridade: ${(similarity * 100).toFixed(1)}%)`;
+                        result.className = 'result match';
+                    } else {
+                        result.textContent = `✗ Voz não corresponde. (Similaridade: ${(similarity * 100).toFixed(1)}%)`;
+                        result.className = 'result no-match';
+                    }
+                }
+            };
+            
+            // Erro no reconhecimento
+            recognition.onerror = function(event) {
+                console.error('Erro no reconhecimento:', event.error);
+                status.textContent = `Erro: ${event.error}. Tente novamente.`;
+                stopVisualization();
+                
+                if (!registeredVoice) {
+                    status.textContent += ' Clique em "Cadastrar Voz" para tentar novamente.';
+                    registerBtn.disabled = false;
+                } else {
+                    verifyBtn.disabled = false;
+                }
+            };
+            
+            // Calcular similaridade entre textos
+            function calculateSimilarity(text1, text2) {
+                const words1 = text1.split(' ');
+                const words2 = text2.split(' ');
+                
+                const set1 = new Set(words1);
+                const set2 = new Set(words2);
+                
+                const intersection = new Set([...set1].filter(x => set2.has(x)));
+                const union = new Set([...set1, ...set2]);
+                
+                return intersection.size / union.size;
+            }
+            
+            // Cadastrar voz
+            registerBtn.addEventListener('click', function() {
+                result.textContent = '';
+                result.className = 'result';
+                
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then(function(stream) {
+                        startVisualization(stream);
+                        recognition.start();
+                    })
+                    .catch(function(err) {
+                        console.error('Erro ao acessar microfone:', err);
+                        status.textContent = 'Erro ao acessar o microfone. Verifique as permissões.';
+                    });
+            });
+            
+            // Verificar voz
+            verifyBtn.addEventListener('click', function() {
+                if (!registeredVoice) {
+                    result.textContent = 'Nenhuma voz cadastrada. Cadastre primeiro.';
+                    result.className = 'result no-match';
+                    return;
+                }
+                
+                result.textContent = '';
+                result.className = 'result';
+                
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then(function(stream) {
+                        startVisualization(stream);
+                        recognition.start();
+                    })
+                    .catch(function(err) {
+                        console.error('Erro ao acessar microfone:', err);
+                        status.textContent = 'Erro ao acessar o microfone. Verifique as permissões.';
+                    });
+            });
+            
+            // Redefinir cadastro
+            resetBtn.addEventListener('click', function() {
+                registeredVoice = null;
+                status.textContent = 'Cadastro de voz removido. Clique em "Cadastrar Voz" para registrar novamente.';
+                result.textContent = '';
+                result.className = 'result';
+                verifyBtn.disabled = true;
+                stopVisualization();
+            });
+        });
+    </script>
+</body>
+</html>
