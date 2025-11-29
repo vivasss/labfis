@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulação de Ondas - Física Interativa</title>
+    <meta name="description"
+        content="Explore ondas transversais, longitudinais, estacionárias e interferência. Ajuste frequência, amplitude, velocidade e veja as propriedades das ondas em tempo real. Agora com áudio!">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #0f0a1f 100%);
+            color: #e0e0ff;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        h1 {
+            font-size: 3em;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(123, 47, 247, 0.5);
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            color: #a0a0ff;
+            margin-bottom: 20px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .canvas-container {
+            background: rgba(20, 10, 40, 0.6);
+            border-radius: 20px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(123, 47, 247, 0.3);
+            box-shadow: 0 8px 32px rgba(123, 47, 247, 0.2);
+            animation: fadeIn 1s ease-out;
+        }
+
+        canvas {
+            width: 100%;
+            height: 400px;
+            border-radius: 10px;
+            background: rgba(10, 5, 20, 0.8);
+            cursor: crosshair;
+        }
+
+        .controls {
+            background: rgba(20, 10, 40, 0.6);
+            border-radius: 20px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(123, 47, 247, 0.3);
+            box-shadow: 0 8px 32px rgba(123, 47, 247, 0.2);
+            animation: fadeInRight 1s ease-out;
+            max-height: 800px;
+            overflow-y: auto;
+        }
+
+        .controls::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .controls::-webkit-scrollbar-track {
+            background: rgba(20, 10, 40, 0.4);
+            border-radius: 10px;
+        }
+
+        .controls::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #7b2ff7, #ff00ff);
+            border-radius: 10px;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #b0b0ff;
+            font-size: 0.95em;
+        }
+
+        .value-display {
+            float: right;
+            background: linear-gradient(135deg, #7b2ff7, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: rgba(123, 47, 247, 0.2);
+            border-radius: 5px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(123, 47, 247, 0.8);
+            transition: transform 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(123, 47, 247, 0.8);
+            border: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #7b2ff7, #ff00ff);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(123, 47, 247, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(123, 47, 247, 0.6);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .audio-btn {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+        }
+
+        .audio-btn.playing {
+            background: linear-gradient(135deg, #00ff88, #00cc66);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 4px 25px rgba(0, 255, 136, 0.8);
+            }
+        }
+
+        .audio-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: #00ff88;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .info-panel {
+            background: rgba(20, 10, 40, 0.6);
+            border-radius: 20px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(123, 47, 247, 0.3);
+            box-shadow: 0 8px 32px rgba(123, 47, 247, 0.2);
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .info-panel h2 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .info-item {
+            background: rgba(123, 47, 247, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(123, 47, 247, 0.3);
+            transition: all 0.3s;
+        }
+
+        .info-item:hover {
+            background: rgba(123, 47, 247, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .info-label {
+            font-size: 0.85em;
+            color: #a0a0ff;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #00d4ff, #7b2ff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .wave-modes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .wave-mode-btn {
+            padding: 10px;
+            background: rgba(20, 10, 40, 0.8);
+            color: #e0e0ff;
+            border: 2px solid rgba(123, 47, 247, 0.4);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .wave-mode-btn:hover {
+            border-color: rgba(123, 47, 247, 0.8);
+            background: rgba(123, 47, 247, 0.2);
+        }
+
+        .wave-mode-btn.active {
+            background: linear-gradient(135deg, #7b2ff7, #ff00ff);
+            border-color: #ff00ff;
+            box-shadow: 0 0 20px rgba(123, 47, 247, 0.6);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .info-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .subtitle {
+                font-size: 1em;
+            }
+
+            .wave-modes {
+                grid-template-columns: 1fr;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            cursor: pointer;
+            accent-color: #7b2ff7;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🌊 Simulação de Ondas</h1>
+            <p class="subtitle">Explore diferentes tipos de ondas, suas propriedades físicas e ouça seus sons!</p>
+        </header>
+
+        <div class="main-content">
+            <div class="canvas-container">
+                <canvas id="waveCanvas"></canvas>
+            </div>
+
+            <div class="controls">
+                <h2 style="color: #00d4ff; margin-bottom: 20px;">Controles</h2>
+
+                <div class="wave-modes">
+                    <button class="wave-mode-btn active" data-mode="sine">Senoidal</button>
+                    <button class="wave-mode-btn" data-mode="square">Quadrada</button>
+                    <button class="wave-mode-btn" data-mode="sawtooth">Dente de Serra</button>
+                    <button class="wave-mode-btn" data-mode="standing">Estacionária</button>
+                </div>
+
+                <div class="control-group">
+                    <label>
+                        Amplitude (A)
+                        <span class="value-display" id="amplitudeValue">50</span>
+                    </label>
+                    <input type="range" id="amplitude" min="10" max="150" value="50" step="5">
+                </div>
+
+                <div class="control-group">
+                    <label>
+                        Frequência (f)
+                        <span class="value-display" id="frequencyValue">2.0 Hz</span>
+                    </label>
+                    <input type="range" id="frequency" min="0.5" max="10" value="2" step="0.5">
+                </div>
+
+                <div class="control-group">
+                    <label>
+                        Comprimento de Onda (λ)
+                        <span class="value-display" id="wavelengthValue">200</span>
+                    </label>
+                    <input type="range" id="wavelength" min="50" max="400" value="200" step="10">
+                </div>
+
+                <div class="control-group">
+                    <label>
+                        Velocidade (v)
+                        <span class="value-display" id="speedValue">100</span>
+                    </label>
+                    <input type="range" id="speed" min="20" max="300" value="100" step="10">
+                </div>
+
+                <div class="control-group">
+                    <label>
+                        Número de Ondas
+                        <span class="value-display" id="numWavesValue">2</span>
+                    </label>
+                    <input type="range" id="numWaves" min="1" max="5" value="2" step="1">
+                </div>
+
+                <div class="control-group">
+                    <label>
+                        Volume do Áudio
+                        <span class="value-display" id="volumeValue">50%</span>
+                    </label>
+                    <input type="range" id="volume" min="0" max="100" value="50" step="5">
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="showInterference" checked>
+                    <label for="showInterference">Mostrar Interferência</label>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="showGrid">
+                    <label for="showGrid">Mostrar Grade</label>
+                </div>
+
+                <button id="audioBtn" class="audio-btn">🔊 Tocar Som da Onda</button>
+                <button id="pauseBtn">⏸️ Pausar</button>
+                <button id="resetBtn">🔄 Resetar</button>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <h2>📊 Propriedades da Onda</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Amplitude (A)</div>
+                    <div class="info-value" id="infoAmplitude">50 px</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Frequência (f)</div>
+                    <div class="info-value" id="infoFrequency">2.0 Hz</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Comprimento de Onda (λ)</div>
+                    <div class="info-value" id="infoWavelength">200 px</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Período (T)</div>
+                    <div class="info-value" id="infoPeriod">0.50 s</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Velocidade (v)</div>
+                    <div class="info-value" id="infoSpeed">100 px/s</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Número de Onda (k)</div>
+                    <div class="info-value" id="infoWaveNumber">0.031 rad/px</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Frequência do Áudio</div>
+                    <div class="info-value" id="infoAudioFreq">200 Hz</div>
+                </div>
+            </div>
+
+            <div
+                style="margin-top: 25px; padding: 20px; background: rgba(123, 47, 247, 0.1); border-radius: 10px; border-left: 4px solid #7b2ff7;">
+                <h3 style="color: #00d4ff; margin-bottom: 10px;">💡 Sobre Ondas</h3>
+                <p style="line-height: 1.6; color: #b0b0ff;">
+                    Uma onda é uma perturbação que se propaga através do espaço e do tempo, transportando energia sem
+                    transportar matéria.
+                    As propriedades fundamentais incluem:
+                </p>
+                <ul style="margin-top: 10px; margin-left: 20px; line-height: 1.8; color: #b0b0ff;">
+                    <li><strong>Amplitude:</strong> altura máxima da onda</li>
+                    <li><strong>Frequência:</strong> número de oscilações por segundo</li>
+                    <li><strong>Comprimento de onda:</strong> distância entre cristas consecutivas</li>
+                    <li><strong>Velocidade:</strong> v = f × λ (velocidade = frequência × comprimento de onda)</li>
+                    <li><strong>Período:</strong> T = 1/f (tempo para uma oscilação completa)</li>
+                    <li><strong>Som:</strong> Agora você pode escutar o som da onda! A frequência visual é multiplicada
+                        por 100 para criar tons audíveis.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('waveCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth - 40;
+            canvas.height = 400;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Wave parameters
+        let amplitude = 50;
+        let frequency = 2;
+        let wavelength = 200;
+        let speed = 100;
+        let time = 0;
+        let isPaused = false;
+        let waveMode = 'sine';
+        let numWaves = 2;
+        let showInterference = true;
+        let showGrid = false;
+
+        // Audio parameters
+        let audioContext = null;
+        let oscillator = null;
+        let gainNode = null;
+        let isAudioPlaying = false;
+        let audioVolume = 0.5;
+
+        // Control elements
+        const amplitudeSlider = document.getElementById('amplitude');
+        const frequencySlider = document.getElementById('frequency');
+        const wavelengthSlider = document.getElementById('wavelength');
+        const speedSlider = document.getElementById('speed');
+        const numWavesSlider = document.getElementById('numWaves');
+        const volumeSlider = document.getElementById('volume');
+        const audioBtn = document.getElementById('audioBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const waveModeBtns = document.querySelectorAll('.wave-mode-btn');
+        const showInterferenceCheck = document.getElementById('showInterference');
+        const showGridCheck = document.getElementById('showGrid');
+
+        // Update controls
+        amplitudeSlider.addEventListener('input', (e) => {
+            amplitude = parseFloat(e.target.value);
+            document.getElementById('amplitudeValue').textContent = amplitude;
+            updateInfo();
+        });
+
+        frequencySlider.addEventListener('input', (e) => {
+            frequency = parseFloat(e.target.value);
+            document.getElementById('frequencyValue').textContent = frequency.toFixed(1) + ' Hz';
+            updateInfo();
+            updateAudioFrequency();
+        });
+
+        wavelengthSlider.addEventListener('input', (e) => {
+            wavelength = parseFloat(e.target.value);
+            document.getElementById('wavelengthValue').textContent = wavelength;
+            updateInfo();
+        });
+
+        speedSlider.addEventListener('input', (e) => {
+            speed = parseFloat(e.target.value);
+            document.getElementById('speedValue').textContent = speed;
+            updateInfo();
+        });
+
+        numWavesSlider.addEventListener('input', (e) => {
+            numWaves = parseInt(e.target.value);
+            document.getElementById('numWavesValue').textContent = numWaves;
+        });
+
+        volumeSlider.addEventListener('input', (e) => {
+            audioVolume = parseFloat(e.target.value) / 100;
+            document.getElementById('volumeValue').textContent = e.target.value + '%';
+            if (gainNode) {
+                gainNode.gain.value = audioVolume;
+            }
+        });
+
+        showInterferenceCheck.addEventListener('change', (e) => {
+            showInterference = e.target.checked;
+        });
+
+        showGridCheck.addEventListener('change', (e) => {
+            showGrid = e.target.checked;
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            isPaused = !isPaused;
+            pauseBtn.textContent = isPaused ? '▶️ Continuar' : '⏸️ Pausar';
+        });
+
+        resetBtn.addEventListener('click', () => {
+            time = 0;
+            isPaused = false;
+            pauseBtn.textContent = '⏸️ Pausar';
+        });
+
+        waveModeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                waveModeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                waveMode = btn.dataset.mode;
+                updateAudioWaveType();
+            });
+        });
+
+        // Audio functions
+        function initAudioContext() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                gainNode = audioContext.createGain();
+                gainNode.connect(audioContext.destination);
+                gainNode.gain.value = audioVolume;
+            }
+        }
+
+        function startAudio() {
+            initAudioContext();
+
+            if (oscillator) {
+                oscillator.stop();
+            }
+
+            oscillator = audioContext.createOscillator();
+            oscillator.connect(gainNode);
+
+            // Scale frequency to audible range (100x)
+            const audioFreq = frequency * 100;
+            oscillator.frequency.value = audioFreq;
+
+            // Set wave type (standing wave uses sine)
+            if (waveMode === 'standing') {
+                oscillator.type = 'sine';
+            } else {
+                oscillator.type = waveMode;
+            }
+
+            oscillator.start();
+            isAudioPlaying = true;
+            audioBtn.classList.add('playing');
+            audioBtn.innerHTML = '<span class="audio-indicator"></span>🔇 Parar Som';
+        }
+
+        function stopAudio() {
+            if (oscillator) {
+                oscillator.stop();
+                oscillator = null;
+            }
+            isAudioPlaying = false;
+            audioBtn.classList.remove('playing');
+            audioBtn.textContent = '🔊 Tocar Som da Onda';
+        }
+
+        function updateAudioFrequency() {
+            if (oscillator && isAudioPlaying) {
+                const audioFreq = frequency * 100;
+                oscillator.frequency.setValueAtTime(audioFreq, audioContext.currentTime);
+            }
+        }
+
+        function updateAudioWaveType() {
+            if (isAudioPlaying) {
+                stopAudio();
+                startAudio();
+            }
+        }
+
+        audioBtn.addEventListener('click', () => {
+            if (isAudioPlaying) {
+                stopAudio();
+            } else {
+                startAudio();
+            }
+        });
+
+        // Calculate wave value based on mode
+        function calculateWave(x, t, offset = 0) {
+            const k = 2 * Math.PI / wavelength;
+            const omega = 2 * Math.PI * frequency;
+            const phase = k * x - omega * t + offset;
+
+            switch (waveMode) {
+                case 'sine':
+                    return amplitude * Math.sin(phase);
+                case 'square':
+                    return amplitude * Math.sign(Math.sin(phase));
+                case 'sawtooth':
+                    return amplitude * (2 * (phase / (2 * Math.PI) - Math.floor(phase / (2 * Math.PI) + 0.5)));
+                case 'standing':
+                    return amplitude * Math.sin(k * x) * Math.cos(omega * t + offset);
+                default:
+                    return amplitude * Math.sin(phase);
+            }
+        }
+
+        // Draw grid
+        function drawGrid() {
+            ctx.strokeStyle = 'rgba(123, 47, 247, 0.2)';
+            ctx.lineWidth = 1;
+
+            // Vertical lines
+            for (let x = 0; x < canvas.width; x += 50) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            // Horizontal lines
+            for (let y = 0; y < canvas.height; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+
+        // Draw wave
+        function drawWave() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (showGrid) {
+                drawGrid();
+            }
+
+            const centerY = canvas.height / 2;
+
+            // Draw center line
+            ctx.strokeStyle = 'rgba(123, 47, 247, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(canvas.width, centerY);
+            ctx.stroke();
+
+            if (showInterference && numWaves > 1) {
+                // Draw individual waves with transparency
+                for (let i = 0; i < numWaves; i++) {
+                    const offset = (i * Math.PI * 2) / numWaves;
+                    const hue = (i * 360) / numWaves;
+
+                    ctx.strokeStyle = `hsla(${hue}, 100%, 60%, 0.3)`;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+
+                    for (let x = 0; x < canvas.width; x++) {
+                        const y = centerY - calculateWave(x, time, offset);
+                        if (x === 0) {
+                            ctx.moveTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                    }
+                    ctx.stroke();
+                }
+
+                // Draw interference pattern (sum of waves)
+                const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+                gradient.addColorStop(0, '#00d4ff');
+                gradient.addColorStop(0.5, '#7b2ff7');
+                gradient.addColorStop(1, '#ff00ff');
+
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = 3;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#7b2ff7';
+                ctx.beginPath();
+
+                for (let x = 0; x < canvas.width; x++) {
+                    let sum = 0;
+                    for (let i = 0; i < numWaves; i++) {
+                        const offset = (i * Math.PI * 2) / numWaves;
+                        sum += calculateWave(x, time, offset);
+                    }
+                    const y = centerY - sum / numWaves;
+
+                    if (x === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            } else {
+                // Draw single wave
+                const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+                gradient.addColorStop(0, '#00d4ff');
+                gradient.addColorStop(0.5, '#7b2ff7');
+                gradient.addColorStop(1, '#ff00ff');
+
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = 3;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#7b2ff7';
+                ctx.beginPath();
+
+                for (let x = 0; x < canvas.width; x++) {
+                    const y = centerY - calculateWave(x, time, 0);
+                    if (x === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // Update info panel
+        function updateInfo() {
+            const period = 1 / frequency;
+            const waveNumber = 2 * Math.PI / wavelength;
+            const audioFreq = frequency * 100;
+
+            document.getElementById('infoAmplitude').textContent = amplitude + ' px';
+            document.getElementById('infoFrequency').textContent = frequency.toFixed(1) + ' Hz';
+            document.getElementById('infoWavelength').textContent = wavelength + ' px';
+            document.getElementById('infoPeriod').textContent = period.toFixed(2) + ' s';
+            document.getElementById('infoSpeed').textContent = speed + ' px/s';
+            document.getElementById('infoWaveNumber').textContent = waveNumber.toFixed(3) + ' rad/px';
+            document.getElementById('infoAudioFreq').textContent = audioFreq.toFixed(0) + ' Hz';
+        }
+
+        // Animation loop
+        function animate() {
+            if (!isPaused) {
+                time += 0.016 * (speed / 100);
+            }
+            drawWave();
+            requestAnimationFrame(animate);
+        }
+
+        // Initialize
+        updateInfo();
+        animate();
+    </script>
+</body>
+
+</html>

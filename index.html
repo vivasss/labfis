@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aprendizagem — Física</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #071026;
+            --panel: #0f1724;
+            --muted: #9fb7d9;
+            --accent: #39a2ff;
+            --accent-2: #6fb8ff;
+            --accent-3: #9b7dff;
+            --glass: rgba(255, 255, 255, 0.03);
+            --radius: 14px;
+            --shadow: 0 12px 40px rgba(2, 6, 23, 0.6);
+            --glass-2: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+            --card-hover-scale: 1.03;
+            --transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: 'Segoe UI', system-ui, Roboto, Arial, sans-serif;
+            background: linear-gradient(180deg, var(--bg), #041022);
+            color: #e6eef8;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        .wrap {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(90deg, #0b63d6, #6fb8ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        h1 {
+            font-size: 22px;
+            color: var(--accent);
+            text-transform: lowercase;
+            letter-spacing: 0.2px;
+        }
+
+        .lead {
+            color: var(--muted);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .topbar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--glass);
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            color: var(--muted);
+        }
+
+        .search input {
+            background: transparent;
+            border: 0;
+            color: inherit;
+            outline: none;
+            min-width: 150px;
+            width: 100%;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+            position: relative;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: var(--glass);
+            border-radius: 12px;
+            padding: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            position: relative;
+            z-index: 5;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 14px;
+            transition: var(--transition);
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .nav-tab.active {
+            color: white;
+        }
+
+        .nav-tab:hover:not(.active) {
+            color: var(--accent-2);
+        }
+
+        .nav-indicator {
+            position: absolute;
+            height: calc(100% - 12px);
+            border-radius: 8px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-3));
+            z-index: 1;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 4px 20px rgba(57, 162, 255, 0.3);
+        }
+
+        .content-section {
+            display: none;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 22px;
+            margin-top: 20px;
+            align-items: start;
+        }
+
+        .card {
+            position: relative;
+            background: var(--glass-2);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.02);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 320px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: var(--transition);
+            transform-origin: center;
+            will-change: transform;
+        }
+
+        .card:hover {
+            transform: translateY(-10px) scale(var(--card-hover-scale));
+            box-shadow: 0 26px 80px rgba(2, 6, 23, 0.72);
+            filter: brightness(1.02);
+        }
+
+        .tag {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(0, 0, 0, 0.22);
+            padding: 6px 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .thumb {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #0b63d6, #6fb8ff);
+            display: block;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.6s cubic-bezier(0.2, 0.9, 0.3, 1);
+        }
+
+        .card:hover .thumb img {
+            transform: scale(1.06) rotate(-1deg);
+        }
+
+        .title {
+            font-weight: 700;
+            color: #fff;
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .desc {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            margin-top: auto;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: transparent;
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+        }
+
+        .btn.primary {
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
+            color: #021425;
+            border: none;
+            box-shadow: 0 8px 20px rgba(57, 162, 255, 0.12);
+        }
+
+        .btn.explore {
+            background: linear-gradient(90deg, var(--accent-3), #b89cff);
+            color: #021425;
+            border: none;
+            box-shadow: 0 8px 20px rgba(155, 125, 255, 0.12);
+            animation: pulse-glow 2s infinite;
+        }
+
+        @keyframes pulse-glow {
+            0% {
+                box-shadow: 0 8px 20px rgba(155, 125, 255, 0.12);
+            }
+
+            50% {
+                box-shadow: 0 8px 25px rgba(155, 125, 255, 0.3);
+            }
+
+            100% {
+                box-shadow: 0 8px 20px rgba(155, 125, 255, 0.12);
+            }
+        }
+
+        .card-meta {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .pulse {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: linear-gradient(90deg, #58e6ff, #9b7dff);
+            box-shadow: 0 6px 18px rgba(91, 200, 255, 0.09);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(.9);
+                opacity: .9;
+            }
+
+            50% {
+                transform: scale(1.15);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(.9);
+                opacity: .9;
+            }
+        }
+
+        .floating-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), var(--accent-3));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 10px 25px rgba(57, 162, 255, 0.3);
+            cursor: pointer;
+            z-index: 100;
+            transition: var(--transition);
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .floating-btn.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .floating-btn:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 15px 35px rgba(57, 162, 255, 0.4);
+        }
+
+        .footer-note {
+            margin-top: 40px;
+            color: var(--muted);
+            font-size: 13px;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        /* Modal de seleção aleatória */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(7, 16, 38, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--glass-2);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal h2 {
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
+        .modal p {
+            color: var(--muted);
+            margin-bottom: 20px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-btn.confirm {
+            background: linear-gradient(90deg, var(--accent), var(--accent-2));
+            color: #021425;
+        }
+
+        .modal-btn.cancel {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--muted);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-3px);
+        }
+
+        .roulette-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            height: 120px;
+        }
+
+        .roulette {
+            display: flex;
+            overflow: hidden;
+            border-radius: 8px;
+            height: 100%;
+            position: relative;
+            transition: transform 0.5s ease;
+        }
+
+        .roulette-item {
+            flex: 0 0 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            background: var(--glass);
+            border-radius: 8px;
+            opacity: 0.6;
+            transition: opacity 0.3s ease;
+        }
+
+        .roulette-item.active {
+            opacity: 1;
+            background: linear-gradient(90deg, rgba(57, 162, 255, 0.2), rgba(107, 184, 255, 0.1));
+        }
+
+        .roulette-title {
+            font-weight: 700;
+            color: white;
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .roulette-desc {
+            color: var(--muted);
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .roulette-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 4px;
+            height: 40px;
+            background: var(--accent);
+            border-radius: 2px;
+            box-shadow: 0 0 10px var(--accent);
+            z-index: 10;
+        }
+
+        .selected-lab-info {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(57, 162, 255, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(57, 162, 255, 0.2);
+        }
+
+        .selected-lab-info h3 {
+            color: var(--accent);
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .selected-lab-info p {
+            color: var(--muted);
+            font-size: 14px;
+            margin: 0;
+        }
+
+        /* Área de Notícias */
+        .news-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .news-card {
+            background: var(--glass-2);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .news-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 50px rgba(2, 6, 23, 0.72);
+        }
+
+        .news-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .news-title {
+            color: var(--accent);
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .news-date {
+            color: var(--muted);
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 5px 10px;
+            border-radius: 6px;
+        }
+
+        .news-content {
+            color: #e6eef8;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .news-highlight {
+            background: linear-gradient(90deg, rgba(57, 162, 255, 0.1), rgba(155, 125, 255, 0.1));
+            border-left: 4px solid var(--accent-3);
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin: 15px 0;
+        }
+
+        .news-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: linear-gradient(90deg, var(--accent-3), #b89cff);
+            color: #021425;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 0 16px 0 12px;
+            box-shadow: 0 4px 15px rgba(155, 125, 255, 0.3);
+        }
+
+        .news-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin: 15px 0;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            transition: var(--transition);
+        }
+
+        .news-image:hover {
+            transform: scale(1.02);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Responsividade */
+        @media (max-width: 900px) {
+            .wrap {
+                padding: 16px;
+            }
+
+            .grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                gap: 18px;
+            }
+
+            .nav-tabs {
+                overflow-x: auto;
+                justify-content: flex-start;
+            }
+
+            .nav-tab {
+                padding: 10px 14px;
+                font-size: 13px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .topbar {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .search input {
+                min-width: 120px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .nav-tabs {
+                width: 100%;
+                overflow-x: auto;
+                padding: 4px;
+            }
+
+            .nav-tab {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+
+            .floating-btn {
+                bottom: 20px;
+                right: 20px;
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+
+            .modal-actions {
+                flex-direction: column;
+            }
+
+            .news-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .news-image {
+                height: 180px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .wrap {
+                padding: 12px;
+            }
+
+            .card {
+                min-height: 280px;
+            }
+
+            .thumb {
+                height: 150px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        .bg-blob {
+            position: fixed;
+            right: -120px;
+            top: 20%;
+            width: 480px;
+            height: 480px;
+            background: radial-gradient(circle at 30% 30%, rgba(63, 138, 255, 0.14), transparent 30%), radial-gradient(circle at 70% 70%, rgba(167, 139, 250, 0.08), transparent 30%);
+            filter: blur(60px);
+            transform: rotate(8deg);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            background: var(--accent);
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float 15s infinite linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 0.3;
+            }
+
+            90% {
+                opacity: 0.3;
+            }
+
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-blob" aria-hidden="true"></div>
+    <div class="particles" id="particles"></div>
+
+    <!-- Modal de seleção aleatória -->
+    <div class="modal" id="exploreModal">
+        <div class="modal-content">
+            <h2>Explorar Laboratório</h2>
+            <p>Vamos descobrir um laboratório aleatório para você explorar!</p>
+
+            <div class="roulette-container">
+                <div class="roulette" id="roulette">
+                    <!-- Itens da roleta serão inseridos via JavaScript -->
+                </div>
+                <div class="roulette-indicator"></div>
+            </div>
+
+            <div class="selected-lab-info" id="selectedLabInfo" style="display: none;">
+                <h3 id="selectedLabTitle">Título do Laboratório</h3>
+                <p id="selectedLabDesc">Descrição do laboratório selecionado</p>
+            </div>
+
+            <div class="modal-actions">
+                <button class="modal-btn confirm" id="confirmExplore">
+                    <i class="fas fa-play"></i> Explorar este Laboratório
+                </button>
+                <button class="modal-btn cancel" id="cancelExplore">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="wrap">
+        <header>
+            <div class="logo-container">
+                <div class="logo">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path d="M12 2L15 8l6 .5-4.5 3L18 20l-6-3-6 3 1.5-8.5L2 8.5 8 8 12 2z" fill="white"
+                            opacity=".95" />
+                    </svg>
+                </div>
+                <div>
+                    <h1>aprendizagem física</h1>
+                    <p class="lead">laboratórios interativos, simuladores e notas — explore conceitos com visualizações
+                        animadas</p>
+                </div>
+            </div>
+
+            <div class="topbar">
+                <div class="search" title="Pesquisar">
+                    <i class="fas fa-search"></i>
+                    <input id="search" placeholder="Pesquisar laboratórios..." />
+                </div>
+
+                <button id="openLabs" class="btn explore" title="Explorar laboratório aleatório">
+                    <i class="fas fa-dice"></i> Explorar
+                </button>
+            </div>
+            <button onclick="window.open('historia_animada.html', '_blank')" class="btn primary"
+                title="Ver História da Física"
+                style="background: linear-gradient(90deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%); color: #5e2a40;">
+                <i class="fas fa-history"></i> História
+            </button>
+        </header>
+
+        <div class="nav-container">
+            <div class="nav-tabs">
+                <div class="nav-indicator" id="navIndicator"></div>
+                <div class="nav-tab active" data-tab="laboratorios">
+                    <i class="fas fa-flask"></i>
+                    Laboratórios
+                </div>
+                <div class="nav-tab" data-tab="noticias">
+                    <i class="fas fa-newspaper"></i>
+                    Notícias
+                </div>
+                <div class="nav-tab" data-tab="sobre">
+                    <i class="fas fa-users"></i>
+                    Sobre Nós
+                </div>
+            </div>
+        </div>
+
+        <main>
+            <section class="content-section active" id="laboratorios">
+                <div class="grid" id="cardsGrid" aria-live="polite"></div>
+            </section>
+
+            <section class="content-section" id="noticias">
+                <div class="news-container">
+                    <h2 style="text-align:center;color:var(--accent);margin-bottom:10px">Notícias</h2>
+                    <p class="lead" style="text-align:center;margin:0 auto">Fique por dentro das novidades e
+                        atualizações</p>
+
+                    <div class="news-card">
+                        <div class="news-badge">NOVO</div>
+                        <div class="news-header">
+                            <h3 class="news-title">Laboratório de Empuxo Lançado</h3>
+                            <span class="news-date">01/11/2025</span>
+                        </div>
+                        <div class="news-content">
+                            <p>É com grande satisfação que anunciamos o lançamento do nosso mais recente laboratório:
+                                <strong>Empuxo</strong>!</p>
+
+                            <div class="news-highlight">
+                                <p>O novo laboratório permite explorar o princípio de Arquimedes de forma interativa,
+                                    com simulações de corpos imersos em fluidos e cálculo do empuxo em tempo real.</p>
+                            </div>
+
+                            <p>Com este laboratório, você pode:</p>
+                            <ul style="margin-left: 20px; margin-bottom: 15px;">
+                                <li>Visualizar a força de empuxo atuando em diferentes objetos</li>
+                                <li>Ajustar a densidade do fluido e dos objetos</li>
+                                <li>Observar o comportamento de objetos flutuantes, suspensos e afundando</li>
+                                <li>Calcular o volume deslocado e comparar com a teoria</li>
+                            </ul>
+
+                            <p>Este laboratório é ideal para estudantes que estão aprendendo hidrostática e princípios
+                                de flutuação. Acesse agora e experimente!</p>
+                        </div>
+                        <div class="actions">
+                            <button class="btn primary" onclick="openLab('Empuxo')">
+                                <i class="fas fa-external-link-alt"></i> Acessar Laboratório de Empuxo
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="news-card">
+                        <div class="news-badge">NOVO</div>
+                        <div class="news-header">
+                            <h3 class="news-title">Nova Série: Laboratórios de Hidrostática</h3>
+                            <span class="news-date">28/10/2025</span>
+                        </div>
+                        <div class="news-content">
+                            <p>Acabamos de lançar uma nova série de laboratórios focados em hidrostática, incluindo:</p>
+
+                            <div class="news-highlight">
+                                <p><strong>Princípio de Stevin:</strong> Explore a relação entre pressão e profundidade
+                                    em fluidos, com visualização das forças atuantes em diferentes níveis.</p>
+                            </div>
+
+                            <div class="news-highlight">
+                                <p><strong>Princípio de Pascal:</strong> Simule a transmissão de pressão em fluidos e
+                                    entenda o funcionamento de prensas hidráulicas.</p>
+                            </div>
+
+                            <div class="news-highlight">
+                                <p><strong>Densidade:</strong> Compare densidades de diferentes materiais e observe como
+                                    isso afeta a flutuação e o empuxo.</p>
+                            </div>
+
+                            <p>Estes laboratórios complementam o estudo de fluidos em repouso e são fundamentais para
+                                entender fenômenos do cotidiano e aplicações tecnológicas.</p>
+                        </div>
+                        <div class="actions">
+                            <button class="btn primary" onclick="openLab('stevin')">
+                                <i class="fas fa-external-link-alt"></i> Acessar Stevin
+                            </button>
+                            <button class="btn primary" onclick="openLab('pascal')">
+                                <i class="fas fa-external-link-alt"></i> Acessar Pascal
+                            </button>
+                            <button class="btn primary" onclick="openLab('densidade')">
+                                <i class="fas fa-external-link-alt"></i> Acessar Densidade
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="news-card">
+                        <div class="news-badge">NOVO</div>
+                        <div class="news-header">
+                            <h3 class="news-title">Laboratórios de Eletromagnetismo e Óptica</h3>
+                            <span class="news-date">25/10/2025</span>
+                        </div>
+                        <div class="news-content">
+                            <p>Expandimos nossa coleção com novos laboratórios de eletromagnetismo e óptica:</p>
+
+                            <div class="news-highlight">
+                                <p><strong>Lei de Coulomb:</strong> Simule interações entre cargas elétricas e visualize
+                                    linhas de campo elétrico.</p>
+                            </div>
+
+                            <div class="news-highlight">
+                                <p><strong>Capacitores:</strong> Explore o armazenamento de energia em capacitores e
+                                    como eles funcionam em circuitos.</p>
+                            </div>
+
+                            <div class="news-highlight">
+                                <p><strong>Refração:</strong> Observe como a luz se comporta ao passar por diferentes
+                                    meios e entenda as leis da refração.</p>
+                            </div>
+
+                            <div class="news-highlight">
+                                <p><strong>Fenda Dupla:</strong> Visualize o famoso experimento que demonstra a natureza
+                                    ondulatória da luz.</p>
+                            </div>
+
+                            <p>Estes laboratórios trazem conceitos fundamentais da física moderna de forma interativa e
+                                acessível.</p>
+                        </div>
+                        <div class="actions">
+                            <button class="btn primary" onclick="openLab('columb')">
+                                <i class="fas fa-external-link-alt"></i> Acessar Coulomb
+                            </button>
+                            <button class="btn primary" onclick="openLab('Capacitor')">
+                                <i class="fas fa-external-link-alt"></i> Acessar Capacitor
+                            </button>
+                            <button class="btn primary" onclick="openLab('Refração')">
+                                <i class="fas fa-external-link-alt"></i> Acessar Refração
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="news-card">
+                        <div class="news-badge">NOVO</div>
+                        <div class="news-header">
+                            <h3 class="news-title">Laboratórios de Mecânica e Física Moderna</h3>
+                            <span class="news-date">20/10/2025</span>
+                        </div>
+                        <div class="news-content">
+                            <p>Mais laboratórios foram adicionados para explorar conceitos de mecânica e física moderna:
+                            </p>
+
+                            <div class="news-highlight">
+                                <p><strong>Lei de Hooke:</strong> Investigue a relação entre força e deformação em molas
+                                    e determine constantes elásticas.</p>
+                            </div>
+
+                            <div class="news-highlight">
+                                <p><strong>Deflexão de Partículas:</strong> Simule o movimento de partículas carregadas
+                                    em campos magnéticos.</p>
+                            </div>
+
+                            <div class="news-highlight">
+                                <p><strong>Modelo de Bohr:</strong> Explore o modelo atômico de Bohr e transições entre
+                                    níveis de energia.</p>
+                            </div>
+
+                            <div class="news-highlight">
+                                <p><strong>Sistema Massa-Mola:</strong> Analise oscilações em sistemas massa-mola e
+                                    determine períodos de oscilação.</p>
+                            </div>
+
+                            <p>Estes laboratórios oferecem uma abordagem prática para conceitos que muitas vezes são
+                                apresentados apenas teoricamente.</p>
+                        </div>
+                        <div class="actions">
+                            <button class="btn primary" onclick="openLab('hoock')">
+                                <i class="fas fa-external-link-alt"></i> Acessar Hooke
+                            </button>
+                            <button class="btn primary" onclick="openLab('Deflexão de Partículas')">
+                                <i class="fas fa-external-link-alt"></i> Acessar Deflexão
+                            </button>
+                            <button class="btn primary" onclick="openLab('bohr')">
+                                <i class="fas fa-external-link-alt"></i> Acessar Bohr
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="news-card">
+                        <div class="news-header">
+                            <h3 class="news-title">Atualização de Interface</h3>
+                            <span class="news-date">15/10/2025</span>
+                        </div>
+                        <div class="news-content">
+                            <p>Melhoramos a interface do usuário em vários laboratórios para proporcionar uma
+                                experiência mais fluida e intuitiva.</p>
+                            <p>As principais mudanças incluem:</p>
+                            <ul style="margin-left: 20px;">
+                                <li>Controles mais responsivos</li>
+                                <li>Visualizações aprimoradas</li>
+                                <li>Melhor organização dos parâmetros ajustáveis</li>
+                                <li>Novos recursos de acessibilidade</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="content-section" id="sobre">
+                <div style="max-width: 800px; margin: 0 auto;">
+                    <h2 style="text-align:center;color:var(--accent);margin-bottom:10px">Sobre Nós</h2>
+                    <p class="lead" style="text-align:center;margin:0 auto">Uma paixão por física e educação</p>
+
+                    <div
+                        style="background: var(--glass); border-radius: 16px; padding: 30px; margin-top: 20px; border: 1px solid rgba(255,255,255,0.03); box-shadow: var(--shadow);">
+                        <p>Somos uma iniciativa comprometida em tornar o aprendizado de física acessível, envolvente e
+                            interativo para todos.</p>
+
+                        <div
+                            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 30px;">
+                            <div
+                                style="background: var(--glass-2); border-radius: 12px; padding: 20px; text-align: center; transition: var(--transition);">
+                                <div
+                                    style="width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 15px; background: linear-gradient(135deg, var(--accent), var(--accent-3)); display: flex; align-items: center; justify-content: center; font-size: 32px; color: white;">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <h3>Josué</h3>
+                                <p class="desc">Desenvolvedor & Criador</p>
+                                <p style="font-size: 13px; color: var(--muted); margin-top: 10px;">Criador da plataforma
+                                    e responsável por todos os simuladores interativos e desenvolvimento do projeto</p>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:30px;padding:20px;background:rgba(255,255,255,0.02);border-radius:10px;">
+                            <h3 style="color:var(--accent);margin-top:0">Nossa Missão</h3>
+                            <p>Democratizar o acesso ao conhecimento físico por meio de tecnologia, criando experiências
+                                de aprendizado imersivas que tornam conceitos complexos intuitivos e acessíveis.</p>
+                        </div>
+
+                        <div style="margin-top:30px;padding:20px;background:rgba(255,255,255,0.02);border-radius:10px;">
+                            <h3 style="color:var(--accent);margin-top:0">Recursos Disponíveis</h3>
+                            <p>Nossa plataforma oferece mais de 25 laboratórios interativos cobrindo diversas áreas da
+                                física:</p>
+                            <ul style="margin-left: 20px; margin-top: 10px;">
+                                <li>Mecânica Clássica</li>
+                                <li>Termodinâmica</li>
+                                <li>Eletromagnetismo</li>
+                                <li>Óptica</li>
+                                <li>Física Moderna</li>
+                                <li>Hidrostática</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <p class="footer-note">Feito por: Josué — objetivo: fórum de construção de programas educacionais sem custo</p>
+        <br>
+        <p class="footer-note">README.md</p>
+    </div>
+
+    <div class="floating-btn" id="scrollTopBtn">
+        <i class="fas fa-arrow-up"></i>
+    </div>
+
+    <script>
+        // Laboratórios disponíveis com descrições aprimoradas
+        const LABS = [
+            {
+                id: 'vetores',
+                title: 'Vetores',
+                desc: 'Editor completo de vetores com operações de soma, subtração, decomposição em componentes e arraste interativo no plano cartesiano. Visualize magnitudes, direções e resultantes em tempo real.',
+                href: 'vetor.html',
+                img: 'vet.png'
+            },
+            {
+                id: 'lorentz',
+                title: 'Fator de Lorentz',
+                desc: 'Simulador avançado do fator de Lorentz γ(β) com gráficos interativos. Observe a contração do espaço e dilatação do tempo conforme a velocidade se aproxima da velocidade da luz.',
+                href: 'lorenz.html',
+                img: 'lorenz.png'
+            },
+            {
+                id: 'circuitos',
+                title: 'Circuitos',
+                desc: 'Laboratório completo de circuitos elétricos com leis de Kirchhoff. Monte esquemas complexos com resistores, capacitores e fontes. Visualize correntes, tensões e potências em tempo real.',
+                href: 'circuitos.html',
+                img: 'circ.png'
+            },
+            {
+                id: 'queda',
+                title: 'Queda Livre',
+                desc: 'Simulador comparativo de queda livre com e sem resistência do ar. Ajuste massa, área e coeficiente de arrastre. Analise gráficos de posição, velocidade e aceleração.',
+                href: 'queda_lv_cs.html',
+                img: 'quedA.png'
+            },
+            {
+                id: 'grav',
+                title: 'Gravitação',
+                desc: 'Simulador de interações gravitacionais e órbitas planetárias. Experimente colisões, encontros próximos e trocas de energia entre corpos celestes. Visualize campos gravitacionais.',
+                href: 'gravitação.html',
+                img: 'gravitaçao.png'
+            },
+            {
+                id: 'quark',
+                title: 'Quark',
+                desc: 'Animação interativa de partículas subatômicas. Arraste quarks para formar hádrons e observe emissões, decaimentos e interações fundamentais da física de partículas.',
+                href: 'quarck.html',
+                img: 'quarck.png'
+            },
+            {
+                id: 'termo1',
+                title: 'Termodinâmica 1',
+                desc: 'Introdução aos conceitos fundamentais de termodinâmica: temperatura, calor, energia térmica e equilíbrio térmico. Simule transferência de calor entre corpos.',
+                href: 'termo1.html',
+                img: 'termo1.png'
+            },
+            {
+                id: 'termo2',
+                title: 'Termodinâmica 2',
+                desc: 'Exploração das leis da termodinâmica e transformações gasosas. Simule processos isotérmicos, isobáricos, isocóricos e adiabáticos com visualizações de PVT.',
+                href: 'termo2.html',
+                img: 'termo2.png'
+            },
+            {
+                id: 'termo3',
+                title: 'Termodinâmica 3',
+                desc: 'Máquinas térmicas, ciclos termodinâmicos e eficiência energética. Analise ciclos de Carnot, Stirling e motores reais com cálculos de trabalho e calor trocado.',
+                href: 'termo3.html',
+                img: 'termo3.png'
+            },
+            {
+                id: 'tabela',
+                title: 'Tabela Periódica',
+                desc: 'Tabela periódica interativa completa com propriedades físicas e químicas dos elementos. Explore configurações eletrônicas, raios atômicos e tendências periódicas.',
+                href: 'tabela.html',
+                img: 'tabela.png'
+            },
+            {
+                id: 'vestibular',
+                title: 'Questões de Vestibular',
+                desc: 'Banco de questões de física com resolução passo a passo e explicações detalhadas. Pratique com problemas de mecânica, termodinâmica, eletromagnetismo e óptica.',
+                href: 'vestibular.html',
+                img: 'vestibular.png'
+            },
+            {
+                id: 'pendulo',
+                title: 'Pêndulo Simples e Duplo',
+                desc: 'Simulador de pêndulo simples e duplo com variação de parâmetros. Analise períodos, energias e movimentos caóticos. Visualize trajetórias e diagramas de fase.',
+                href: 'pendulo.html',
+                img: 'pendulo.png'
+            },
+            {
+                id: 'chernkov',
+                title: 'Radiação Cherenkov',
+                desc: 'Simulador do efeito Cherenkov com partículas superluminais em meios dielétricos. Observe o cone de luz característico e explore aplicações em física nuclear.',
+                href: 'chernkov.html',
+                img: 'chernkov.png'
+            },
+            {
+                id: 'Lentes',
+                title: 'Lentes e Espelhos',
+                desc: 'Laboratório completo de óptica geométrica. Simule formação de imagens em lentes convergentes/divergentes e espelhos esféricos. Ajuste distâncias focais e posições de objetos.',
+                href: 'lente1.html',
+                img: 'lente.png'
+            },
+            {
+                id: 'Capacitor',
+                title: 'Capacitores',
+                desc: 'Laboratório de capacitores e circuitos RC. Explore carregamento e descarregamento, constantes de tempo, associações série/paralelo e energia armazenada em campos elétricos.',
+                href: 'capacitor.html',
+                img: 'capacitor.png'
+            },
+            {
+                id: 'Refração',
+                title: 'Refração da Luz',
+                desc: 'Simulador de refração e reflexão da luz. Explore as leis de Snell-Descartes, ângulos críticos, reflexão total e dispersão cromática em prismas.',
+                href: 'ref.html',
+                img: 'ref.png'
+            },
+            {
+                id: 'Deflexão de Partículas',
+                title: 'Deflexão de Partículas',
+                desc: 'Laboratório de movimento de partículas carregadas em campos elétricos e magnéticos. Simule seletores de velocidade, espectrômetros de massa e aplicações em aceleradores.',
+                href: 'desvio.html',
+                img: 'desvio.png'
+            },
+            {
+                id: 'Empuxo',
+                title: 'Empuxo - Princípio de Arquimedes',
+                desc: 'Laboratório interativo do princípio de Arquimedes. Explore flutuação, densidade relativa e cálculo de empuxo. Teste diferentes fluidos e materiais com visualização de forças.',
+                href: 'empuxo.html',
+                img: 'empuxo.png'
+            },
+            {
+                id: 'columb',
+                title: 'Lei de Coulomb',
+                desc: 'Simulador da lei de Coulomb para interações eletrostáticas. Visualize campos elétricos, linhas de força e potencial elétrico. Teste diferentes configurações de cargas.',
+                href: 'culomb.html',
+                img: 'culomb.png'
+            },
+            {
+                id: 'hoock',
+                title: 'Lei de Hooke',
+                desc: 'Laboratório de elasticidade e lei de Hooke. Determine constantes elásticas de molas, explore regimes elástico e plástico, e analise sistemas massa-mola em oscilação.',
+                href: 'hoock.html',
+                img: 'hoock.png'
+            },
+            {
+                id: 'densidade',
+                title: 'Densidade e Flutuação',
+                desc: 'Laboratório de densidade e princípios de flutuação. Compare densidades de materiais, determine densidades desconhecidas e explore o conceito de densidade relativa.',
+                href: 'densidade.html',
+                img: 'densidade.png'
+            },
+            {
+                id: 'stevin',
+                title: 'Princípio de Stevin',
+                desc: 'Simulador do princípio de Stevin para hidrostática. Explore a relação entre pressão e profundidade em fluidos. Visualize pressões em diferentes pontos e vasos comunicantes.',
+                href: 'stevin.html',
+                img: 'stevin.png'
+            },
+            {
+                id: 'pascal',
+                title: 'Princípio de Pascal',
+                desc: 'Laboratório do princípio de Pascal e prensas hidráulicas. Simule a transmissão de pressão em fluidos incompressíveis e calcule forças de entrada e saída em sistemas hidráulicos.',
+                href: 'pascal.html',
+                img: 'pascal.png'
+            },
+            {
+                id: 'Fenda dupla',
+                title: 'Experimento da Fenda Dupla',
+                desc: 'Simulador do famoso experimento da fenda dupla de Young. Observe padrões de interferência e difração, explore dualidade onda-partícula e ajuste parâmetros experimentais.',
+                href: 'dpfenda.html',
+                img: 'fenda.png'
+            },
+            {
+                id: 'bohr',
+                title: 'Modelo Atômico de Bohr',
+                desc: 'Laboratório do modelo atômico de Bohr. Visualize órbitas eletrônicas, transições entre níveis de energia e espectros de emissão/absorção. Calcule energias de fótons emitidos.',
+                href: 'bohr.html',
+                img: 'bohr.png'
+            },
+            {
+                id: 'mola',
+                title: 'Sistema Massa-Mola',
+                desc: 'Simulador avançado de sistemas massa-mola. Explore oscilações livres, amortecidas e forçadas. Analise ressonância, frequências naturais e fatores de amortecimento.',
+                href: 'mola3.html',
+                img: 'mola.png'
+            },
+            {
+                id: 'funcao sen e cos',
+                title: 'Funções Seno e Cosseno',
+                desc: 'Gráfico interativo de funções trigonométricas. Ajuste amplitude, frequência, fase e deslocamento vertical. Calcule integrais entre pontos selecionados, visualize raízes e explore propriedades das funções seno e cosseno com animações suaves e responsivas.',
+                href: 'sc.html',
+                img: 'sc.png'
+            },
+            {
+                id: 'Deflexão de Partículas De ruterford(colombiana)',
+                title: 'Deflexão de Partículas De ruterford(colombiana)',
+                desc: 'Simulador avançado de Deflexão de Partículas De ruterford(colombiana) veja como particulas interagem com o atomo.',
+                href: 'espalhamento.html',
+                img: 'espalhamento.png'
+            },
+            {
+                id: '3 corpos ',
+                title: 'Problema dos Três Corpos 3D',
+                desc: 'Simulação gravitacional 3D interativa do problema dos três corpos. Explore configurações presets como órbita em figura-8, pontos de Lagrange e sistemas caóticos. Visualize trajetórias, vetores de velocidade e ajuste massas, constante gravitacional e condições iniciais.',
+                href: 'tres_corpos_3d.html',
+                img: 'tres_corpos_3d.png'
+            },
+            {
+                id: 'empuxo 3d',
+                title: 'Empuxo 3D - Princípio de Arquimedes',
+                desc: 'Simulação 3D interativa do Princípio de Arquimedes. Selecione diferentes materiais (cortiça, madeira, alumínio, ferro, chumbo), ajuste volumes, densidades de fluidos customizados e visualize forças de empuxo, peso e resultante em tempo real com animações físicas realistas.',
+                href: 'empuxo3D.html',
+                img: 'empuxo3D.png'
+            },
+            {
+                id: 'fourier',
+                title: 'Série de Fourier',
+                desc: 'Visualize como ondas complexas são formadas pela soma de ondas senoidais simples. Explore diferentes tipos de ondas (quadrada, dente de serra, triangular, retificada, pulso) ajustando o número de termos, espaçamento e velocidade da animação.',
+                href: 'fourier.html',
+                img: 'fourier.png'
+            },
+            {
+                id: 'grav2',
+                title: 'Gravitação Universal',
+                desc: 'Simulador da Lei da Gravitação Universal de Newton. Visualize forças gravitacionais entre corpos celestes (Sol, Terra, Júpiter, Lua) ou customizados. Ajuste distâncias, massas e observe vetores de força com animações e detecção de colisões.',
+                href: 'grav2.html',
+                img: 'grav2.png'
+            },
+            {
+                id: 'pendulo 3d',
+                title: 'Pêndulo Esférico 3D',
+                desc: 'Simulação 3D de pêndulo esférico com câmera livre. Ajuste comprimento, ângulo inicial, velocidade e gravidade. Controle a câmera com mouse: arraste para rotacionar, scroll para zoom e botão direito para mover. Física realista com movimento em 3 dimensões.',
+                href: 'pendulo3d.html',
+                img: 'pendulo3d.png'
+            },
+            {
+                id: 'gravidade',
+                title: 'Gravidade e Queda Livre 3D',
+                desc: 'Sandbox 3D de física gravitacional. Adicione objetos (esferas, cubos, cilindros, cones) e experimente com diferentes gravidades (Lua, Marte, Terra, Júpiter), resistência do ar, atrito e elasticidade. Visualize energia cinética, potencial e observe comportamentos físicos realistas.',
+                href: 'gravidade.html',
+                img: 'gravidade.png'
+            },
+            {
+                id: 'onda',
+                title: 'Ondas',
+                desc: 'Controle frequencia inetencidade frequencia e tipo de onda e muito mais',
+                href: 'ondas_agua_fendas.html',
+                img: 'ondas_agua_fenda.png'
+            },
+            {
+                id: 'ondas',
+                title: 'Onda',
+                desc: 'Controle frequencia inetencidade frequencia e tipo de onda e muito mais',
+                href: 'ondas.html',
+                img: 'ondas.png'
+            },
+        ];
+
+        // Variáveis globais
+        let selectedLab = null;
+        let rouletteInterval = null;
+        let currentRouletteIndex = 0;
+
+        // Inicialização dos elementos da página
+        function initPage() {
+            initParticles();
+            initNavigation();
+            initScrollTop();
+            initLabs();
+            initSearch();
+            initExplore();
+        }
+
+        // Sistema de partículas de fundo
+        function initParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 30;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                const size = Math.random() * 6 + 2;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${Math.random() * 100}%`;
+                const colors = ['#39a2ff', '#6fb8ff', '#9b7dff', '#58e6ff'];
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.animationDelay = `${Math.random() * 15}s`;
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Sistema de navegação por abas
+        function initNavigation() {
+            const tabs = document.querySelectorAll('.nav-tab');
+            const indicator = document.getElementById('navIndicator');
+            const sections = document.querySelectorAll('.content-section');
+
+            // Posicionar indicador na aba ativa inicial
+            const activeTab = document.querySelector('.nav-tab.active');
+            if (activeTab) {
+                const tabRect = activeTab.getBoundingClientRect();
+                const containerRect = activeTab.parentElement.getBoundingClientRect();
+                indicator.style.width = `${tabRect.width}px`;
+                indicator.style.left = `${tabRect.left - containerRect.left}px`;
+            }
+
+            // Adicionar eventos de clique nas abas
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetTab = tab.dataset.tab;
+
+                    // Atualizar abas ativas
+                    tabs.forEach(t => t.classList.remove('active'));
+                    sections.forEach(s => s.classList.remove('active'));
+
+                    tab.classList.add('active');
+                    document.getElementById(targetTab).classList.add('active');
+
+                    // Atualizar posição do indicador
+                    const tabRect = tab.getBoundingClientRect();
+                    const containerRect = tab.parentElement.getBoundingClientRect();
+                    indicator.style.width = `${tabRect.width}px`;
+                    indicator.style.left = `${tabRect.left - containerRect.left}px`;
+                });
+            });
+        }
+
+        // Sistema de scroll para o topo
+        function initScrollTop() {
+            const scrollBtn = document.getElementById('scrollTopBtn');
+
+            // Mostrar/ocultar botão baseado na posição de rolagem
+            window.addEventListener('scroll', () => {
+                if (window.pageYOffset > 300) {
+                    scrollBtn.classList.add('visible');
+                } else {
+                    scrollBtn.classList.remove('visible');
+                }
+            });
+
+            // Rolar para o topo quando clicar no botão
+            scrollBtn.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+
+        // Sistema de laboratórios
+        function initLabs() {
+            const cardsGrid = document.getElementById('cardsGrid');
+
+            // Criar cards para cada laboratório
+            LABS.forEach(lab => {
+                const card = document.createElement('article');
+                card.className = 'card';
+                card.dataset.lab = lab.id;
+                card.innerHTML = `
+                    <div class="tag">Laboratório</div>
+                    <div class="thumb" aria-hidden="true">
+                        <img loading="lazy" src="${lab.img}" alt="${lab.title} imagem" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100%\" height=\"100%\"><rect width=\"100%\" height=\"100%\" fill=\"%23071a2a\"/></svg>'">
+                    </div>
+                    <h3 class="title">${lab.title}</h3>
+                    <p class="desc">${lab.desc}</p>
+                    <div class="actions">
+                        <button class="btn primary" data-open="${lab.id}">
+                            <i class="fas fa-external-link-alt"></i> Abrir Laboratório
+                        </button>
+                        <button class="btn" data-info="${lab.id}">
+                            <i class="fas fa-info-circle"></i> Detalhes
+                        </button>
+                    </div>
+                    <div class="card-meta">
+                        <span class="pulse" aria-hidden></span>
+                        <span>conteúdo completo com exemplos passo a passo</span>
+                    </div>
+                `;
+
+                // Adicionar eventos aos botões
+                card.querySelector('[data-open]').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openLab(lab.id);
+                });
+
+                card.querySelector('[data-info]').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showLabInfo(lab);
+                });
+
+                // Abrir laboratório ao clicar no card
+                card.addEventListener('click', () => {
+                    openLab(lab.id);
+                });
+
+                cardsGrid.appendChild(card);
+            });
+        }
+
+        // Sistema de busca
+        function initSearch() {
+            const searchInput = document.getElementById('search');
+
+            searchInput.addEventListener('input', () => {
+                const query = searchInput.value.trim().toLowerCase();
+                const cards = document.querySelectorAll('.card[data-lab]');
+
+                cards.forEach(card => {
+                    const title = card.querySelector('.title').textContent.toLowerCase();
+                    const desc = card.querySelector('.desc').textContent.toLowerCase();
+
+                    if (!query || title.includes(query) || desc.includes(query)) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // Sistema de exploração aleatória
+        function initExplore() {
+            const exploreBtn = document.getElementById('openLabs');
+            const modal = document.getElementById('exploreModal');
+            const confirmBtn = document.getElementById('confirmExplore');
+            const cancelBtn = document.getElementById('cancelExplore');
+            const roulette = document.getElementById('roulette');
+            const selectedLabInfo = document.getElementById('selectedLabInfo');
+            const selectedLabTitle = document.getElementById('selectedLabTitle');
+            const selectedLabDesc = document.getElementById('selectedLabDesc');
+
+            // Preencher a roleta com os laboratórios
+            LABS.forEach(lab => {
+                const item = document.createElement('div');
+                item.className = 'roulette-item';
+                item.dataset.id = lab.id;
+                item.innerHTML = `
+                    <div class="roulette-title">${lab.title}</div>
+                    <div class="roulette-desc">${lab.desc}</div>
+                `;
+                roulette.appendChild(item);
+            });
+
+            // Abrir modal ao clicar no botão Explorar
+            exploreBtn.addEventListener('click', () => {
+                modal.classList.add('active');
+                selectedLabInfo.style.display = 'none';
+                startRoulette();
+            });
+
+            // Confirmar seleção
+            confirmBtn.addEventListener('click', () => {
+                if (selectedLab) {
+                    modal.classList.remove('active');
+                    stopRoulette();
+                    openLab(selectedLab);
+                }
+            });
+
+            // Cancelar seleção
+            cancelBtn.addEventListener('click', () => {
+                modal.classList.remove('active');
+                stopRoulette();
+            });
+
+            // Fechar modal ao clicar fora
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                    stopRoulette();
+                }
+            });
+
+            // Função para atualizar informações do laboratório selecionado
+            function updateSelectedLabInfo(labId) {
+                const lab = LABS.find(l => l.id === labId);
+                if (lab) {
+                    selectedLabTitle.textContent = lab.title;
+                    selectedLabDesc.textContent = lab.desc;
+                    selectedLabInfo.style.display = 'block';
+                }
+            }
+
+            // Função para iniciar a roleta
+            function startRoulette() {
+                const items = roulette.querySelectorAll('.roulette-item');
+
+                // Parar qualquer animação anterior
+                stopRoulette();
+
+                // Resetar estado visual
+                items.forEach(item => item.classList.remove('active'));
+
+                // Iniciar animação
+                currentRouletteIndex = 0;
+                items[currentRouletteIndex].classList.add('active');
+                selectedLab = items[currentRouletteIndex].dataset.id;
+                updateSelectedLabInfo(selectedLab);
+
+                rouletteInterval = setInterval(() => {
+                    // Remover destaque do item atual
+                    items[currentRouletteIndex].classList.remove('active');
+
+                    // Avançar para o próximo item
+                    currentRouletteIndex = (currentRouletteIndex + 1) % items.length;
+
+                    // Destacar novo item
+                    items[currentRouletteIndex].classList.add('active');
+
+                    // Atualizar laboratório selecionado
+                    selectedLab = items[currentRouletteIndex].dataset.id;
+                    updateSelectedLabInfo(selectedLab);
+                }, 150);
+
+                // Parar automaticamente após alguns segundos
+                setTimeout(() => {
+                    stopRoulette();
+
+                    // Selecionar um laboratório aleatório final
+                    const randomIndex = Math.floor(Math.random() * items.length);
+                    items.forEach(item => item.classList.remove('active'));
+                    items[randomIndex].classList.add('active');
+                    selectedLab = items[randomIndex].dataset.id;
+                    updateSelectedLabInfo(selectedLab);
+                }, 3000);
+            }
+
+            // Função para parar a roleta
+            function stopRoulette() {
+                if (rouletteInterval) {
+                    clearInterval(rouletteInterval);
+                    rouletteInterval = null;
+                }
+            }
+        }
+
+        // Abrir laboratório
+        function openLab(id) {
+            const lab = LABS.find(l => l.id === id);
+            if (!lab) return;
+
+            showToast(`Abrindo: ${lab.title}`);
+
+            // Abrir o laboratório em uma nova aba
+            setTimeout(() => {
+                window.open(lab.href, '_blank');
+            }, 500);
+        }
+
+        // Mostrar informações do laboratório
+        function showLabInfo(lab) {
+            showToast(`Informações: ${lab.title} - ${lab.desc}`);
+        }
+
+        // Mostrar notificação toast
+        function showToast(message) {
+            // Criar elemento toast
+            const toast = document.createElement('div');
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                left: 50%;
+                top: 20%;
+                transform: translateX(-50%);
+                background: linear-gradient(90deg, rgba(57,162,255,0.9), rgba(107,184,255,0.7));
+                padding: 12px 18px;
+                border-radius: 10px;
+                color: #fff;
+                z-index: 1000;
+                box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+                font-weight: 600;
+                max-width: 80%;
+                text-align: center;
+            `;
+
+            document.body.appendChild(toast);
+
+            // Remover toast após alguns segundos
+            setTimeout(() => {
+                toast.style.transition = 'opacity 0.5s';
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 500);
+            }, 2000);
+        }
+
+        // Inicializar a página quando o DOM estiver carregado
+        document.addEventListener('DOMContentLoaded', initPage);
+    </script>
+</body>
+
+</html>

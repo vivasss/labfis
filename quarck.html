@@ -1,0 +1,2054 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Simulador de Quarks & Glúons — Josué JR</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #071028;
+      --card: #0f1724;
+      --muted: #94a3b8;
+      --primary: #8a2be2;
+      --accent: #00bfff;
+      --success: #10b981;
+      --warning: #f59e0b;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: all 0.3s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, 'Segoe UI', Roboto, Arial;
+      background: linear-gradient(180deg, #071028 0%, #071021 60%);
+      color: #e6eef8;
+      min-height: 100vh;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+
+    header {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: textGlow 3s infinite alternate;
+    }
+
+    .tab-container {
+      display: flex;
+      background: var(--card);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .tab {
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tab:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .tab.active {
+      background: var(--primary);
+      font-weight: 700;
+      box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
+    }
+
+    .tab::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 3px;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    .tab.active::after {
+      width: 100%;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 18px;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 18px;
+      height: calc(100vh - 134px);
+      padding: 0 18px 18px;
+      animation: slideUp 0.6s ease-out;
+    }
+
+    .simulation-container {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .simulation-container::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(138, 43, 226, 0.05) 0%, transparent 70%);
+      animation: rotate 20s linear infinite;
+      pointer-events: none;
+    }
+
+    #simCanvas {
+      width: 100%;
+      height: 560px;
+      border-radius: 8px;
+      background: transparent;
+      display: block;
+      animation: canvasAppear 1s ease-out;
+      touch-action: none;
+    }
+
+    .info-panel {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .info-card {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      border-left: 3px solid var(--primary);
+      position: relative;
+      overflow: hidden;
+      animation: cardSlideIn 0.5s ease-out;
+    }
+
+    .info-card:nth-child(2) {
+      border-left-color: var(--accent);
+      animation-delay: 0.1s;
+    }
+
+    .info-card:nth-child(3) {
+      border-left-color: var(--success);
+      animation-delay: 0.2s;
+    }
+
+    .info-card:nth-child(4) {
+      border-left-color: var(--warning);
+      animation-delay: 0.3s;
+    }
+
+    .info-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .info-card:hover::before {
+      left: 100%;
+    }
+
+    .info-card .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .info-card .value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .controls {
+      background: var(--card);
+      padding: 16px;
+      border-radius: 12px;
+      height: 100%;
+      overflow-y: auto;
+      animation: slideInRight 0.6s ease-out;
+    }
+
+    .controls::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .controls::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    .controls::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 3px;
+    }
+
+    .group {
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .group:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .group:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+
+    .group:nth-child(4) {
+      animation-delay: 0.3s;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    input[type='range'] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type='range']::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+      transition: all 0.2s ease;
+    }
+
+    input[type='range']::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 10px rgba(138, 43, 226, 0.8);
+    }
+
+    input[type='number'],
+    select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.02);
+      color: inherit;
+      margin-bottom: 8px;
+      transition: all 0.3s ease;
+    }
+
+    input[type='number']:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background: linear-gradient(90deg, var(--primary), #6a0dad);
+      border: 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.secondary {
+      background: linear-gradient(90deg, #444, #666);
+    }
+
+    button.secondary:hover {
+      box-shadow: 0 5px 15px rgba(102, 102, 102, 0.4);
+    }
+
+    .muted {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .charts-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .chart-panel {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    .chart-panel:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .chart-container {
+      height: 240px;
+      width: 100%;
+    }
+
+    .explanation-container {
+      padding: 18px;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    .explanation-content {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      margin-bottom: 18px;
+    }
+
+    .explanation-content h2 {
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1.5rem;
+    }
+
+    .explanation-content h3 {
+      margin: 20px 0 10px;
+      color: var(--primary);
+      font-size: 1.2rem;
+    }
+
+    .explanation-content p {
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+
+    .explanation-content ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    .explanation-content li {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .highlight {
+      background: linear-gradient(90deg, transparent, rgba(138, 43, 226, 0.1), transparent);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .formula {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 12px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-family: monospace;
+      text-align: center;
+      border-left: 3px solid var(--accent);
+    }
+
+    .example {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 3px solid var(--success);
+    }
+
+    .concept-card {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 3px solid var(--primary);
+      transition: all 0.3s ease;
+    }
+
+    .concept-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .touch-hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      max-width: 80%;
+      z-index: 5;
+      animation: pulse 2s infinite;
+    }
+
+    /* Botão de ajuda flutuante */
+    .help-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      transition: all 0.3s ease;
+      border: none;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .help-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 25px rgba(138, 43, 226, 0.5);
+    }
+
+    .help-button:active {
+      transform: scale(0.95);
+    }
+
+    /* Painel de ajuda */
+    .help-panel {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 320px;
+      max-height: 70vh;
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      overflow-y: auto;
+      transform: translateY(20px);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    .help-panel.active {
+      transform: translateY(0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .help-panel h2 {
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .help-panel h3 {
+      margin: 15px 0 8px;
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+
+    .help-panel p {
+      margin-bottom: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .help-panel ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    .help-panel li {
+      margin-bottom: 6px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .help-panel .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .help-panel .close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    footer {
+      padding: 12px 20px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+      animation: fadeIn 1s ease-out;
+    }
+
+    /* Animações personalizadas */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes canvasAppear {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes cardSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes textGlow {
+      0% {
+        text-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+      }
+      100% {
+        text-shadow: 0 0 15px rgba(0, 191, 255, 0.8), 0 0 20px rgba(138, 43, 226, 0.6);
+      }
+    }
+
+    @keyframes rotate {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: 0.7;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0.7;
+      }
+    }
+
+    @keyframes particlePulse {
+      0% {
+        transform: scale(0.5);
+        opacity: 0;
+      }
+      50% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    /* Responsividade */
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+        height: auto;
+        padding-bottom: 18px;
+      }
+      
+      #simCanvas {
+        height: 420px;
+      }
+      
+      .info-panel {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .help-panel {
+        width: 280px;
+        right: 10px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .info-panel {
+        grid-template-columns: 1fr;
+      }
+      
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .tab-container {
+        width: 100%;
+      }
+      
+      .tab {
+        flex: 1;
+        text-align: center;
+        padding: 12px 8px;
+      }
+      
+      .simulation-container {
+        padding: 8px;
+      }
+      
+      #simCanvas {
+        height: 60vh;
+        min-height: 400px;
+      }
+      
+      .controls {
+        padding: 12px;
+      }
+      
+      button {
+        padding: 12px 16px;
+        font-size: 16px;
+      }
+      
+      .help-button {
+        width: 50px;
+        height: 50px;
+        bottom: 15px;
+        right: 15px;
+        font-size: 20px;
+      }
+      
+      .help-panel {
+        width: calc(100% - 30px);
+        right: 15px;
+        bottom: 75px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #simCanvas {
+        height: 50vh;
+        min-height: 350px;
+      }
+      
+      .touch-hint {
+        font-size: 14px;
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Simulador de Quarks & Glúons — Josué JR</h1>
+    <div class="tab-container">
+      <div class="tab active" data-tab="simulation">Simulação</div>
+      <div class="tab" data-tab="charts">Gráficos</div>
+      <div class="tab" data-tab="explanation">Explicação</div>
+    </div>
+  </header>
+
+  <div class="tab-content active" id="simulation-tab">
+    <main>
+      <div class="simulation-container">
+        <canvas id="simCanvas"></canvas>
+        
+        <div class="touch-hint" id="touchHint">
+          <p>💡 Clique em qualquer lugar para criar um múon</p>
+          <p>Arraste os múons para movê-los</p>
+          <p>Clique nos quarks para emitir glúons</p>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-card">
+            <div class="label">Quarks</div>
+            <div class="value" id="quarksCount">3</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Múons</div>
+            <div class="value" id="muonsCount">0</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Glúons</div>
+            <div class="value" id="gluonsCount">0</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Interações</div>
+            <div class="value" id="interactionsCount">0</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; display:flex; gap:10px;">
+          <button id="startBtn">Iniciar</button>
+          <button id="pauseBtn" class="secondary">Pausar</button>
+          <button id="resetBtn" class="secondary">Resetar</button>
+        </div>
+      </div>
+
+      <aside class="controls">
+        <div class="group">
+          <label><strong>Modo de Simulação</strong></label>
+          <select id="mode">
+            <option value="demo">Demo (Trio de Quarks)</option>
+            <option value="free">Múons Livres</option>
+          </select>
+        </div>
+
+        <div class="group">
+          <label><strong>Parâmetros Físicos</strong></label>
+          <div class="row">
+            <div style="flex:1">
+              <label class="small">Confinamento</label>
+              <input id="kRange" type="range" min="0" max="150" value="45">
+              <span id="confinementDisplay">0,45</span>
+            </div>
+          </div>
+          <div class="row">
+            <div style="flex:1">
+              <label class="small">Elasticidade</label>
+              <input id="eRange" type="range" min="0" max="100" value="85">
+              <span id="elasticityDisplay">0,85</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <label><strong>Velocidade da Simulação</strong></label>
+          <input id="simulationSpeed" type="range" min="1" max="10" value="5">
+          <span id="simulationSpeedDisplay">Normal</span>
+        </div>
+
+        <div class="group">
+          <label><strong>Visualização</strong></label>
+          <label class="small"><input id="showTrails" type="checkbox" checked> Mostrar rastros</label>
+          <label class="small"><input id="showSprings" type="checkbox" checked> Mostrar molas</label>
+          <label class="small"><input id="showLabels" type="checkbox" checked> Mostrar rótulos</label>
+          <label class="small"><input id="showGrid" type="checkbox"> Mostrar grade</label>
+          <label class="small"><input id="touchHintToggle" type="checkbox" checked> Mostrar dicas</label>
+        </div>
+        
+        <div class="group">
+          <label><strong>Configurações de Interação</strong></label>
+          <label class="small"><input id="freeMuons" type="checkbox" checked> Múons livres</label>
+          <label class="small"><input id="autoGluon" type="checkbox" checked> Emissão automática de glúons</label>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div class="tab-content" id="charts-tab">
+    <div class="charts-container" style="padding:12px 18px;">
+      <div class="chart-panel">
+        <h3 style="margin:0 0 8px 0">Distribuição de Partículas</h3>
+        <div class="chart-container"><canvas id="particlesChart"></canvas></div>
+      </div>
+
+      <div class="chart-panel" style="margin-top:10px">
+        <h3 style="margin:0 0 8px 0">Atividade de Glúons</h3>
+        <div class="chart-container"><canvas id="gluonsChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="explanation-tab">
+    <div class="explanation-container">
+      <div class="explanation-content">
+        <h2>Como Usar o Simulador</h2>
+        <p>Este simulador permite explorar as interações entre quarks e glúons de forma interativa:</p>
+        
+        <div class="concept-card">
+          <h3>Interação com Partículas</h3>
+          <p>Clique em qualquer lugar da tela para criar um múon. Arraste os múons para movê-los. Clique nos quarks para emitir glúons.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Modos de Simulação</h3>
+          <p>Use os diferentes modos para explorar cenários distintos:</p>
+          <ul>
+            <li><strong>Demo (Trio):</strong> Três quarks conectados por molas, simulando um próton</li>
+            <li><strong>Múons Livres:</strong> Múltiplos múons que interagem com quarks</li>
+          </ul>
+        </div>
+        
+        <p>Experimente diferentes configurações e observe como as partículas interagem!</p>
+      </div>
+
+      <div class="explanation-content">
+        <h2>O que são Quarks e Glúons?</h2>
+        <p>Os <span class="highlight">quarks</span> e <span class="highlight">glúons</span> são as partículas fundamentais que compõem os prótons, nêutrons e outras partículas subatômicas.</p>
+        
+        <div class="concept-card">
+          <h3>Quarks</h3>
+          <p>Os quarks são partículas elementares que nunca são encontradas isoladas na natureza devido ao confinamento. Existem seis tipos (ou "sabores") de quarks: up, down, charm, strange, top e bottom.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Glúons</h3>
+          <p>Os glúons são as partículas mediadoras da força forte, que mantém os quarks unidos. Eles carregam a "carga de cor" que permite a interação entre quarks.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Troca de Cor</h3>
+          <p>Quando quarks interagem, eles trocam glúons que carregam informações sobre a "cor" (um tipo de carga quântica). Esta troca é responsável pela força forte que mantém os núcleos atômicos unidos.</p>
+        </div>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Princípios da Cromodinâmica Quântica</h2>
+        
+        <div class="formula">
+          F = k × (r - r₀)
+        </div>
+        
+        <p>Onde:</p>
+        <ul>
+          <li><span class="highlight">F</span> é a força entre quarks</li>
+          <li><span class="highlight">k</span> é a constante de confinamento</li>
+          <li><span class="highlight">r</span> é a distância atual entre quarks</li>
+          <li><span class="highlight">r₀</span> é a distância de equilíbrio</li>
+        </ul>
+        
+        <p>Esta fórmula representa a força restauradora que mantém os quarks confinados. À medida que a distância aumenta, a força torna-se mais forte, impedindo que os quarks se separem.</p>
+        
+        <div class="example">
+          <h3>Confinamento de Quarks</h3>
+          <p>O confinamento é um dos princípios fundamentais da cromodinâmica quântica. Ele estabelece que quarks nunca são observados isoladamente, mas sempre em combinações chamadas hádrons (como prótons e nêutrons).</p>
+          <p>No simulador, você pode ajustar o parâmetro de confinamento para ver como isso afeta o comportamento dos quarks.</p>
+        </div>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Aplicações e Importância</h2>
+        
+        <p>O estudo de quarks e glúons tem aplicações importantes em várias áreas da física:</p>
+        
+        <ul>
+          <li><span class="highlight">Física Nuclear:</span> Compreensão da estrutura dos núcleos atômicos e das forças que os mantêm unidos.</li>
+          <li><span class="highlight">Cosmologia:</span> Estudo do universo primordial, onde quarks e glúons existiam em estado livre.</li>
+          <li><span class="highlight">Aceleradores de Partículas:</span> Experimentos no LHC e outros aceleradores estudam colisões de alta energia para entender a matéria fundamental.</li>
+          <li><span class="highlight">Tecnologia:</span> Pesquisa em física de partículas levou a desenvolvimentos em imageamento médico, como a ressonância magnética.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botão de ajuda flutuante -->
+  <button class="help-button" id="helpButton">?</button>
+
+  <!-- Painel de ajuda -->
+  <div class="help-panel" id="helpPanel">
+    <button class="close-btn" id="closeHelp">&times;</button>
+    <h2>💡 Como Usar o Simulador</h2>
+    
+    <h3>Interação com Partículas</h3>
+    <p>Você pode interagir diretamente com as partículas:</p>
+    <ul>
+      <li><strong>Clique em qualquer lugar:</strong> Cria um novo múon</li>
+      <li><strong>Arraste um múon:</strong> Move o múon para onde quiser</li>
+      <li><strong>Clique em um quark:</strong> Força a emissão de um glúon</li>
+      <li><strong>Os quarks estão fixos:</strong> Eles não podem ser movidos</li>
+    </ul>
+    
+    <h3>Modos de Simulação</h3>
+    <p>Escolha entre diferentes modos:</p>
+    <ul>
+      <li><strong>Demo (Trio):</strong> Três quarks conectados simulando um próton</li>
+      <li><strong>Múons Livres:</strong> Múltiplos múons interagindo</li>
+    </ul>
+    
+    <h3>Parâmetros Físicos</h3>
+    <p>Ajuste os parâmetros para ver diferentes comportamentos:</p>
+    <ul>
+      <li><strong>Confinamento:</strong> Controla a força que mantém quarks unidos</li>
+      <li><strong>Elasticidade:</strong> Define como as partículas ricocheteiam nas bordas</li>
+      <li><strong>Múons Livres:</strong> Quando ativado, múons se movem livremente</li>
+    </ul>
+    
+    <p style="margin-top: 15px; font-style: italic; text-align: center;">
+      Explore diferentes configurações e observe como as partículas fundamentais interagem!
+    </p>
+  </div>
+
+  <footer>Simulador de Quarks & Glúons — HTML5 & Canvas & Chart.js — Josué JR</footer>
+
+  <script>
+    // Canvas and context
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Charts variables
+    let particlesChart, gluonsChart;
+
+    // Chart data buffers
+    const chartData = { 
+      time: [], 
+      quarks: [], 
+      muons: [], 
+      gluons: [],
+      interactions: []
+    };
+    const maxDataPoints = 100;
+
+    // Controls
+    const mode = document.getElementById('mode');
+    const kRange = document.getElementById('kRange');
+    const eRange = document.getElementById('eRange');
+    const showTrails = document.getElementById('showTrails');
+    const showSprings = document.getElementById('showSprings');
+    const showLabels = document.getElementById('showLabels');
+    const showGrid = document.getElementById('showGrid');
+    const simulationSpeed = document.getElementById('simulationSpeed');
+    const freeMuons = document.getElementById('freeMuons');
+    const autoGluon = document.getElementById('autoGluon');
+    const touchHintToggle = document.getElementById('touchHintToggle');
+    const touchHint = document.getElementById('touchHint');
+
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    // Display elements
+    const quarksCount = document.getElementById('quarksCount');
+    const muonsCount = document.getElementById('muonsCount');
+    const gluonsCount = document.getElementById('gluonsCount');
+    const interactionsCount = document.getElementById('interactionsCount');
+    const confinementDisplay = document.getElementById('confinementDisplay');
+    const elasticityDisplay = document.getElementById('elasticityDisplay');
+    const simulationSpeedDisplay = document.getElementById('simulationSpeedDisplay');
+
+    // Help elements
+    const helpButton = document.getElementById('helpButton');
+    const helpPanel = document.getElementById('helpPanel');
+    const closeHelp = document.getElementById('closeHelp');
+
+    // Simulation state
+    let running = true;
+    let lastTime = null;
+    let simulationTime = 0;
+    let interactionCounter = 0;
+
+    // Simulation parameters
+    let params = {
+      k: 0.45,
+      e: 0.85,
+      simulationSpeed: 5,
+      showTrails: true,
+      showSprings: true,
+      showLabels: true,
+      showGrid: false,
+      freeMuons: true,
+      autoGluon: true
+    };
+
+    // Physics constants
+    const FIXED_MS = 16;
+    const SUBSTEPS = 6;
+    const GLUON_DELAY_MS = 400;
+
+    // Particle system
+    let particles = [], springs = [], gluons = [];
+    let mouse = {x:0,y:0,down:false,dragging:null,dragOffsetX:0,dragOffsetY:0};
+    let DPR = Math.max(1, window.devicePixelRatio || 1);
+
+    // Resize canvas properly for high-dpi
+    function resizeCanvas(){
+      const ratio = devicePixelRatio || 1;
+      const cssW = window.innerWidth;
+      const cssH = Math.max(200, window.innerHeight - 140);
+      
+      canvas.style.width = cssW + 'px';
+      canvas.style.height = cssH + 'px';
+      canvas.width = Math.floor(cssW * ratio);
+      canvas.height = Math.floor(cssH * ratio);
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.scale(ratio, ratio);
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const id = tab.getAttribute('data-tab');
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(id + '-tab').classList.add('active');
+      });
+    });
+
+    // Help panel functionality
+    helpButton.addEventListener('click', () => {
+      helpPanel.classList.toggle('active');
+    });
+
+    closeHelp.addEventListener('click', () => {
+      helpPanel.classList.remove('active');
+    });
+
+    // Close help panel when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!helpPanel.contains(e.target) && e.target !== helpButton) {
+        helpPanel.classList.remove('active');
+      }
+    });
+
+    // Touch hint toggle
+    touchHintToggle.addEventListener('change', () => {
+      if (touchHintToggle.checked) {
+        touchHint.style.display = 'block';
+      } else {
+        touchHint.style.display = 'none';
+      }
+    });
+
+    // Charts initialization
+    function initCharts() {
+      const particlesCtx = document.getElementById('particlesChart').getContext('2d');
+      particlesChart = new Chart(particlesCtx, {
+        type: 'line',
+        data: {
+          labels: chartData.time,
+          datasets: [
+            { 
+              label: 'Quarks', 
+              data: chartData.quarks, 
+              borderColor: '#ff4d4d', 
+              backgroundColor: 'transparent', 
+              tension: 0.3 
+            },
+            { 
+              label: 'Múons', 
+              data: chartData.muons, 
+              borderColor: '#ffd66b', 
+              backgroundColor: 'transparent', 
+              tension: 0.3 
+            }
+          ]
+        },
+        options: {
+          responsive: true, 
+          maintainAspectRatio: false,
+          scales: {
+            x: { 
+              ticks: { color: '#cbd5e1' }, 
+              title: { 
+                display: true, 
+                text: 'Tempo (s)', 
+                color: '#9ca3af' 
+              } 
+            },
+            y: { 
+              ticks: { color: '#cbd5e1' }, 
+              title: { 
+                display: true, 
+                text: 'Número de Partículas', 
+                color: '#9ca3af' 
+              } 
+            }
+          },
+          plugins: { 
+            legend: { 
+              labels: { color: '#e6eef8' } 
+            } 
+          }
+        }
+      });
+
+      const gluonsCtx = document.getElementById('gluonsChart').getContext('2d');
+      gluonsChart = new Chart(gluonsCtx, {
+        type: 'line',
+        data: {
+          labels: chartData.time,
+          datasets: [
+            { 
+              label: 'Glúons Ativos', 
+              data: chartData.gluons, 
+              borderColor: '#ffd34d', 
+              backgroundColor: 'transparent', 
+              tension: 0.3 
+            },
+            { 
+              label: 'Interações', 
+              data: chartData.interactions, 
+              borderColor: '#00bfff', 
+              backgroundColor: 'transparent', 
+              tension: 0.3 
+            }
+          ]
+        },
+        options: {
+          responsive: true, 
+          maintainAspectRatio: false,
+          scales: {
+            x: { 
+              ticks: { color: '#cbd5e1' }, 
+              title: { 
+                display: true, 
+                text: 'Tempo (s)', 
+                color: '#9ca3af' 
+              } 
+            },
+            y: { 
+              ticks: { color: '#cbd5e1' }, 
+              title: { 
+                display: true, 
+                text: 'Contagem', 
+                color: '#9ca3af' 
+              } 
+            }
+          },
+          plugins: { 
+            legend: { 
+              labels: { color: '#e6eef8' } 
+            } 
+          }
+        }
+      });
+    }
+
+    // Update parameters from controls
+    function updateParams() {
+      // Update parameters from controls
+      params.k = parseInt(kRange.value) / 100;
+      params.e = parseInt(eRange.value) / 100;
+      params.simulationSpeed = parseInt(simulationSpeed.value);
+      params.showTrails = showTrails.checked;
+      params.showSprings = showSprings.checked;
+      params.showLabels = showLabels.checked;
+      params.showGrid = showGrid.checked;
+      params.freeMuons = freeMuons.checked;
+      params.autoGluon = autoGluon.checked;
+      
+      // Update display values
+      confinementDisplay.textContent = params.k.toFixed(2);
+      elasticityDisplay.textContent = params.e.toFixed(2);
+      
+      // Update simulation speed display
+      const speedLabels = ['Muito Lento', 'Lento', 'Normal', 'Rápido', 'Muito Rápido'];
+      simulationSpeedDisplay.textContent = speedLabels[Math.floor((params.simulationSpeed - 1) / 2)] || 'Normal';
+      
+      // Update springs with new k value
+      springs.forEach(s => s.k = params.k);
+    }
+
+    // Attach input listeners
+    [
+      mode, kRange, eRange, showTrails, showSprings, showLabels, showGrid, 
+      simulationSpeed, freeMuons, autoGluon, touchHintToggle
+    ].forEach(el => el.addEventListener('input', () => { 
+      updateParams(); 
+    }));
+
+    // Buttons
+    startBtn.onclick = () => { running = true; };
+    pauseBtn.onclick = () => { running = false; };
+    resetBtn.onclick = () => { resetSimulation(); };
+
+    // Particle classes
+    function safeHypot(x,y){ const h = Math.hypot(x,y); return (h === 0 || !isFinite(h)) ? 0.0001 : h; }
+
+    class Particle {
+      constructor(x,y,opts={}){
+        this.x = x; this.y = y;
+        this.vx = opts.vx||0; this.vy = opts.vy||0;
+        this.r = opts.r||10; this.mass = opts.mass||1;
+        this.color = opts.color||'#fff'; this.type = opts.type||'muon'; this.label = opts.label||'';
+        this.fixed = !!opts.fixed; this.energyHighlight = 0;
+        this.gluonCooldown = null;
+        this.gluonEmitAt = null;
+        this.creationTime = performance.now();
+        this.entranceProgress = 0;
+        this.pulseEffect = 0;
+        this.trail = [];
+        this.maxTrailLength = 8;
+        // Área de clique aumentada para facilitar a interação
+        this.clickRadius = opts.clickRadius || this.r + 15;
+        this.dragging = false;
+        this.creationAnimation = 0;
+      }
+      applyForce(fx,fy){ if(this.fixed || this.dragging) return; this.vx += fx/this.mass; this.vy += fy/this.mass; }
+      
+      updateEntrance(now) {
+        if (this.entranceProgress < 1) {
+          const elapsed = now - this.creationTime;
+          this.entranceProgress = Math.min(1, elapsed / 500);
+        }
+        
+        // Atualizar animação de criação
+        if (this.creationAnimation < 1) {
+          const elapsed = now - this.creationTime;
+          this.creationAnimation = Math.min(1, elapsed / 300);
+        }
+      }
+      
+      getCurrentRadius() {
+        const eased = this.entranceProgress < 0.5 
+          ? 2 * this.entranceProgress * this.entranceProgress 
+          : 1 - Math.pow(-2 * this.entranceProgress + 2, 2) / 2;
+        return this.r * eased;
+      }
+      
+      addToTrail() {
+        this.trail.unshift({x: this.x, y: this.y});
+        if (this.trail.length > this.maxTrailLength) {
+          this.trail.pop();
+        }
+      }
+      
+      drawTrail(ctx) {
+        if (this.trail.length < 2) return;
+        
+        ctx.beginPath();
+        ctx.moveTo(this.trail[0].x, this.trail[0].y);
+        
+        for (let i = 1; i < this.trail.length; i++) {
+          const point = this.trail[i];
+          ctx.lineTo(point.x, point.y);
+        }
+        
+        ctx.strokeStyle = this.color.replace(')', ', 0.3)').replace('rgb', 'rgba');
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+
+    class Gluon {
+      constructor(x,y,target,carry,emitter){
+        this.x = x; this.y = y; this.target = target;
+        this.vx = 0; this.vy = 0; this.speed = 12;
+        this.r = 5; this.carry = carry; this.emitter = emitter; this.alive = true;
+        this.creationTime = performance.now();
+        this.entranceProgress = 0;
+        this.trail = [];
+        this.maxTrailLength = 5;
+      }
+      
+      updateEntrance(now) {
+        if (this.entranceProgress < 1) {
+          const elapsed = now - this.creationTime;
+          this.entranceProgress = Math.min(1, elapsed / 200);
+        }
+      }
+      
+      getCurrentRadius() {
+        const eased = this.entranceProgress < 0.5 
+          ? 2 * this.entranceProgress * this.entranceProgress 
+          : 1 - Math.pow(-2 * this.entranceProgress + 2, 2) / 2;
+        return this.r * eased;
+      }
+      
+      addToTrail() {
+        this.trail.unshift({x: this.x, y: this.y});
+        if (this.trail.length > this.maxTrailLength) {
+          this.trail.pop();
+        }
+      }
+      
+      drawTrail(ctx) {
+        if (this.trail.length < 2) return;
+        
+        ctx.beginPath();
+        ctx.moveTo(this.trail[0].x, this.trail[0].y);
+        
+        for (let i = 1; i < this.trail.length; i++) {
+          const point = this.trail[i];
+          ctx.lineTo(point.x, point.y);
+        }
+        
+        ctx.strokeStyle = 'rgba(255, 211, 77, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+      
+      step(){
+        const dx = this.target.x - this.x, dy = this.target.y - this.y;
+        const dist = safeHypot(dx,dy);
+        const nx = dx/dist, ny = dy/dist;
+        const travel = Math.min(this.speed, dist);
+        this.x += nx*travel; this.y += ny*travel;
+        this.vx = nx * travel; this.vy = ny * travel;
+        if(dist <= 4) this.alive = false;
+      }
+    }
+
+    // Particle creation functions
+    function addMuon(x,y,vx=0,vy=0){
+      const m = new Particle(x,y,{
+        r:9,
+        mass:0.65,
+        color:'#ffd66b',
+        type:'muon',
+        label:'μ',
+        clickRadius: 20
+      }); 
+      m.vx = vx; m.vy = vy; 
+      particles.push(m); 
+      return m;
+    }
+
+    function createTrio(cx,cy){
+      const cols = [{label:'u',color:'#ff4d4d'},{label:'d',color:'#6bff7a'},{label:'s',color:'#6fb8ff'}];
+      const R = Math.min(35, canvas.width * 0.08, canvas.height * 0.08);
+      const created = [];
+      
+      for(let i=0;i<3;i++){
+        const a = Math.PI*2*i/3;
+        const x = cx + Math.cos(a)*R;
+        const y = cy + Math.sin(a)*R;
+        // Quarks agora são fixos e têm área de clique maior
+        const q = new Particle(x,y,{
+          r:10,
+          mass:1.4,
+          color:cols[i].color,
+          type:'quark',
+          label:cols[i].label,
+          fixed: true, // Quarks fixos
+          clickRadius: 25 // Área de clique maior
+        });
+        // Removemos a velocidade inicial
+        q.vx = 0;
+        q.vy = 0;
+        created.push(q); 
+        particles.push(q);
+      }
+      
+      const rest = Math.round(Math.sqrt(3) * R * 0.6);
+      const kVal = Math.max(0.05, params.k);
+      
+      // Conectar todos os quarks com molas
+      for(let i=0;i<3;i++){
+        for(let j=i+1;j<3;j++){
+          springs.push({a:created[i],b:created[j],rest:rest,k:kVal});
+        }
+      }
+    }
+
+    function resetSimulation(){
+      particles = []; springs = []; gluons = [];
+      interactionCounter = 0;
+      
+      // Garantir que o canvas tenha o tamanho correto
+      resizeCanvas();
+      
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      
+      if(mode.value === 'demo'){ 
+        createTrio(cx,cy); 
+      }
+      else { // Múons livres
+        // No modo livre, os quarks também são fixos
+        const numQuarks = 5;
+        const spacing = canvas.width / (numQuarks + 2);
+        for(let i=0;i<numQuarks;i++){ 
+          const x = spacing * (i+1);
+          const y = cy + (Math.random()-0.5)*50;
+          const q = new Particle(x,y,{
+            r:8,
+            mass:1,
+            color:'#6fb8ff',
+            type:'quark',
+            label:'s',
+            fixed: true, // Quarks fixos
+            clickRadius: 20 // Área de clique maior
+          });
+          q.vx = 0; // Sem velocidade
+          particles.push(q); 
+        } 
+      }
+      
+      // Update info panel
+      updateInfoPanel();
+    }
+
+    // Gluon emission functions
+    function scheduleGluonEmission(quark){
+      const now = performance.now();
+      if(quark.gluonEmitAt && quark.gluonEmitAt > now) return;
+      quark.gluonEmitAt = now + GLUON_DELAY_MS;
+      quark.gluonCooldown = GLUON_DELAY_MS;
+      quark.energyHighlight = Math.min(1, (quark.energyHighlight || 0) + 0.2);
+    }
+
+    function tryEmitScheduledGluons(now){
+      for(const p of particles){
+        if(p.type === 'quark' && p.gluonEmitAt){
+          if(now >= p.gluonEmitAt){
+            emitGluon(p);
+            p.gluonEmitAt = null;
+            p.gluonCooldown = null;
+          } else {
+            p.gluonCooldown = Math.max(0, p.gluonEmitAt - now);
+          }
+        }
+      }
+    }
+
+    function emitGluon(emitter){
+      const quarks = particles.filter(p => p.type === 'quark' && p !== emitter);
+      if(quarks.length === 0) return;
+      const target = quarks[Math.floor(Math.random()*quarks.length)];
+      const g = new Gluon(emitter.x, emitter.y, target, {from:emitter.color,to:target.color}, emitter);
+      const dx = target.x - emitter.x, dy = target.y - emitter.y;
+      const dist = safeHypot(dx,dy);
+      const nx = dx/dist, ny = dy/dist;
+      gluons.push(g);
+      interactionCounter++;
+    }
+
+    // Mouse/touch interaction
+    function pointerToCanvas(ev){
+      const rect = canvas.getBoundingClientRect();
+      let clientX, clientY;
+      
+      if (ev.type.includes('touch')) {
+        clientX = ev.touches[0].clientX;
+        clientY = ev.touches[0].clientY;
+      } else {
+        clientX = ev.clientX;
+        clientY = ev.clientY;
+      }
+      
+      return { 
+        x: (clientX - rect.left), 
+        y: (clientY - rect.top) 
+      };
+    }
+
+    function handlePointerStart(e) {
+      e.preventDefault();
+      const p = pointerToCanvas(e);
+      mouse.x = p.x; mouse.y = p.y; mouse.down = true;
+      
+      // Verificar se clicou em uma partícula existente
+      for(let i = particles.length - 1; i >= 0; i--){
+        const particle = particles[i];
+        const d = safeHypot(particle.x - mouse.x, particle.y - mouse.y);
+        const touchRadius = e.type.includes('touch') ? particle.clickRadius + 10 : particle.clickRadius;
+        
+        if(d <= touchRadius){
+          if(particle.type === 'quark'){
+            // Clique em quark - emitir glúon
+            scheduleGluonEmission(particle);
+            return;
+          } else if(particle.type === 'muon'){
+            // Clique em múon - começar a arrastar
+            mouse.dragging = particle;
+            mouse.dragOffsetX = particle.x - mouse.x;
+            mouse.dragOffsetY = particle.y - mouse.y;
+            particle.dragging = true;
+            particle.vx = 0;
+            particle.vy = 0;
+            return;
+          }
+        }
+      }
+      
+      // Se não clicou em nenhuma partícula, criar um novo múon
+      const newMuon = addMuon(mouse.x, mouse.y, 0, 0);
+      mouse.dragging = newMuon;
+      mouse.dragOffsetX = 0;
+      mouse.dragOffsetY = 0;
+      newMuon.dragging = true;
+    }
+
+    function handlePointerMove(e) {
+      e.preventDefault();
+      const p = pointerToCanvas(e); 
+      mouse.x = p.x; mouse.y = p.y;
+      
+      if(mouse.dragging && mouse.dragging.type === 'muon'){
+        mouse.dragging.x = mouse.x + mouse.dragOffsetX;
+        mouse.dragging.y = mouse.y + mouse.dragOffsetY;
+        mouse.dragging.vx = 0;
+        mouse.dragging.vy = 0;
+      }
+    }
+
+    function handlePointerEnd(e) {
+      e.preventDefault();
+      if(mouse.dragging){
+        mouse.dragging.dragging = false;
+        
+        // Aplicar um pequeno impulso quando soltar o múon
+        if(mouse.dragging.type === 'muon'){
+          const impulse = 0.5;
+          mouse.dragging.vx = (Math.random() - 0.5) * impulse;
+          mouse.dragging.vy = (Math.random() - 0.5) * impulse;
+        }
+      }
+      
+      mouse.down = false;
+      mouse.dragging = null;
+    }
+
+    // Event listeners for interaction
+    canvas.addEventListener('pointerdown', handlePointerStart);
+    canvas.addEventListener('touchstart', handlePointerStart, { passive: false });
+    canvas.addEventListener('mousedown', handlePointerStart);
+
+    canvas.addEventListener('pointermove', handlePointerMove);
+    canvas.addEventListener('touchmove', handlePointerMove, { passive: false });
+    canvas.addEventListener('mousemove', handlePointerMove);
+
+    canvas.addEventListener('pointerup', handlePointerEnd);
+    canvas.addEventListener('touchend', handlePointerEnd);
+    canvas.addEventListener('mouseup', handlePointerEnd);
+
+    // Physics functions
+    function worldBounds(p){
+      const w = canvas.width, h = canvas.height;
+      const e = params.e;
+      if(p.x - p.r < 0){ p.x = p.r; p.vx = Math.abs(p.vx) * e; }
+      if(p.x + p.r > w){ p.x = w - p.r; p.vx = -Math.abs(p.vx) * e; }
+      if(p.y - p.r < 0){ p.y = p.r; p.vy = Math.abs(p.vy) * e; }
+      if(p.y + p.r > h){ p.y = h - p.r; p.vy = -Math.abs(p.vy) * e; }
+    }
+
+    function physicsStep(dt, now){
+      const globalDamping = 0.992;
+      const maxVel = 50;
+      const repulseStrength = 0.35;
+
+      // Update entrance animations
+      for(const p of particles) p.updateEntrance(now);
+      for(const g of gluons) g.updateEntrance(now);
+
+      // Update trails
+      for(const p of particles) {
+        if (p.type === 'muon' && !p.dragging) {
+          p.addToTrail();
+        }
+      }
+      for(const g of gluons) g.addToTrail();
+
+      // Springs - apenas para partículas não fixas
+      for(const s of springs){
+        // Se ambos os quarks são fixos, não aplicamos força
+        if (s.a.fixed && s.b.fixed) continue;
+        
+        const dx = s.b.x - s.a.x, dy = s.b.y - s.a.y;
+        const dist = safeHypot(dx,dy);
+        const nx = dx/dist, ny = dy/dist;
+        const diff = dist - s.rest;
+        const kEff = (s.k || params.k) / SUBSTEPS;
+        const force = -kEff * diff;
+        
+        // Aplicar força apenas se a partícula não for fixa
+        if (!s.a.fixed && !s.a.dragging) s.a.applyForce(force*nx, force*ny);
+        if (!s.b.fixed && !s.b.dragging) s.b.applyForce(-force*nx, -force*ny);
+        
+        const relvx = (s.b.vx - s.a.vx), relvy = (s.b.vy - s.a.vy);
+        const damp = 0.02;
+        const proj = relvx*nx + relvy*ny;
+        const fdx = -damp * proj * nx, fdy = -damp * proj * ny;
+        if (!s.a.fixed && !s.a.dragging) s.a.applyForce(fdx, fdy);
+        if (!s.b.fixed && !s.b.dragging) s.b.applyForce(-fdx, -fdy);
+      }
+
+      // Pairwise interactions
+      for(let i=0;i<particles.length;i++){
+        for(let j=i+1;j<particles.length;j++){
+          const a = particles[i], b = particles[j];
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const dist = Math.hypot(dx,dy) || 0.0001;
+          const minDist = a.r + b.r;
+          if(dist < minDist){
+            const nx = dx/dist, ny = dy/dist;
+            const overlap = (minDist - dist);
+            const isMuonPair = (a.type === 'muon' && b.type === 'muon');
+            const skipRepel = params.freeMuons && isMuonPair;
+
+            if(!skipRepel && !a.dragging && !b.dragging){
+              const f = repulseStrength * overlap;
+              if(!a.fixed && !a.dragging) a.applyForce(-f*nx, -f*ny);
+              if(!b.fixed && !b.dragging) b.applyForce(f*nx, f*ny);
+            } else {
+              const tiny = 0.02 * overlap;
+              if(!a.fixed && !a.dragging) a.applyForce(-tiny*nx, -tiny*ny);
+              if(!b.fixed && !b.dragging) b.applyForce(tiny*nx, tiny*ny);
+            }
+
+            const relvx = b.vx - a.vx, relvy = b.vy - a.vy;
+            const rel = relvx*nx + relvy*ny;
+            if(rel < 0 && !skipRepel && !a.fixed && !b.fixed && !a.dragging && !b.dragging){
+              const e = params.e;
+              const j = -(1+e) * rel / (1/a.mass + 1/b.mass);
+              a.vx -= (j * nx)/a.mass; a.vy -= (j * ny)/a.mass;
+              b.vx += (j * nx)/b.mass; b.vy += (j * ny)/b.mass;
+            }
+
+            // Schedule gluon emission on muon-quark collision
+            if((a.type === 'muon' && b.type === 'quark' && params.autoGluon && !a.dragging)){
+              scheduleGluonEmission(b);
+              b.pulseEffect = 1;
+            }
+            if((b.type === 'muon' && a.type === 'quark' && params.autoGluon && !b.dragging)){
+              scheduleGluonEmission(a);
+              a.pulseEffect = 1;
+            }
+          }
+        }
+      }
+
+      // Wandering for free muons
+      if(params.freeMuons){
+        for(const p of particles){
+          if(p.type === 'muon' && !p.fixed && !p.dragging){
+            const wander = 6;
+            p.vx += (Math.random()-0.5) * wander * dt * 0.5;
+            p.vy += (Math.random()-0.5) * wander * dt * 0.5;
+          }
+        }
+      }
+
+      // Integrate - apenas partículas não fixas e não sendo arrastadas
+      for(const p of particles){
+        if(!p.fixed && !p.dragging){
+          p.vx = Math.max(-maxVel, Math.min(maxVel, p.vx));
+          p.vy = Math.max(-maxVel, Math.min(maxVel, p.vy));
+          p.vx *= globalDamping;
+          p.vy *= globalDamping;
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.energyHighlight *= 0.94;
+          p.pulseEffect *= 0.9;
+        }
+      }
+
+      // Advance gluons and arrival handling
+      for(let i = gluons.length - 1; i >= 0; i--){
+        const g = gluons[i];
+        g.step();
+        if(!g.alive){
+          const emitter = g.emitter, target = g.target;
+          if(emitter && target && emitter.type === 'quark' && target.type === 'quark'){
+            const tmp = emitter.color;
+            emitter.color = target.color;
+            target.color = tmp;
+            const dx = target.x - emitter.x, dy = target.y - emitter.y;
+            const d = safeHypot(dx,dy) || 0.0001; const nx = dx/d, ny = dy/d;
+            emitter.energyHighlight = Math.min(1, emitter.energyHighlight + 0.4);
+            target.energyHighlight = Math.min(1, target.energyHighlight + 0.6);
+            emitter.pulseEffect = 1;
+            target.pulseEffect = 1;
+          }
+          gluons.splice(i,1);
+        }
+      }
+
+      // Population control
+      const muons = particles.filter(p => p.type === 'muon');
+      if(muons.length > 50){
+        const excess = muons.length - 40;
+        let removed = 0;
+        particles = particles.filter(p => {
+          if(p.type === 'muon' && removed < excess){ removed++; return false; }
+          return true;
+        });
+      }
+
+      // Bounds - apenas para partículas não fixas e não sendo arrastadas
+      for(const p of particles) {
+        if (!p.fixed && !p.dragging) {
+          worldBounds(p);
+        }
+      }
+    }
+
+    // Drawing functions
+    function draw(){
+      const w = canvas.width, h = canvas.height;
+      ctx.clearRect(0,0,w,h);
+      
+      // Draw background
+      const g = ctx.createLinearGradient(0,0,0,h);
+      g.addColorStop(0,'#04121b'); g.addColorStop(1,'#082033');
+      ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
+
+      // Draw grid if enabled
+      if (params.showGrid) {
+        ctx.save();
+        ctx.globalAlpha = 0.1;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        const gridSize = 60;
+        for (let x = 0; x < w; x += gridSize) {
+          ctx.beginPath(); 
+          ctx.moveTo(x, 0); 
+          ctx.lineTo(x, h); 
+          ctx.stroke();
+        }
+        for (let y = 0; y < h; y += gridSize) {
+          ctx.beginPath(); 
+          ctx.moveTo(0, y); 
+          ctx.lineTo(w, y); 
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      // Draw springs
+      if (params.showSprings) {
+        ctx.lineWidth = 2;
+        for(const s of springs){
+          ctx.beginPath(); 
+          ctx.strokeStyle = 'rgba(100,160,200,0.25)';
+          ctx.moveTo(s.a.x, s.a.y); 
+          ctx.lineTo(s.b.x, s.b.y); 
+          ctx.stroke();
+        }
+      }
+
+      // Draw trails
+      if (params.showTrails) {
+        for(const p of particles) {
+          if (p.type === 'muon' && !p.dragging) {
+            p.drawTrail(ctx);
+          }
+        }
+        for(const gl of gluons) gl.drawTrail(ctx);
+      }
+
+      // Draw gluons
+      for(const gl of gluons){
+        const currentRadius = gl.getCurrentRadius();
+        
+        // Draw gluon
+        ctx.beginPath(); 
+        ctx.fillStyle = '#ffd34d'; 
+        ctx.arc(gl.x, gl.y, currentRadius, 0, Math.PI*2); 
+        ctx.fill();
+        
+        // Draw glow effect
+        if (gl.entranceProgress > 0.5) {
+          ctx.beginPath();
+          ctx.strokeStyle = 'rgba(255, 211, 77, 0.7)';
+          ctx.lineWidth = 1;
+          ctx.arc(gl.x, gl.y, currentRadius + 3, 0, Math.PI*2);
+          ctx.stroke();
+        }
+        
+        // Draw tail
+        if (gl.entranceProgress > 0.3) {
+          ctx.beginPath(); 
+          ctx.strokeStyle = `rgba(255,211,77,${0.5 * gl.entranceProgress})`; 
+          ctx.lineWidth = 2;
+          ctx.moveTo(gl.x, gl.y); 
+          ctx.lineTo(gl.x - gl.vx*1.5, gl.y - gl.vy*1.5); 
+          ctx.stroke();
+        }
+      }
+
+      // Draw particles
+      for(const p of particles){
+        // Draw cooldown indicator
+        if(p.gluonEmitAt){
+          const now = performance.now();
+          const remain = Math.max(0, p.gluonEmitAt - now);
+          const frac = 1 - Math.min(1, remain / GLUON_DELAY_MS);
+          ctx.beginPath();
+          ctx.strokeStyle = 'rgba(255,200,80,' + (0.6 * (1-frac)) + ')';
+          ctx.lineWidth = 3;
+          ctx.arc(p.x,p.y,p.r + 8 * frac, -Math.PI/2, -Math.PI/2 + Math.PI*2*frac);
+          ctx.stroke();
+        }
+
+        // Draw energy highlight
+        if(p.energyHighlight > 0.01){
+          ctx.beginPath(); 
+          ctx.fillStyle = 'rgba(255,240,150,' + (p.energyHighlight*0.35) + ')';
+          ctx.arc(p.x,p.y,p.r+6*p.energyHighlight,0,Math.PI*2); 
+          ctx.fill();
+        }
+        
+        // Draw creation animation for new particles
+        if (p.creationAnimation < 1) {
+          const scale = 0.5 + p.creationAnimation * 0.5;
+          const alpha = p.creationAnimation;
+          
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.beginPath(); 
+          ctx.fillStyle = p.color; 
+          ctx.strokeStyle = 'rgba(0,0,0,0.15)'; 
+          ctx.lineWidth = 1;
+          ctx.arc(p.x, p.y, p.r * scale, 0, Math.PI*2); 
+          ctx.fill(); 
+          ctx.stroke();
+          ctx.restore();
+        }
+        
+        // Draw particle with pulse effect
+        const pulseScale = 1 + p.pulseEffect * 0.1;
+        const currentRadius = p.getCurrentRadius() * pulseScale;
+        
+        // Only draw the main particle if creation animation is complete
+        if (p.creationAnimation >= 1) {
+          ctx.beginPath(); 
+          ctx.fillStyle = p.color; 
+          ctx.strokeStyle = p.dragging ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.15)'; 
+          ctx.lineWidth = p.dragging ? 3 : 1;
+          ctx.arc(p.x, p.y, currentRadius, 0, Math.PI*2); 
+          ctx.fill(); 
+          ctx.stroke();
+          
+          // Draw dragging indicator
+          if (p.dragging) {
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+            ctx.setLineDash([5, 5]);
+            ctx.lineWidth = 1;
+            ctx.arc(p.x, p.y, currentRadius + 8, 0, Math.PI*2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+          }
+        }
+        
+        // Draw label
+        if(p.label && p.entranceProgress > 0.7 && params.showLabels && p.creationAnimation >= 1){
+          ctx.font = '12px system-ui,Segoe UI,Roboto,Arial';
+          ctx.fillStyle = '#04121b'; 
+          ctx.textAlign = 'center'; 
+          ctx.textBaseline = 'middle';
+          ctx.fillText(p.label, p.x, p.y);
+        }
+      }
+
+      // Draw stats
+      ctx.font = '11px system-ui,Segoe UI,Roboto,Arial';
+      ctx.fillStyle = 'rgba(230,238,248,0.85)';
+      ctx.textAlign = 'left';
+      ctx.fillText('Quarks: ' + particles.filter(p => p.type === 'quark').length + 
+                  '  Múons: ' + particles.filter(p => p.type === 'muon').length + 
+                  '  Glúons: ' + gluons.length, 10, 18);
+    }
+
+    // Update info panel
+    function updateInfoPanel() {
+      const quarks = particles.filter(p => p.type === 'quark').length;
+      const muons = particles.filter(p => p.type === 'muon').length;
+      
+      quarksCount.textContent = quarks;
+      muonsCount.textContent = muons;
+      gluonsCount.textContent = gluons.length;
+      interactionsCount.textContent = interactionCounter;
+    }
+
+    // Update chart data
+    function updateChartData() {
+      const quarks = particles.filter(p => p.type === 'quark').length;
+      const muons = particles.filter(p => p.type === 'muon').length;
+      
+      // Add data to charts
+      if (chartData.time.length >= maxDataPoints) {
+        chartData.time.shift();
+        chartData.quarks.shift();
+        chartData.muons.shift();
+        chartData.gluons.shift();
+        chartData.interactions.shift();
+      }
+      
+      chartData.time.push(simulationTime.toFixed(1));
+      chartData.quarks.push(quarks);
+      chartData.muons.push(muons);
+      chartData.gluons.push(gluons.length);
+      chartData.interactions.push(interactionCounter);
+      
+      // Update charts
+      if (particlesChart) particlesChart.update();
+      if (gluonsChart) gluonsChart.update();
+    }
+
+    // Main loop
+    let last = performance.now();
+    function stepFrame(now){
+      if (!running) {
+        requestAnimationFrame(stepFrame);
+        return;
+      }
+      
+      let elapsed = now - last;
+      if(elapsed > 300) elapsed = 300;
+      last = now;
+      
+      // Update simulation time
+      simulationTime += elapsed / 1000;
+      
+      const totalSteps = Math.max(1, Math.floor((elapsed / FIXED_MS) * SUBSTEPS));
+      const dt = (FIXED_MS / 16) / SUBSTEPS;
+      
+      for(let s=0;s<totalSteps;s++){
+        physicsStep(dt, now);
+        tryEmitScheduledGluons(performance.now());
+      }
+      
+      draw();
+      updateInfoPanel();
+      updateChartData();
+      requestAnimationFrame(stepFrame);
+    }
+
+    // Initial setup
+    function start() {
+      resizeCanvas();
+      initCharts();
+      updateParams();
+      resetSimulation();
+      requestAnimationFrame(stepFrame);
+    }
+
+    // Prevent zoom gestures
+    document.addEventListener('gesturestart', function(e) {
+      e.preventDefault();
+    });
+    
+    document.addEventListener('gesturechange', function(e) {
+      e.preventDefault();
+    });
+    
+    document.addEventListener('gestureend', function(e) {
+      e.preventDefault();
+    });
+
+    start();
+  </script>
+</body>
+</html>

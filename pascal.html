@@ -1,0 +1,1761 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Simulação Interativa — Princípio de Pascal</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #071028;
+      --card: #0f1724;
+      --muted: #94a3b8;
+      --primary: #4dd0e1;
+      --accent: #8a2be2;
+      --success: #10b981;
+      --warning: #f59e0b;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: all 0.3s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, 'Segoe UI', Roboto, Arial;
+      background: linear-gradient(180deg, #071028 0%, #071021 60%);
+      color: #e6eef8;
+      min-height: 100vh;
+      overflow-x: hidden;
+      touch-action: manipulation;
+      padding: 0;
+    }
+
+    header {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: textGlow 3s infinite alternate;
+    }
+
+    .tab-container {
+      display: flex;
+      background: var(--card);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .tab {
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      flex: 1;
+      text-align: center;
+    }
+
+    .tab:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .tab.active {
+      background: var(--primary);
+      font-weight: 700;
+      box-shadow: 0 0 15px rgba(77, 208, 225, 0.5);
+    }
+
+    .tab::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 3px;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    .tab.active::after {
+      width: 100%;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 18px;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 18px;
+      height: calc(100vh - 134px);
+      padding: 0 18px 18px;
+      animation: slideUp 0.6s ease-out;
+    }
+
+    .simulation-container {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .simulation-container::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(77, 208, 225, 0.05) 0%, transparent 70%);
+      animation: rotate 20s linear infinite;
+      pointer-events: none;
+    }
+
+    .jarras {
+      width: 100%;
+      height: 560px;
+      border-radius: 8px;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px;
+      position: relative;
+      animation: canvasAppear 1s ease-out;
+    }
+
+    .cil {
+      width: 180px;
+      height: 280px;
+      position: relative;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #062636, #063343);
+      box-shadow: inset 0 6px 18px rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: flex-end;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .cil.right {
+      width: 240px;
+    }
+
+    .fluido {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 40%;
+      background: linear-gradient(180deg, #0b93a0, #075d6a);
+      transition: height 0.5s cubic-bezier(0.2, 0.9, 0.2, 1);
+    }
+
+    .piston {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 12px;
+      background: rgba(230, 240, 251, 0.95);
+      top: calc(100% - 40% - 12px);
+      border-radius: 6px;
+      box-shadow: 0 6px 12px rgba(2, 6, 23, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #022;
+      cursor: grab;
+      transition: transform 0.5s cubic-bezier(0.2, 0.9, 0.2, 1);
+      z-index: 2;
+    }
+
+    .piston:active {
+      cursor: grabbing;
+    }
+
+    .rod {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      top: -120px;
+      width: 6px;
+      height: 120px;
+      background: linear-gradient(180deg, #b8c6cf, #7f8b92);
+      border-radius: 4px;
+    }
+
+    .conexao {
+      width: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    .conexao-tubo {
+      width: 40px;
+      height: 14px;
+      background: linear-gradient(90deg, #08353a, #07586b);
+      border-radius: 8px;
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
+    }
+
+    .conexao-texto {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .info-panel {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .info-card {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      border-left: 3px solid var(--primary);
+      position: relative;
+      overflow: hidden;
+      animation: cardSlideIn 0.5s ease-out;
+    }
+
+    .info-card:nth-child(2) {
+      border-left-color: var(--accent);
+      animation-delay: 0.1s;
+    }
+
+    .info-card:nth-child(3) {
+      border-left-color: var(--success);
+      animation-delay: 0.2s;
+    }
+
+    .info-card:nth-child(4) {
+      border-left-color: var(--warning);
+      animation-delay: 0.3s;
+    }
+
+    .info-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .info-card:hover::before {
+      left: 100%;
+    }
+
+    .info-card .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .info-card .value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .controls {
+      background: var(--card);
+      padding: 16px;
+      border-radius: 12px;
+      height: 100%;
+      overflow-y: auto;
+      animation: slideInRight 0.6s ease-out;
+    }
+
+    .controls::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .controls::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    .controls::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 3px;
+    }
+
+    .group {
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .group:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .group:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+
+    .group:nth-child(4) {
+      animation-delay: 0.3s;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    input[type='range'] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type='range']::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(77, 208, 225, 0.5);
+      transition: all 0.2s ease;
+    }
+
+    input[type='range']::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 10px rgba(77, 208, 225, 0.8);
+    }
+
+    input[type='number'],
+    select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.02);
+      color: inherit;
+      margin-bottom: 8px;
+      transition: all 0.3s ease;
+    }
+
+    input[type='number']:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(77, 208, 225, 0.2);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background: linear-gradient(90deg, var(--primary), #0b93a0);
+      border: 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(77, 208, 225, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.secondary {
+      background: linear-gradient(90deg, #444, #666);
+    }
+
+    button.secondary:hover {
+      box-shadow: 0 5px 15px rgba(102, 102, 102, 0.4);
+    }
+
+    .muted {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .charts-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .chart-panel {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    .chart-panel:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .chart-container {
+      height: 240px;
+      width: 100%;
+    }
+
+    .explanation-container {
+      padding: 18px;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    .explanation-content {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      margin-bottom: 18px;
+    }
+
+    .explanation-content h2 {
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1.5rem;
+    }
+
+    .explanation-content h3 {
+      margin: 20px 0 10px;
+      color: var(--primary);
+      font-size: 1.2rem;
+    }
+
+    .explanation-content p {
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+
+    .explanation-content ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    .explanation-content li {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .highlight {
+      background: linear-gradient(90deg, transparent, rgba(77, 208, 225, 0.1), transparent);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .formula {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 12px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-family: monospace;
+      text-align: center;
+      border-left: 3px solid var(--accent);
+    }
+
+    .example {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 3px solid var(--success);
+    }
+
+    .concept-card {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 3px solid var(--primary);
+      transition: all 0.3s ease;
+    }
+
+    .concept-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .touch-hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      max-width: 80%;
+      z-index: 5;
+      animation: pulse 2s infinite;
+    }
+
+    /* Botão de ajuda flutuante */
+    .help-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      transition: all 0.3s ease;
+      border: none;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .help-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 25px rgba(77, 208, 225, 0.5);
+    }
+
+    .help-button:active {
+      transform: scale(0.95);
+    }
+
+    /* Painel de ajuda */
+    .help-panel {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 320px;
+      max-height: 70vh;
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      overflow-y: auto;
+      transform: translateY(20px);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    .help-panel.active {
+      transform: translateY(0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .help-panel h2 {
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .help-panel h3 {
+      margin: 15px 0 8px;
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+
+    .help-panel p {
+      margin-bottom: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .help-panel ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    .help-panel li {
+      margin-bottom: 6px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .help-panel .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .help-panel .close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    footer {
+      padding: 12px 20px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+      animation: fadeIn 1s ease-out;
+    }
+
+    /* Animações personalizadas */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes canvasAppear {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes cardSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes textGlow {
+      0% {
+        text-shadow: 0 0 5px rgba(77, 208, 225, 0.5);
+      }
+      100% {
+        text-shadow: 0 0 15px rgba(77, 208, 225, 0.8), 0 0 20px rgba(138, 43, 226, 0.6);
+      }
+    }
+
+    @keyframes rotate {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: 0.7;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0.7;
+      }
+    }
+
+    /* Responsividade - Melhorias para mobile */
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+        height: auto;
+        padding-bottom: 18px;
+      }
+      
+      .jarras {
+        height: 420px;
+      }
+      
+      .info-panel {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .help-panel {
+        width: 280px;
+        right: 10px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .info-panel {
+        grid-template-columns: 1fr 1fr;
+      }
+      
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 12px 15px;
+      }
+      
+      .tab-container {
+        width: 100%;
+        margin-top: 8px;
+      }
+      
+      .tab {
+        flex: 1;
+        text-align: center;
+        padding: 10px 8px;
+        font-size: 13px;
+      }
+      
+      .simulation-container {
+        padding: 8px;
+      }
+      
+      .jarras {
+        height: 60vh;
+        min-height: 350px;
+        flex-direction: column;
+        padding: 15px;
+      }
+      
+      .cil {
+        width: 120px;
+        height: 200px;
+      }
+      
+      .cil.right {
+        width: 160px;
+      }
+      
+      .conexao {
+        width: 100%;
+        height: 40px;
+        flex-direction: row;
+        justify-content: center;
+        margin: 10px 0;
+      }
+      
+      .conexao-tubo {
+        width: 100%;
+        height: 14px;
+      }
+      
+      .conexao-texto {
+        margin-bottom: 0;
+        margin-right: 10px;
+      }
+      
+      .controls {
+        padding: 12px;
+      }
+      
+      button {
+        padding: 12px 16px;
+        font-size: 16px;
+      }
+      
+      .help-button {
+        width: 50px;
+        height: 50px;
+        bottom: 15px;
+        right: 15px;
+        font-size: 20px;
+      }
+      
+      .help-panel {
+        width: calc(100% - 30px);
+        right: 15px;
+        bottom: 75px;
+        max-height: 60vh;
+      }
+
+      .explanation-content {
+        padding: 15px;
+      }
+
+      .chart-container {
+        height: 200px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .jarras {
+        height: 50vh;
+        min-height: 300px;
+      }
+      
+      .touch-hint {
+        font-size: 14px;
+        padding: 12px;
+      }
+
+      .group {
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+      }
+
+      .tab-content {
+        padding: 12px;
+      }
+
+      .info-panel {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .info-card {
+        padding: 8px;
+      }
+
+      .info-card .value {
+        font-size: 0.9rem;
+      }
+
+      .control-buttons button {
+        padding: 14px 12px;
+        font-size: 15px;
+      }
+
+      .charts-container {
+        gap: 10px;
+      }
+
+      .chart-container {
+        height: 180px;
+      }
+    }
+
+    @media (max-height: 700px) {
+      .jarras {
+        height: 45vh;
+      }
+    }
+
+    @media (max-width: 360px) {
+      header {
+        padding: 10px 12px;
+      }
+
+      .tab {
+        padding: 8px 6px;
+        font-size: 12px;
+      }
+
+      .tab-content {
+        padding: 10px;
+      }
+
+      .jarras {
+        height: 45vh;
+        min-height: 250px;
+      }
+
+      .control-buttons button {
+        padding: 12px 10px;
+        font-size: 14px;
+      }
+
+      .help-panel {
+        width: calc(100% - 20px);
+        right: 10px;
+        padding: 15px;
+      }
+    }
+
+    /* Melhorias de acessibilidade e usabilidade */
+    .mobile-controls-overlay {
+      display: none;
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
+      background: rgba(15, 23, 36, 0.8);
+      border-radius: 10px;
+      padding: 10px;
+      z-index: 5;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .mobile-controls-buttons {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .mobile-controls-buttons button {
+      flex: 1;
+      padding: 10px;
+      font-size: 14px;
+    }
+
+    @media (max-width: 768px) {
+      .mobile-controls-overlay {
+        display: block;
+      }
+    }
+
+    /* Melhorias de toque para controles deslizantes */
+    input[type="range"] {
+      touch-action: pan-y;
+    }
+
+    /* Melhorias para evitar zoom em inputs */
+    input, select, textarea {
+      font-size: 16px; /* Previne zoom no iOS */
+    }
+
+    /* Melhorias de foco para acessibilidade */
+    button:focus, input:focus, select:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .slider-container input[type="range"] {
+      flex: 1;
+    }
+
+    .slider-value {
+      min-width: 40px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .control-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .control-buttons button {
+      flex: 1;
+      padding: 12px 8px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Princípio de Pascal - Vasos Comunicantes</h1>
+    <div class="tab-container">
+      <div class="tab active" data-tab="simulation">Simulação</div>
+      <div class="tab" data-tab="charts">Gráficos</div>
+      <div class="tab" data-tab="explanation">Explicação</div>
+    </div>
+  </header>
+
+  <div class="tab-content active" id="simulation-tab">
+    <main>
+      <div class="simulation-container">
+        <div class="jarras" id="jarras">
+          <div class="cil left" id="leftCil">
+            <div class="fluido" id="fluidLeft"></div>
+            <div class="piston" id="pistonLeft">E</div>
+            <div class="rod" id="rodLeft"></div>
+          </div>
+
+          <div class="conexao">
+            <div class="conexao-texto">Conexão</div>
+            <div class="conexao-tubo"></div>
+          </div>
+
+          <div class="cil right" id="rightCil">
+            <div class="fluido" id="fluidRight"></div>
+            <div class="piston" id="pistonRight">D</div>
+            <div class="rod" id="rodRight"></div>
+          </div>
+        </div>
+        
+        <div class="touch-hint" id="touchHint">
+          <p>💡 Arraste os pistões para alterar o deslocamento</p>
+          <p>Use os controles para ajustar parâmetros</p>
+        </div>
+
+        <!-- Controles móveis adicionais -->
+        <div class="mobile-controls-overlay">
+          <div class="mobile-controls-buttons">
+            <button id="mobileApplyBtn">Aplicar</button>
+            <button id="mobileResetBtn" class="secondary">Resetar</button>
+          </div>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-card">
+            <div class="label">Pressão Aplicada</div>
+            <div class="value" id="pressure">— Pa</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Força de Saída</div>
+            <div class="value" id="forceOut">— N</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Área Esquerda</div>
+            <div class="value" id="area1">— cm²</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Área Direita</div>
+            <div class="value" id="area2">— cm²</div>
+          </div>
+        </div>
+
+        <div class="control-buttons">
+          <button id="applyBtn">Aplicar e Animar</button>
+          <button id="resetBtn" class="secondary">Resetar</button>
+        </div>
+      </div>
+
+      <aside class="controls">
+        <div class="group">
+          <label><strong>Força Aplicada (N)</strong></label>
+          <div class="slider-container">
+            <input id="forceRange" type="range" min="0" max="200" step="1" value="20">
+            <div class="slider-value" id="forceValueDisplay">20</div>
+          </div>
+          <input id="forceNum" type="number" min="0" max="200" value="20">
+        </div>
+
+        <div class="group">
+          <label><strong>Raio Pistão Esquerdo (cm)</strong></label>
+          <div class="slider-container">
+            <input id="r1Range" type="range" min="0.5" max="6" step="0.1" value="1.5">
+            <div class="slider-value" id="r1ValueDisplay">1.5</div>
+          </div>
+          <input id="r1Num" type="number" min="0.5" max="6" step="0.1" value="1.5">
+        </div>
+
+        <div class="group">
+          <label><strong>Raio Pistão Direito (cm)</strong></label>
+          <div class="slider-container">
+            <input id="r2Range" type="range" min="0.5" max="8" step="0.1" value="3.5">
+            <div class="slider-value" id="r2ValueDisplay">3.5</div>
+          </div>
+          <input id="r2Num" type="number" min="0.5" max="8" step="0.1" value="3.5">
+        </div>
+
+        <div class="group">
+          <label><strong>Deslocamento Aplicado (cm)</strong></label>
+          <div class="slider-container">
+            <input id="dispRange" type="range" min="0.1" max="10" step="0.1" value="2">
+            <div class="slider-value" id="dispValueDisplay">2.0</div>
+          </div>
+          <input id="dispNum" type="number" min="0.1" max="10" step="0.1" value="2">
+        </div>
+
+        <div class="group">
+          <label><strong>Visual</strong></label>
+          <label class="small"><input id="showValues" type="checkbox" checked> Mostrar valores</label>
+          <label class="small"><input id="touchHintToggle" type="checkbox"> Mostrar dicas</label>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div class="tab-content" id="charts-tab">
+    <div class="charts-container" style="padding:12px 18px;">
+      <div class="chart-panel">
+        <h3 style="margin:0 0 8px 0">Relação Forças e Áreas</h3>
+        <div class="chart-container"><canvas id="forceAreaChart"></canvas></div>
+      </div>
+
+      <div class="chart-panel" style="margin-top:10px">
+        <h3 style="margin:0 0 8px 0">Relação Deslocamentos</h3>
+        <div class="chart-container"><canvas id="displacementChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="explanation-tab">
+    <div class="explanation-container">
+      <div class="explanation-content">
+        <h2>Como Usar o Simulador</h2>
+        <p>Esta simulação interativa permite explorar o Princípio de Pascal de forma visual e intuitiva:</p>
+        
+        <div class="concept-card">
+          <h3>Interação Direta</h3>
+          <p>Arraste os pistões para alterar o deslocamento. Use os controles para ajustar os parâmetros e clique em "Aplicar e Animar" para ver os resultados.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Controles</h3>
+          <p>Use os controles deslizantes e numéricos para ajustar força aplicada, raios dos pistões e deslocamento. Observe como essas alterações afetam a pressão e força de saída.</p>
+        </div>
+        
+        <p>Experimente diferentes configurações e observe como o sistema responde!</p>
+      </div>
+
+      <div class="explanation-content">
+        <h2>O que é o Princípio de Pascal?</h2>
+        <p>O Princípio de Pascal, formulado por Blaise Pascal no século XVII, afirma que uma mudança de pressão aplicada a um fluido confinado é transmitida integralmente a todos os pontos do fluido e às paredes do recipiente.</p>
+        
+        <div class="concept-card">
+          <h3>Aplicações Práticas</h3>
+          <p>Este princípio é a base de muitos sistemas hidráulicos, como freios de carros, elevadores hidráulicos, prensas e sistemas de direção.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Fórmula Fundamental</h3>
+          <div class="formula">P = F / A</div>
+          <p>Onde P é a pressão, F é a força aplicada e A é a área sobre a qual a força é distribuída.</p>
+        </div>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Princípios Físicos</h2>
+        
+        <div class="formula">
+          Pressão: P = F₁ / A₁ = F₂ / A₂
+        </div>
+        
+        <p>Onde:</p>
+        <ul>
+          <li><span class="highlight">P</span> é a pressão no fluido (constante em todo o sistema)</li>
+          <li><span class="highlight">F₁</span> é a força aplicada no pistão esquerdo</li>
+          <li><span class="highlight">A₁</span> é a área do pistão esquerdo</li>
+          <li><span class="highlight">F₂</span> é a força resultante no pistão direito</li>
+          <li><span class="highlight">A₂</span> é a área do pistão direito</li>
+        </ul>
+        
+        <div class="formula">
+          Conservação de Volume: A₁ × d₁ = A₂ × d₂
+        </div>
+        
+        <p>Onde:</p>
+        <ul>
+          <li><span class="highlight">d₁</span> é o deslocamento do pistão esquerdo</li>
+          <li><span class="highlight">d₂</span> é o deslocamento do pistão direito</li>
+        </ul>
+        
+        <div class="example">
+          <h3>Exemplo Prático</h3>
+          <p>Se aplicarmos uma força de 20N em um pistão com área de 2cm², a pressão será:</p>
+          <p>P = 20N / (2×10⁻⁴ m²) = 100.000 Pa</p>
+          <p>Se o pistão de saída tiver área de 10cm², a força de saída será:</p>
+          <p>F₂ = P × A₂ = 100.000 Pa × (10×10⁻⁴ m²) = 100N</p>
+          <p>Assim, uma força de entrada de 20N gera uma força de saída de 100N - uma vantagem mecânica de 5 vezes!</p>
+        </div>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Vantagem Mecânica</h2>
+        
+        <p>Os sistemas hidráulicos baseados no Princípio de Pascal permitem multiplicar forças:</p>
+        
+        <ul>
+          <li><span class="highlight">Vantagem Mecânica</span>: A relação entre a força de saída e a força de entrada</li>
+          <li><span class="highlight">Conservação de Energia</span>: Embora a força seja multiplicada, o trabalho realizado (força × distância) permanece constante</li>
+          <li><span class="highlight">Compensação</span>: Um pistão menor se move mais para produzir um movimento menor em um pistão maior</li>
+        </ul>
+        
+        <div class="formula">
+          Vantagem Mecânica = F₂ / F₁ = A₂ / A₁
+        </div>
+        
+        <p>Esta é a base do funcionamento de sistemas hidráulicos que permitem que uma pessoa levante um carro inteiro usando apenas a força dos braços.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botão de ajuda flutuante -->
+  <button class="help-button" id="helpButton">?</button>
+
+  <!-- Painel de ajuda -->
+  <div class="help-panel" id="helpPanel">
+    <button class="close-btn" id="closeHelp">&times;</button>
+    <h2>💡 Como Usar o Simulador</h2>
+    
+    <h3>Controles Interativos</h3>
+    <p>Você pode interagir diretamente com os pistões:</p>
+    <ul>
+      <li><strong>Arraste os pistões</strong> para alterar o deslocamento</li>
+      <li><strong>Use os controles</strong> para ajustar parâmetros</li>
+      <li><strong>Clique em "Aplicar e Animar"</strong> para ver os resultados</li>
+    </ul>
+    
+    <h3>Parâmetros Ajustáveis</h3>
+    <ul>
+      <li><strong>Força Aplicada:</strong> Força exercida no pistão esquerdo</li>
+      <li><strong>Raio dos Pistões:</strong> Determina a área de cada pistão</li>
+      <li><strong>Deslocamento:</strong> Quanto o pistão esquerdo se move</li>
+    </ul>
+    
+    <h3>Fórmulas Importantes</h3>
+    <div class="formula">P = F / A</div>
+    <p>Pressão = Força / Área</p>
+    
+    <div class="formula">F₂ = P × A₂</div>
+    <p>Força de saída = Pressão × Área do pistão direito</p>
+    
+    <div class="formula">A₁ × d₁ = A₂ × d₂</div>
+    <p>Conservação de volume: Área esquerda × deslocamento esquerdo = Área direita × deslocamento direito</p>
+    
+    <p style="margin-top: 15px; font-style: italic; text-align: center;">
+      Explore diferentes configurações e observe como o sistema hidráulico responde!
+    </p>
+  </div>
+
+  <footer>Simulação do Princípio de Pascal — HTML5 & Chart.js</footer>
+
+  <script>
+    // Elementos do DOM
+    const forceRange = document.getElementById('forceRange');
+    const forceNum = document.getElementById('forceNum');
+    const r1Range = document.getElementById('r1Range');
+    const r1Num = document.getElementById('r1Num');
+    const r2Range = document.getElementById('r2Range');
+    const r2Num = document.getElementById('r2Num');
+    const dispRange = document.getElementById('dispRange');
+    const dispNum = document.getElementById('dispNum');
+
+    // Slider value displays
+    const forceValueDisplay = document.getElementById('forceValueDisplay');
+    const r1ValueDisplay = document.getElementById('r1ValueDisplay');
+    const r2ValueDisplay = document.getElementById('r2ValueDisplay');
+    const dispValueDisplay = document.getElementById('dispValueDisplay');
+
+    const pressureEl = document.getElementById('pressure');
+    const forceOutEl = document.getElementById('forceOut');
+    const area1El = document.getElementById('area1');
+    const area2El = document.getElementById('area2');
+
+    const pistonLeft = document.getElementById('pistonLeft');
+    const pistonRight = document.getElementById('pistonRight');
+    const fluidLeft = document.getElementById('fluidLeft');
+    const fluidRight = document.getElementById('fluidRight');
+
+    const applyBtn = document.getElementById('applyBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const touchHintToggle = document.getElementById('touchHintToggle');
+    const touchHint = document.getElementById('touchHint');
+    const showValues = document.getElementById('showValues');
+
+    // Mobile controls
+    const mobileApplyBtn = document.getElementById('mobileApplyBtn');
+    const mobileResetBtn = document.getElementById('mobileResetBtn');
+
+    // Help elements
+    const helpButton = document.getElementById('helpButton');
+    const helpPanel = document.getElementById('helpPanel');
+    const closeHelp = document.getElementById('closeHelp');
+
+    // Chart variables
+    let forceAreaChart, displacementChart;
+
+    // Touch interaction state
+    let isDragging = false;
+    let draggedPiston = null;
+    let touchHintTimeout = null;
+
+    // Helper functions
+    const rToArea = rCm => Math.PI * (rCm/100)**2; // m^2
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+    // Sync inputs and update slider displays
+    function bindRangeAndNumber(range, num, display) {
+      range.addEventListener('input', () => { 
+        num.value = range.value; 
+        display.textContent = range.value;
+        updateValues(); 
+      });
+      num.addEventListener('input', () => { 
+        range.value = num.value; 
+        display.textContent = num.value;
+        updateValues(); 
+      });
+    }
+
+    bindRangeAndNumber(forceRange, forceNum, forceValueDisplay);
+    bindRangeAndNumber(r1Range, r1Num, r1ValueDisplay);
+    bindRangeAndNumber(r2Range, r2Num, r2ValueDisplay);
+    bindRangeAndNumber(dispRange, dispNum, dispValueDisplay);
+
+    // Initialize charts
+    function initCharts() {
+      const forceAreaCtx = document.getElementById('forceAreaChart').getContext('2d');
+      forceAreaChart = new Chart(forceAreaCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Entrada', 'Saída'],
+          datasets: [
+            { 
+              label: 'Força (N)', 
+              data: [0, 0], 
+              backgroundColor: ['rgba(77, 208, 225, 0.7)', 'rgba(138, 43, 226, 0.7)'],
+              borderColor: ['rgba(77, 208, 225, 1)', 'rgba(138, 43, 226, 1)'],
+              borderWidth: 1
+            },
+            { 
+              label: 'Área (cm²)', 
+              data: [0, 0], 
+              backgroundColor: ['rgba(16, 185, 129, 0.7)', 'rgba(245, 158, 11, 0.7)'],
+              borderColor: ['rgba(16, 185, 129, 1)', 'rgba(245, 158, 11, 1)'],
+              borderWidth: 1,
+              type: 'line',
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true, 
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#cbd5e1' }, 
+              title: { display: true, text: 'Força (N)', color: '#9ca3af' }
+            },
+            y1: {
+              position: 'right',
+              beginAtZero: true,
+              ticks: { color: '#cbd5e1' }, 
+              title: { display: true, text: 'Área (cm²)', color: '#9ca3af' },
+              grid: { drawOnChartArea: false }
+            }
+          },
+          plugins: { 
+            legend: { labels: { color: '#e6eef8' } },
+            title: { display: true, text: 'Relação Força-Área', color: '#e6eef8' }
+          }
+        }
+      });
+
+      const displacementCtx = document.getElementById('displacementChart').getContext('2d');
+      displacementChart = new Chart(displacementCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Esquerdo', 'Direito'],
+          datasets: [
+            { 
+              label: 'Deslocamento (cm)', 
+              data: [0, 0], 
+              backgroundColor: ['rgba(77, 208, 225, 0.7)', 'rgba(138, 43, 226, 0.7)'],
+              borderColor: ['rgba(77, 208, 225, 1)', 'rgba(138, 43, 226, 1)'],
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true, 
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#cbd5e1' }, 
+              title: { display: true, text: 'Deslocamento (cm)', color: '#9ca3af' }
+            }
+          },
+          plugins: { 
+            legend: { labels: { color: '#e6eef8' } },
+            title: { display: true, text: 'Relação de Deslocamentos', color: '#e6eef8' }
+          }
+        }
+      });
+    }
+
+    // Update values and visualization - CORREÇÃO DA FÍSICA
+    function updateValues() {
+      const F = Number(forceNum.value);
+      const r1 = Number(r1Num.value);
+      const r2 = Number(r2Num.value);
+      const dAppliedCm = Number(dispNum.value);
+
+      const A1 = rToArea(r1); // m^2
+      const A2 = rToArea(r2);
+
+      // CORREÇÃO: A pressão é F/A1 (força aplicada dividida pela área do pistão esquerdo)
+      const P = A1 > 0 ? F / A1 : 0; // Pa
+      
+      // CORREÇÃO: A força de saída é P * A2 (pressão vezes área do pistão direito)
+      const F2 = P * A2; // N
+
+      // CORREÇÃO: Conservação de volume - A1 * d1 = A2 * d2
+      // dApplied é o deslocamento do pistão esquerdo em cm
+      const d1 = dAppliedCm / 100; // convertendo para metros
+      const d2 = (A1 * d1) / A2; // metros
+
+      // Update displayed values
+      pressureEl.textContent = P.toFixed(1) + ' Pa';
+      forceOutEl.textContent = F2.toFixed(2) + ' N';
+      area1El.textContent = (A1*10000).toFixed(2) + ' cm²';
+      area2El.textContent = (A2*10000).toFixed(2) + ' cm²';
+
+      // Update charts
+      if (forceAreaChart && displacementChart) {
+        forceAreaChart.data.datasets[0].data = [F, F2];
+        forceAreaChart.data.datasets[1].data = [A1*10000, A2*10000];
+        forceAreaChart.update();
+        
+        displacementChart.data.datasets[0].data = [dAppliedCm, d2*100];
+        displacementChart.update();
+      }
+
+      // Update visual positions if not dragging
+      if (!isDragging) {
+        updateVisuals(d1, d2, A1, A2);
+      }
+    }
+
+    // Update visual elements - CORREÇÃO DA REPRESENTAÇÃO VISUAL
+    function updateVisuals(d1, d2, A1, A2) {
+      // CORREÇÃO: Escala para converter metros em pixels
+      const scale = 120 / 0.1; // 120px representa 0.1m (10cm)
+
+      const leftMovePx = clamp(-d1 * scale, -120, 120);
+      const rightMovePx = clamp(d2 * scale, -120, 120);
+
+      pistonLeft.style.transform = `translateY(${leftMovePx}px)`;
+      pistonRight.style.transform = `translateY(${rightMovePx}px)`;
+
+      // CORREÇÃO: Altura do fluido baseada na conservação de volume
+      const baseFluidHeight = 40; // 40% da altura do cilindro
+      
+      // Quando o pistão esquerdo desce, o fluido no cilindro direito sobe
+      // A altura do fluido no cilindro direito aumenta proporcionalmente ao volume deslocado
+      const fluidRise = (d1 * A1) / (A1 + A2) * 100; // em porcentagem
+      
+      const leftFluidPerc = clamp(baseFluidHeight - fluidRise, 10, 90);
+      const rightFluidPerc = clamp(baseFluidHeight + fluidRise, 10, 90);
+      
+      fluidLeft.style.height = leftFluidPerc + '%';
+      fluidRight.style.height = rightFluidPerc + '%';
+
+      // Update cylinder widths based on areas (visual scaling)
+      const leftWidth = 120 + (A1 * 100000); // Scale factor for visual representation
+      const rightWidth = 120 + (A2 * 100000);
+      document.getElementById('leftCil').style.width = `${clamp(leftWidth, 120, 200)}px`;
+      document.getElementById('rightCil').style.width = `${clamp(rightWidth, 120, 280)}px`;
+    }
+
+    // Apply button with animation
+    function applyAnimation() {
+      // Add visual feedback
+      applyBtn.style.transform = 'scale(0.95)';
+      setTimeout(() => {
+        applyBtn.style.transform = '';
+      }, 200);
+
+      // Trigger animation
+      const origTransition = pistonLeft.style.transition;
+      pistonLeft.style.transition = 'transform 600ms cubic-bezier(.2,.9,.2,1)';
+      pistonRight.style.transition = 'transform 600ms cubic-bezier(.2,.9,.2,1)';
+      fluidLeft.style.transition = 'height 600ms cubic-bezier(.2,.9,.2,1)';
+      fluidRight.style.transition = 'height 600ms cubic-bezier(.2,.9,.2,1)';
+
+      updateValues();
+
+      setTimeout(() => {
+        pistonLeft.style.transition = origTransition;
+        pistonRight.style.transition = origTransition;
+        fluidLeft.style.transition = '';
+        fluidRight.style.transition = '';
+      }, 700);
+    }
+
+    applyBtn.addEventListener('click', applyAnimation);
+    mobileApplyBtn.addEventListener('click', applyAnimation);
+
+    // Reset button
+    function resetSimulation() {
+      forceRange.value = 20; forceNum.value = 20;
+      r1Range.value = 1.5; r1Num.value = 1.5;
+      r2Range.value = 3.5; r2Num.value = 3.5;
+      dispRange.value = 2; dispNum.value = 2;
+      
+      // Update slider displays
+      forceValueDisplay.textContent = '20';
+      r1ValueDisplay.textContent = '1.5';
+      r2ValueDisplay.textContent = '3.5';
+      dispValueDisplay.textContent = '2.0';
+      
+      // Reset visuals with animation
+      pistonLeft.style.transform = '';
+      pistonRight.style.transform = '';
+      fluidLeft.style.height = '40%';
+      fluidRight.style.height = '40%';
+      document.getElementById('leftCil').style.width = '180px';
+      document.getElementById('rightCil').style.width = '240px';
+      
+      updateValues();
+    }
+
+    resetBtn.addEventListener('click', resetSimulation);
+    mobileResetBtn.addEventListener('click', resetSimulation);
+
+    // Tabs functionality
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const id = tab.getAttribute('data-tab');
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(id + '-tab').classList.add('active');
+      });
+    });
+
+    // Help panel functionality
+    helpButton.addEventListener('click', () => {
+      helpPanel.classList.toggle('active');
+    });
+
+    closeHelp.addEventListener('click', () => {
+      helpPanel.classList.remove('active');
+    });
+
+    // Close help panel when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!helpPanel.contains(e.target) && e.target !== helpButton) {
+        helpPanel.classList.remove('active');
+      }
+    });
+
+    // Touch hint toggle
+    touchHintToggle.addEventListener('change', () => {
+      if (touchHintToggle.checked) {
+        touchHint.style.display = 'block';
+        // Auto-hide after 5 seconds
+        clearTimeout(touchHintTimeout);
+        touchHintTimeout = setTimeout(() => {
+          touchHint.style.display = 'none';
+          touchHintToggle.checked = false;
+        }, 5000);
+      } else {
+        touchHint.style.display = 'none';
+      }
+    });
+
+    // Show values toggle
+    showValues.addEventListener('change', () => {
+      const infoCards = document.querySelectorAll('.info-card');
+      infoCards.forEach(card => {
+        card.style.display = showValues.checked ? '' : 'none';
+      });
+    });
+
+    // Dragging functionality for pistons - CORREÇÃO DA INTERAÇÃO
+    function makeDraggable(piston, isLeft) {
+      let startY = 0, startTrans = 0;
+      
+      piston.addEventListener('mousedown', startDrag);
+      piston.addEventListener('touchstart', startDrag, { passive: false });
+      
+      function startDrag(e) {
+        e.preventDefault();
+        isDragging = true;
+        draggedPiston = piston;
+        
+        const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        startY = clientY;
+        
+        const t = piston.style.transform.match(/translateY\((-?\d+)px\)/);
+        startTrans = t ? Number(t[1]) : 0;
+        
+        piston.style.cursor = 'grabbing';
+        document.body.style.userSelect = 'none';
+        
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('touchmove', drag, { passive: false });
+        document.addEventListener('mouseup', endDrag);
+        document.addEventListener('touchend', endDrag);
+      }
+      
+      function drag(e) {
+        if (!isDragging) return;
+        
+        const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        const dy = clientY - startY;
+        const newT = startTrans + dy;
+        
+        // Limit movement range
+        const clampedT = clamp(newT, -120, 120);
+        
+        // Get current parameters
+        const F = Number(forceNum.value);
+        const r1 = Number(r1Num.value);
+        const r2 = Number(r2Num.value);
+        const A1 = rToArea(r1);
+        const A2 = rToArea(r2);
+        
+        // CORREÇÃO: Calcular deslocamentos baseados no movimento do pistão
+        const scale = 120 / 0.1; // 120px representa 0.1m
+        
+        let d1, d2;
+        
+        if (isLeft) {
+          // Para o pistão esquerdo: converter posição visual para deslocamento
+          d1 = -clampedT / scale;
+          d2 = (A1 * d1) / A2;
+          
+          // Atualizar ambos os pistões
+          pistonLeft.style.transform = `translateY(${clampedT}px)`;
+          pistonRight.style.transform = `translateY(${d2 * scale}px)`;
+        } else {
+          // Para o pistão direito: converter posição visual para deslocamento
+          d2 = clampedT / scale;
+          d1 = (A2 * d2) / A1;
+          
+          // Atualizar ambos os pistões
+          pistonRight.style.transform = `translateY(${clampedT}px)`;
+          pistonLeft.style.transform = `translateY(${-d1 * scale}px)`;
+        }
+        
+        // CORREÇÃO: Atualizar níveis de fluido baseado na conservação de volume
+        const baseFluidHeight = 40;
+        const fluidRise = (d1 * A1) / (A1 + A2) * 100;
+        
+        const leftFluidPerc = clamp(baseFluidHeight - fluidRise, 10, 90);
+        const rightFluidPerc = clamp(baseFluidHeight + fluidRise, 10, 90);
+        
+        fluidLeft.style.height = leftFluidPerc + '%';
+        fluidRight.style.height = rightFluidPerc + '%';
+        
+        // Atualizar entrada de deslocamento baseado no arraste
+        const dAppliedCm = isLeft ? (d1 * 100) : (d1 * 100);
+        dispRange.value = Math.max(0.1, Math.abs(dAppliedCm));
+        dispNum.value = dispRange.value;
+        dispValueDisplay.textContent = dispRange.value;
+        
+        // Atualizar todos os valores
+        updateValues();
+      }
+      
+      function endDrag() {
+        isDragging = false;
+        draggedPiston = null;
+        piston.style.cursor = 'grab';
+        document.body.style.userSelect = 'auto';
+        
+        document.removeEventListener('mousemove', drag);
+        document.removeEventListener('touchmove', drag);
+        document.removeEventListener('mouseup', endDrag);
+        document.removeEventListener('touchend', endDrag);
+      }
+      
+      piston.style.cursor = 'grab';
+    }
+
+    makeDraggable(pistonLeft, true);
+    makeDraggable(pistonRight, false);
+
+    // Initialize
+    function init() {
+      initCharts();
+      updateValues();
+      
+      // Auto-hide touch hint after 5 seconds
+      touchHintTimeout = setTimeout(() => {
+        touchHint.style.display = 'none';
+      }, 5000);
+    }
+
+    init();
+  </script>
+</body>
+</html>

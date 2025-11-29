@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Efeito Cherenkov - Brilho Azul Característico</title>
+    <style>
+        :root {
+            --bg: #071028;
+            --card: #0f1724;
+            --muted: #94a3b8;
+            --primary: #8a2be2;
+            --accent: #00bfff;
+            --success: #10b981;
+            --warning: #f59e0b;
+            color-scheme: dark;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: system-ui, 'Segoe UI', Roboto, Arial;
+            background: linear-gradient(180deg, #071028 0%, #071021 60%);
+            color: #e6eef8;
+            min-height: 100vh;
+            overflow-x: hidden;
+            touch-action: manipulation;
+            position: relative;
+        }
+
+        header {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            animation: fadeIn 0.8s ease-out;
+            position: relative;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: clamp(16px, 5vw, 20px);
+            margin: 0;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGlow 3s infinite alternate;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .tab-container {
+            display: flex;
+            background: var(--card);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            flex-wrap: wrap;
+            max-width: 300px;
+        }
+
+        .tab {
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            font-size: clamp(12px, 3vw, 14px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            flex: 1;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            font-weight: 700;
+            box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
+        }
+
+        .tab::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        .tab.active::after {
+            width: 100%;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 18px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 18px;
+            height: calc(100vh - 134px);
+            padding: 0 18px 18px;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        .simulation-container {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            touch-action: none;
+            min-height: 500px;
+        }
+
+        .simulation-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(138, 43, 226, 0.05) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+            pointer-events: none;
+        }
+
+        .simulation-area {
+            position: relative;
+            height: 60vh;
+            min-height: 400px;
+            background: radial-gradient(circle at center, #001122 0%, #000 70%);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(0, 170, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 170, 255, 0.2);
+            animation: canvasAppear 1s ease-out;
+            flex: 1;
+        }
+
+        .water-tank {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 80%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(0, 100, 200, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(0, 150, 255, 0.1) 0%, transparent 50%),
+                linear-gradient(to bottom, rgba(0, 50, 100, 0.7), rgba(0, 100, 150, 0.4));
+            border-top: 2px solid rgba(0, 170, 255, 0.5);
+        }
+
+        .water-surface {
+            position: absolute;
+            top: 20%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to right, transparent, rgba(0, 170, 255, 0.5), transparent);
+            box-shadow: 0 0 10px rgba(0, 170, 255, 0.3);
+        }
+
+        .grid-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(to right, rgba(0, 170, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 170, 255, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        .scale {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: #8cf;
+            font-size: 0.8rem;
+            background: rgba(0, 20, 40, 0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .particle {
+            position: absolute;
+            width: clamp(12px, 3vw, 16px);
+            height: clamp(12px, 3vw, 16px);
+            background: radial-gradient(circle at 30% 30%, #fff, var(--accent) 70%);
+            border-radius: 50%;
+            box-shadow: 
+                0 0 15px #fff,
+                0 0 30px var(--accent),
+                0 0 45px #08f;
+            z-index: 30;
+            left: -50px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .particle-glow {
+            position: absolute;
+            width: clamp(25px, 5vw, 35px);
+            height: clamp(25px, 5vw, 35px);
+            background: radial-gradient(circle, rgba(0, 170, 255, 0.4) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 25;
+            left: -50px;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+        }
+
+        .particle-trail {
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(to right, transparent, var(--accent), #08f, #06f, transparent);
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 20;
+            opacity: 0;
+            filter: blur(1px);
+        }
+
+        .cone {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: clamp(150px, 30vw, 250px) solid transparent;
+            border-right: clamp(150px, 30vw, 250px) solid transparent;
+            border-bottom: clamp(300px, 60vw, 500px) solid rgba(0, 100, 255, 0.15);
+            opacity: 0;
+            z-index: 15;
+            transform-origin: 50% 100%;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
+
+        .cone-glow {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: clamp(170px, 32vw, 270px) solid transparent;
+            border-right: clamp(170px, 32vw, 270px) solid transparent;
+            border-bottom: clamp(330px, 64vw, 540px) solid rgba(0, 150, 255, 0.1);
+            opacity: 0;
+            z-index: 14;
+            transform-origin: 50% 100%;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            filter: blur(15px);
+        }
+
+        .cone-inner-glow {
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: clamp(130px, 28vw, 230px) solid transparent;
+            border-right: clamp(130px, 28vw, 230px) solid transparent;
+            border-bottom: clamp(260px, 56vw, 460px) solid rgba(100, 200, 255, 0.2);
+            opacity: 0;
+            z-index: 16;
+            transform-origin: 50% 100%;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            filter: blur(5px);
+        }
+
+        .light-speed-indicator {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to right, transparent, var(--primary), transparent);
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            opacity: 0.7;
+        }
+
+        .light-speed-label {
+            position: absolute;
+            color: var(--primary);
+            font-size: clamp(0.7rem, 1.5vw, 0.9rem);
+            top: calc(50% - 20px);
+            right: 10px;
+            background: rgba(0, 20, 40, 0.7);
+            padding: 3px 8px;
+            border-radius: 3px;
+        }
+
+        .angle-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: var(--muted);
+            font-size: clamp(0.8rem, 1.5vw, 1rem);
+            background: rgba(0, 20, 40, 0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .threshold-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: var(--muted);
+            font-size: clamp(0.8rem, 1.5vw, 1rem);
+            background: rgba(0, 20, 40, 0.7);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .cherenkov-particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 12;
+            pointer-events: none;
+        }
+
+        .cherenkov-particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent), 0 0 16px var(--accent);
+            opacity: 0;
+        }
+
+        .controls {
+            background: var(--card);
+            padding: 16px;
+            border-radius: 12px;
+            height: auto;
+            overflow-y: auto;
+            animation: slideInRight 0.6s ease-out;
+        }
+
+        .controls::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .controls::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        .controls::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 3px;
+        }
+
+        .group {
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        label {
+            display: block;
+            font-size: clamp(12px, 2.5vw, 14px);
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: clamp(20px, 4vw, 24px);
+            height: clamp(20px, 4vw, 24px);
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(138, 43, 226, 0.8);
+        }
+
+        button {
+            background: linear-gradient(90deg, var(--primary), #6a0dad);
+            border: 0;
+            padding: clamp(12px, 3vw, 14px) clamp(14px, 3vw, 18px);
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            font-size: clamp(14px, 3vw, 16px);
+            min-height: 48px; /* Tamanho mínimo para toque */
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: linear-gradient(90deg, #444, #666);
+        }
+
+        button.secondary:hover {
+            box-shadow: 0 5px 15px rgba(102, 102, 102, 0.4);
+        }
+
+        .info-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .info-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            border-left: 3px solid var(--primary);
+            position: relative;
+            overflow: hidden;
+            animation: cardSlideIn 0.5s ease-out;
+        }
+
+        .info-card:nth-child(2) {
+            border-left-color: var(--accent);
+            animation-delay: 0.1s;
+        }
+
+        .info-card:nth-child(3) {
+            border-left-color: var(--success);
+            animation-delay: 0.2s;
+        }
+
+        .info-card:nth-child(4) {
+            border-left-color: var(--warning);
+            animation-delay: 0.3s;
+        }
+
+        .info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .info-card:hover::before {
+            left: 100%;
+        }
+
+        .info-card .label {
+            font-size: clamp(0.7rem, 2vw, 0.85rem);
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .info-card .value {
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .explanation-container {
+            padding: 18px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .explanation-content {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            margin-bottom: 18px;
+        }
+
+        .explanation-content h2 {
+            margin-bottom: 15px;
+            color: var(--accent);
+            font-size: clamp(1.2rem, 4vw, 1.5rem);
+        }
+
+        .explanation-content h3 {
+            margin: 20px 0 10px;
+            color: var(--primary);
+            font-size: clamp(1rem, 3vw, 1.2rem);
+        }
+
+        .explanation-content p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+            font-size: clamp(14px, 3vw, 16px);
+        }
+
+        .explanation-content ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .explanation-content li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+            font-size: clamp(14px, 3vw, 16px);
+        }
+
+        .highlight {
+            background: linear-gradient(90deg, transparent, rgba(138, 43, 226, 0.1), transparent);
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .formula {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+            text-align: center;
+            border-left: 3px solid var(--accent);
+            font-size: clamp(12px, 3vw, 14px);
+            overflow-x: auto;
+        }
+
+        .example {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 3px solid var(--success);
+        }
+
+        .concept-card {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 3px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .concept-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .steps {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .step {
+            flex: 1;
+            min-width: 250px;
+            background: rgba(0, 30, 60, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            border-top: 3px solid var(--accent);
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: var(--accent);
+            color: #000;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        /* Botão de ajuda flutuante */
+        .help-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: clamp(50px, 10vw, 60px);
+            height: clamp(50px, 10vw, 60px);
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            transition: all 0.3s ease;
+            border: none;
+            color: white;
+            font-size: clamp(20px, 5vw, 24px);
+            font-weight: bold;
+        }
+
+        .help-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(138, 43, 226, 0.5);
+        }
+
+        .help-button:active {
+            transform: scale(0.95);
+        }
+
+        /* Painel de ajuda */
+        .help-panel {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: min(320px, 90vw);
+            max-height: 70vh;
+            background: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            overflow-y: auto;
+            transform: translateY(20px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .help-panel.active {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .help-panel h2 {
+            margin-bottom: 15px;
+            color: var(--accent);
+            font-size: clamp(1.1rem, 4vw, 1.3rem);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .help-panel h3 {
+            margin: 15px 0 8px;
+            color: var(--primary);
+            font-size: clamp(1rem, 3vw, 1.1rem);
+        }
+
+        .help-panel p {
+            margin-bottom: 12px;
+            font-size: clamp(13px, 3vw, 14px);
+            line-height: 1.5;
+        }
+
+        .help-panel ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .help-panel li {
+            margin-bottom: 6px;
+            font-size: clamp(13px, 3vw, 14px);
+            line-height: 1.4;
+        }
+
+        .help-panel .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 20px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .help-panel .close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        footer {
+            padding: 12px 20px;
+            font-size: 13px;
+            color: var(--muted);
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            animation: fadeIn 1s ease-out;
+        }
+
+        /* Animações personalizadas */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes canvasAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes cardSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes textGlow {
+            0% {
+                text-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+            }
+            100% {
+                text-shadow: 0 0 15px rgba(0, 191, 255, 0.8), 0 0 20px rgba(138, 43, 226, 0.6);
+            }
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.7;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0.7;
+            }
+        }
+
+        @keyframes particleMove {
+            0% { left: -50px; }
+            100% { left: calc(100% + 50px); }
+        }
+
+        @keyframes particleGlow {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+        }
+
+        @keyframes coneAppear {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.2); }
+        }
+
+        @keyframes trailAppear {
+            0% { width: 0; opacity: 0; }
+            10% { opacity: 0.7; }
+            100% { width: 100%; opacity: 0; }
+        }
+
+        @keyframes cherenkovParticle {
+            0% { 
+                opacity: 0;
+                transform: translate(0, 0) scale(0.5);
+            }
+            20% {
+                opacity: 1;
+            }
+            100% { 
+                opacity: 0;
+                transform: translate(var(--tx), var(--ty)) scale(1.5);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Responsividade */
+        @media (min-width: 768px) {
+            main {
+                grid-template-columns: 1fr minmax(300px, 380px);
+            }
+            
+            .simulation-area {
+                height: 100%;
+                min-height: 500px;
+            }
+            
+            button {
+                width: auto;
+                margin-bottom: 0;
+                margin-right: 10px;
+            }
+            
+            .slider-container {
+                flex-direction: row;
+                align-items: center;
+            }
+            
+            .slider-row {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 767px) {
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .tab-container {
+                width: 100%;
+                max-width: none;
+            }
+            
+            .tab {
+                flex: 1;
+                text-align: center;
+                padding: 12px 8px;
+                min-width: 100px;
+            }
+            
+            .simulation-container {
+                padding: 8px;
+            }
+            
+            .simulation-area {
+                height: 50vh;
+                min-height: 350px;
+            }
+            
+            .controls {
+                padding: 12px;
+            }
+            
+            .help-button {
+                width: 50px;
+                height: 50px;
+                bottom: 15px;
+                right: 15px;
+                font-size: 20px;
+            }
+            
+            .help-panel {
+                width: calc(100% - 30px);
+                right: 15px;
+                bottom: 75px;
+            }
+            
+            .steps {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .simulation-area {
+                height: 45vh;
+                min-height: 300px;
+            }
+            
+            .tab {
+                min-width: 80px;
+                font-size: 12px;
+                padding: 10px 5px;
+            }
+            
+            .controls {
+                padding: 10px;
+            }
+            
+            .info-panel {
+                gap: 8px;
+            }
+            
+            .info-card {
+                padding: 8px;
+            }
+            
+            .explanation-container {
+                padding: 12px;
+            }
+            
+            .explanation-content {
+                padding: 15px;
+            }
+            
+            .help-panel {
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            header {
+                padding: 12px 15px;
+            }
+            
+            main {
+                padding: 0 12px 12px;
+            }
+            
+            .simulation-area {
+                height: 40vh;
+                min-height: 250px;
+            }
+            
+            .tab {
+                font-size: 11px;
+                padding: 8px 4px;
+            }
+        }
+
+        /* Orientação paisagem em dispositivos móveis */
+        @media (max-height: 500px) and (orientation: landscape) {
+            main {
+                height: auto;
+                min-height: calc(100vh - 120px);
+            }
+            
+            .simulation-area {
+                height: 60vh;
+                min-height: 250px;
+            }
+            
+            .help-button {
+                bottom: 10px;
+                right: 10px;
+            }
+            
+            .help-panel {
+                bottom: 60px;
+                right: 10px;
+                max-height: 80vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Efeito Cherenkov</h1>
+        <div class="tab-container">
+            <div class="tab active" data-tab="simulation">Simulação</div>
+            <div class="tab" data-tab="explanation">Explicação</div>
+        </div>
+    </header>
+
+    <div class="tab-content active" id="simulation-tab">
+        <main>
+            <div class="simulation-container">
+                <div class="simulation-area">
+                    <div class="grid-lines"></div>
+                    <div class="water-tank"></div>
+                    <div class="water-surface"></div>
+                    <div class="scale">Escala: 1 unidade = 10 cm</div>
+                    <div class="light-speed-indicator" id="lightSpeedIndicator"></div>
+                    <div class="light-speed-label" id="lightSpeedLabel">Luz no meio: 0,75c</div>
+                    <div class="cherenkov-particles" id="cherenkovParticles"></div>
+                    <div class="particle-trail" id="particleTrail"></div>
+                    <div class="cone-glow" id="coneGlow"></div>
+                    <div class="cone-inner-glow" id="coneInnerGlow"></div>
+                    <div class="cone" id="cone"></div>
+                    <div class="particle-glow" id="particleGlow"></div>
+                    <div class="particle" id="particle"></div>
+                    <div class="angle-indicator" id="angleIndicator">Ângulo: 41,4°</div>
+                    <div class="threshold-indicator" id="thresholdIndicator">Limite: 0,75c</div>
+                </div>
+                
+                <div class="info-panel">
+                    <div class="info-card">
+                        <div class="label">Velocidade da Partícula</div>
+                        <div class="value" id="particleSpeedValue">0,65c</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="label">Velocidade da Luz no Meio</div>
+                        <div class="value" id="lightSpeedValue">0,75c</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="label">Condição para Efeito</div>
+                        <div class="value" id="conditionValue">β > 1/n = 0,75</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="label">Status</div>
+                        <div class="value" id="cherenkovStatus" style="color:var(--accent);">ATIVO</div>
+                    </div>
+                </div>
+
+                <div style="margin-top:12px; display:flex; gap:10px; flex-wrap: wrap;">
+                    <button id="startBtn">Iniciar Simulação</button>
+                    <button id="resetBtn" class="secondary">Reiniciar</button>
+                </div>
+            </div>
+
+            <aside class="controls">
+                <div class="group">
+                    <label><strong>Controles da Simulação</strong></label>
+                    <div class="slider-container">
+                        <div class="slider-row">
+                            <label for="speedSlider">Velocidade da Partícula (β):</label>
+                            <span id="speedValue">0,65c</span>
+                        </div>
+                        <input type="range" id="speedSlider" min="1" max="20" value="12">
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-row">
+                            <label for="mediumSlider">Índice de Refração (n):</label>
+                            <span id="mediumValue">1,33</span>
+                        </div>
+                        <input type="range" id="mediumSlider" min="1" max="20" value="13">
+                    </div>
+                </div>
+
+                <div class="group">
+                    <label><strong>Informações</strong></label>
+                    <p style="font-size: clamp(12px, 2.5vw, 14px); color: var(--muted); margin-bottom: 10px;">
+                        O efeito Cherenkov ocorre quando uma partícula carregada viaja mais rápido que a velocidade da luz em um meio.
+                    </p>
+                    <p style="font-size: clamp(12px, 2.5vw, 14px); color: var(--muted);">
+                        O brilho azul característico é resultado da emissão de radiação eletromagnética devido à polarização do meio.
+                    </p>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <div class="tab-content" id="explanation-tab">
+        <div class="explanation-container">
+            <div class="explanation-content">
+                <h2>O Brilho Azul do Efeito Cherenkov</h2>
+                <p>O <span class="highlight">característico brilho azul</span> do efeito Cherenkov é resultado da emissão de radiação eletromagnética quando partículas carregadas viajam mais rápido que a luz em um meio dielétrico.</p>
+                
+                <p>Esta radiação é emitida predominantemente no <span class="highlight">espectro visível e ultravioleta</span>, com pico na região azul devido a:</p>
+                
+                <ul>
+                    <li>Emissão contínua ao longo do espectro, mas com intensidade proporcional a 1/λ²</li>
+                    <li>Absorção preferencial da luz vermelha pelo meio (água, no caso de reatores nucleares)</li>
+                    <li>Resposta espectral do olho humano, mais sensível ao azul em baixas intensidades</li>
+                </ul>
+                
+                <div class="formula">
+                    I(λ) ∝ (1 - 1/(β²n²(λ))) × (1/λ²)
+                </div>
+                
+                <p>Onde I(λ) é a intensidade da radiação no comprimento de onda λ, β = v/c, e n(λ) é o índice de refração que varia com o comprimento de onda.</p>
+            </div>
+
+            <div class="steps">
+                <div class="step" style="animation-delay: 0.2s">
+                    <h3><span class="step-number">1</span> Polarização do Meio</h3>
+                    <p>A partícula carregada em movimento rápido polariza as moléculas do meio dielétrico, criando dipolos elétricos temporários ao longo de sua trajetória.</p>
+                </div>
+                
+                <div class="step" style="animation-delay: 0.4s">
+                    <h3><span class="step-number">2</span> Recombinação Coerente</h3>
+                    <p>Quando as moléculas se reorganizam após a passagem da partícula, emitem radiação eletromagnética de forma coerente, como uma "onda de choque" de luz.</p>
+                </div>
+                
+                <div class="step" style="animation-delay: 0.6s">
+                    <h3><span class="step-number">3</span> Interferência Construtiva</h3>
+                    <p>A interferência construtiva das ondas emitidas forma um cone de radiação com ângulo característico θ, onde cos(θ) = 1/(βn).</p>
+                </div>
+                
+                <div class="step" style="animation-delay: 0.8s">
+                    <h3><span class="step-number">4</span> Emissão de Fótons</h3>
+                    <p>Os fótons são emitidos predominantemente no azul e ultravioleta, criando o brilho característico observado em reatores nucleares e detectores de partículas.</p>
+                </div>
+            </div>
+
+            <div class="explanation-content">
+                <h2>A Cor Azul do Efeito Cherenkov</h2>
+                <p>Embora a radiação Cherenkov seja emitida em todo o espectro visível, sua aparência azulada resulta de vários fatores:</p>
+                
+                <ul>
+                    <li><span class="highlight">Dependência espectral:</span> A intensidade é proporcional a 1/λ², favorecendo comprimentos de onda mais curtos (azul)</li>
+                    <li><span class="highlight">Absorção diferencial:</span> A água (meio comum em reatores) absorve mais a luz vermelha que a azul</li>
+                    <li><span class="highlight">Resposta do olho humano:</span> Em baixas intensidades, o olho é mais sensível à luz azul-esverdeada (fenômeno de Purkinje)</li>
+                    <li><span class="highlight">Efeito de Cerenkov-Angulo:</span> O ângulo de emissão varia com o comprimento de onda, criando diferentes cores em condições específicas</li>
+                </ul>
+                
+                <p>Em detectores de partículas, este brilho azul é frequentemente capturado por fotomultiplicadores para identificar e estudar partículas de alta energia.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botão de ajuda flutuante -->
+    <button class="help-button" id="helpButton">?</button>
+
+    <!-- Painel de ajuda -->
+    <div class="help-panel" id="helpPanel">
+        <button class="close-btn" id="closeHelp">&times;</button>
+        <h2>💡 Como Usar o Simulador</h2>
+        
+        <h3>Controles</h3>
+        <ul>
+            <li><strong>Velocidade da Partícula:</strong> Ajuste a velocidade da partícula em relação à velocidade da luz (c)</li>
+            <li><strong>Índice de Refração:</strong> Controle o índice de refração do meio (água = 1.33)</li>
+            <li><strong>Iniciar/Reiniciar:</strong> Controle a simulação com estes botões</li>
+        </ul>
+        
+        <h3>Efeito Cherenkov</h3>
+        <p>O efeito ocorre quando a partícula viaja mais rápido que a luz no meio. Observe o cone azul característico que se forma quando a condição é satisfeita.</p>
+        
+        <h3>Fórmula Importante</h3>
+        <div class="formula">cos(θ) = 1/(βn)</div>
+        <p>Onde θ é o ângulo do cone, β = v/c, e n é o índice de refração.</p>
+        
+        <p style="margin-top: 15px; font-style: italic; text-align: center;">
+            Experimente diferentes configurações e observe como o efeito muda!
+        </p>
+    </div>
+
+    <footer>Simulação Interativa do Efeito Cherenkov | Física de Partículas e Astropartículas</footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elementos da simulação
+            const particle = document.getElementById('particle');
+            const particleGlow = document.getElementById('particleGlow');
+            const particleTrail = document.getElementById('particleTrail');
+            const cone = document.getElementById('cone');
+            const coneGlow = document.getElementById('coneGlow');
+            const coneInnerGlow = document.getElementById('coneInnerGlow');
+            const lightSpeedIndicator = document.getElementById('lightSpeedIndicator');
+            const lightSpeedLabel = document.getElementById('lightSpeedLabel');
+            const angleIndicator = document.getElementById('angleIndicator');
+            const thresholdIndicator = document.getElementById('thresholdIndicator');
+            const cherenkovParticles = document.getElementById('cherenkovParticles');
+            
+            // Controles
+            const startBtn = document.getElementById('startBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const speedSlider = document.getElementById('speedSlider');
+            const mediumSlider = document.getElementById('mediumSlider');
+            const speedValue = document.getElementById('speedValue');
+            const mediumValue = document.getElementById('mediumValue');
+            
+            // Display de informações
+            const particleSpeedValue = document.getElementById('particleSpeedValue');
+            const lightSpeedValue = document.getElementById('lightSpeedValue');
+            const conditionValue = document.getElementById('conditionValue');
+            const cherenkovStatus = document.getElementById('cherenkovStatus');
+            
+            // Help elements
+            const helpButton = document.getElementById('helpButton');
+            const helpPanel = document.getElementById('helpPanel');
+            const closeHelp = document.getElementById('closeHelp');
+            
+            // Tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const id = tab.getAttribute('data-tab');
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById(id + '-tab').classList.add('active');
+                    
+                    // Animate content when switching to explanation tab
+                    if (id === 'explanation') {
+                        document.querySelectorAll('.explanation-content, .step').forEach((content, index) => {
+                            content.style.animation = `slideUp 0.6s ease-out ${index * 0.1}s both`;
+                        });
+                    }
+                });
+            });
+
+            // Help panel functionality
+            helpButton.addEventListener('click', () => {
+                helpPanel.classList.toggle('active');
+            });
+
+            closeHelp.addEventListener('click', () => {
+                helpPanel.classList.remove('active');
+            });
+
+            // Close help panel when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!helpPanel.contains(e.target) && e.target !== helpButton) {
+                    helpPanel.classList.remove('active');
+                }
+            });
+
+            let animationId = null;
+            let isAnimating = false;
+            let cherenkovParticleInterval = null;
+            
+            // Valores iniciais
+            let particleSpeed = 0.65; // Em fração de c (velocidade da luz)
+            let refractionIndex = 1.33; // Água
+            
+            // Atualizar valores dos sliders
+            speedSlider.addEventListener('input', function() {
+                // Converter valor do slider (1-20) para fração de c (0.10 a 0.99)
+                particleSpeed = 0.10 + (parseInt(this.value) - 1) * (0.89 / 19);
+                updateDisplay();
+                if (isAnimating) {
+                    resetAnimation();
+                    startAnimation();
+                }
+            });
+            
+            mediumSlider.addEventListener('input', function() {
+                // Converter valor do slider para índice de refração (1.0 a 2.0)
+                refractionIndex = 1 + (parseInt(this.value) / 20);
+                updateDisplay();
+                if (isAnimating) {
+                    resetAnimation();
+                    startAnimation();
+                }
+            });
+            
+            // Iniciar animação
+            startBtn.addEventListener('click', function() {
+                if (!isAnimating) {
+                    startAnimation();
+                    startBtn.textContent = "Parar Simulação";
+                } else {
+                    stopAnimation();
+                    startBtn.textContent = "Iniciar Simulação";
+                }
+                isAnimating = !isAnimating;
+            });
+            
+            // Reiniciar animação
+            resetBtn.addEventListener('click', function() {
+                resetAnimation();
+                if (isAnimating) {
+                    startAnimation();
+                }
+                startBtn.textContent = "Iniciar Simulação";
+                isAnimating = false;
+            });
+            
+            function updateDisplay() {
+                // Atualizar valores exibidos
+                speedValue.textContent = particleSpeed.toFixed(2).replace('.', ',') + 'c';
+                mediumValue.textContent = refractionIndex.toFixed(2).replace('.', ',');
+                
+                // Calcular velocidade da luz no meio (c/n)
+                const lightSpeedInMedium = 1 / refractionIndex;
+                
+                // Atualizar display de velocidade
+                particleSpeedValue.textContent = particleSpeed.toFixed(2).replace('.', ',') + 'c';
+                lightSpeedValue.textContent = lightSpeedInMedium.toFixed(2).replace('.', ',') + 'c';
+                conditionValue.textContent = `β > 1/n = ${lightSpeedInMedium.toFixed(2).replace('.', ',')}`;
+                
+                // Atualizar indicador de velocidade da luz
+                const lightSpeedPercent = lightSpeedInMedium * 100;
+                lightSpeedIndicator.style.width = `${lightSpeedPercent}%`;
+                lightSpeedLabel.textContent = `Luz no meio: ${lightSpeedInMedium.toFixed(2).replace('.', ',')}c`;
+                lightSpeedLabel.style.left = `calc(${lightSpeedPercent}% - 120px)`;
+                
+                // Atualizar indicador de limiar
+                thresholdIndicator.textContent = `Limite: ${lightSpeedInMedium.toFixed(2).replace('.', ',')}c`;
+                
+                // Verificar condição do efeito Cherenkov
+                if (particleSpeed > lightSpeedInMedium) {
+                    cherenkovStatus.textContent = "ATIVO";
+                    cherenkovStatus.style.color = "var(--accent)";
+                } else {
+                    cherenkovStatus.textContent = "INATIVO";
+                    cherenkovStatus.style.color = "var(--muted)";
+                }
+            }
+            
+            function startAnimation() {
+                resetAnimation();
+                
+                // Calcular ângulo do cone baseado na velocidade e índice de refração
+                const angle = calculateConeAngle(particleSpeed, refractionIndex);
+                
+                // Configurar animação da partícula
+                const animationDuration = 5 / particleSpeed; // Quanto maior a velocidade, mais rápida a animação
+                particle.style.animation = `particleMove ${animationDuration}s linear infinite`;
+                particleGlow.style.animation = `particleGlow ${animationDuration/2}s ease-out infinite`;
+                
+                // Configurar trilha da partícula
+                particleTrail.style.animation = `trailAppear ${animationDuration}s linear infinite`;
+                
+                // Configurar cone de Cherenkov
+                // O tamanho do cone já é responsivo via CSS clamp()
+                cone.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+                cone.style.animation = `coneAppear ${animationDuration}s linear infinite`;
+                
+                coneGlow.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+                coneGlow.style.animation = `coneAppear ${animationDuration}s linear infinite`;
+                
+                coneInnerGlow.style.transform = `translate(-50%, -50%) rotate(${angle}deg)`;
+                coneInnerGlow.style.animation = `coneAppear ${animationDuration}s linear infinite`;
+                
+                // Mostrar cone apenas se a partícula for mais rápida que a luz no meio
+                const lightSpeedInMedium = 1 / refractionIndex;
+                if (particleSpeed > lightSpeedInMedium) {
+                    cone.style.display = "block";
+                    coneGlow.style.display = "block";
+                    coneInnerGlow.style.display = "block";
+                    angleIndicator.style.display = "block";
+                    angleIndicator.textContent = `Ângulo: ${angle.toFixed(1)}°`;
+                    
+                    // Iniciar partículas de Cherenkov
+                    startCherenkovParticles(angle, animationDuration);
+                } else {
+                    cone.style.display = "none";
+                    coneGlow.style.display = "none";
+                    coneInnerGlow.style.display = "none";
+                    angleIndicator.style.display = "none";
+                    stopCherenkovParticles();
+                }
+            }
+            
+            function startCherenkovParticles(angle, duration) {
+                stopCherenkovParticles();
+                
+                // Criar partículas de Cherenkov
+                cherenkovParticleInterval = setInterval(() => {
+                    createCherenkovParticle(angle);
+                }, 100);
+            }
+            
+            function stopCherenkovParticles() {
+                if (cherenkovParticleInterval) {
+                    clearInterval(cherenkovParticleInterval);
+                    cherenkovParticleInterval = null;
+                }
+                cherenkovParticles.innerHTML = '';
+            }
+            
+            function createCherenkovParticle(angle) {
+                const particle = document.createElement('div');
+                particle.className = 'cherenkov-particle';
+                cherenkovParticles.appendChild(particle);
+                
+                // Calcular posição aleatória dentro do cone
+                const angleRad = angle * Math.PI / 180;
+                const distance = 50 + Math.random() * 350;
+                const particleAngle = -angleRad + (Math.random() * 2 * angleRad);
+                
+                const x = Math.sin(particleAngle) * distance;
+                const y = -Math.cos(particleAngle) * distance;
+                
+                // Posicionar partícula
+                particle.style.left = `calc(50% + ${x}px)`;
+                particle.style.top = `calc(50% + ${y}px)`;
+                
+                // Configurar animação
+                const tx = (Math.random() - 0.5) * 100;
+                const ty = (Math.random() - 0.5) * 100;
+                const animationDuration = 1 + Math.random() * 2;
+                
+                particle.style.setProperty('--tx', `${tx}px`);
+                particle.style.setProperty('--ty', `${ty}px`);
+                particle.style.animation = `cherenkovParticle ${animationDuration}s ease-out forwards`;
+                
+                // Remover partícula após animação
+                setTimeout(() => {
+                    if (particle.parentNode) {
+                        particle.parentNode.removeChild(particle);
+                    }
+                }, animationDuration * 1000);
+            }
+            
+            function stopAnimation() {
+                particle.style.animation = "none";
+                particleGlow.style.animation = "none";
+                particleTrail.style.animation = "none";
+                cone.style.animation = "none";
+                coneGlow.style.animation = "none";
+                coneInnerGlow.style.animation = "none";
+                stopCherenkovParticles();
+            }
+            
+            function resetAnimation() {
+                particle.style.animation = "none";
+                particleGlow.style.animation = "none";
+                particleTrail.style.animation = "none";
+                cone.style.animation = "none";
+                coneGlow.style.animation = "none";
+                coneInnerGlow.style.animation = "none";
+                stopCherenkovParticles();
+                
+                // Forçar reflow para reiniciar a animação
+                void particle.offsetWidth;
+                void particleGlow.offsetWidth;
+                void particleTrail.offsetWidth;
+                void cone.offsetWidth;
+                void coneGlow.offsetWidth;
+                void coneInnerGlow.offsetWidth;
+                
+                // Resetar posição da partícula
+                particle.style.left = "-50px";
+                particleGlow.style.left = "-50px";
+                particleTrail.style.width = "0";
+            }
+            
+            function calculateConeAngle(speed, n) {
+                // Fórmula corrigida do efeito Cherenkov: θ = arccos(1/(β·n))
+                // Onde β = v/c (fração da velocidade da luz)
+                if (speed <= 1/n) {
+                    return 0; // Sem efeito Cherenkov
+                }
+                
+                // Verificar se o argumento do arccos está no intervalo válido [-1, 1]
+                const argument = 1/(speed * n);
+                if (argument < -1 || argument > 1) {
+                    return 0; // Valores inválidos, sem efeito Cherenkov
+                }
+                
+                const angleRad = Math.acos(argument);
+                const angleDeg = angleRad * (180 / Math.PI);
+                
+                return angleDeg;
+            }
+            
+            // Inicializar display
+            updateDisplay();
+            
+            // Iniciar automaticamente após um breve delay
+            setTimeout(() => {
+                startAnimation();
+                isAnimating = true;
+                startBtn.textContent = "Parar Simulação";
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

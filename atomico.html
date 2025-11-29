@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Modelos Atômicos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(to right, #2c3e50, #4a6491);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            border-bottom: 5px solid #fdbb2d;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .timeline {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+            overflow-x: auto;
+        }
+        
+        .model-btn {
+            padding: 12px 20px;
+            background: linear-gradient(to bottom, #4a6491, #2c3e50);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            min-width: 150px;
+            margin: 0 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .model-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(to bottom, #fdbb2d, #b21f1f);
+        }
+        
+        .model-btn.active {
+            background: linear-gradient(to bottom, #fdbb2d, #b21f1f);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .content {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 20px;
+        }
+        
+        .visualization {
+            flex: 1;
+            min-width: 300px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .model-canvas {
+            width: 100%;
+            max-width: 500px;
+            height: 400px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .control-btn {
+            padding: 8px 15px;
+            background-color: #4a6491;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .control-btn:hover {
+            background-color: #2c3e50;
+        }
+        
+        .info {
+            flex: 1;
+            min-width: 300px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .model-title {
+            font-size: 1.8rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #fdbb2d;
+        }
+        
+        .model-description {
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .key-points {
+            margin-top: 20px;
+        }
+        
+        .key-points h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .key-points ul {
+            padding-left: 20px;
+        }
+        
+        .key-points li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            background-color: #2c3e50;
+            color: white;
+            border-top: 5px solid #fdbb2d;
+        }
+        
+        .atom {
+            position: absolute;
+            border-radius: 50%;
+        }
+        
+        .nucleus {
+            background: radial-gradient(circle at 30% 30%, #b21f1f, #7a0f0f);
+            box-shadow: 0 0 20px rgba(178, 31, 31, 0.7);
+        }
+        
+        .electron {
+            background: radial-gradient(circle at 30% 30%, #4a90e2, #1a5fb4);
+            box-shadow: 0 0 15px rgba(74, 144, 226, 0.7);
+        }
+        
+        .electron-path {
+            position: absolute;
+            border: 1px dashed rgba(74, 144, 226, 0.5);
+            border-radius: 50%;
+        }
+        
+        .proton {
+            background: radial-gradient(circle at 30% 30%, #ff6b6b, #c23636);
+        }
+        
+        .neutron {
+            background: radial-gradient(circle at 30% 30%, #a0a0a0, #707070);
+        }
+        
+        .experiment-area {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9f5ff;
+            border-radius: 8px;
+            border-left: 4px solid #4a90e2;
+        }
+        
+        .experiment-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .test-btn {
+            padding: 10px 15px;
+            background: linear-gradient(to bottom, #4CAF50, #2E7D32);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+        
+        .test-btn:hover {
+            background: linear-gradient(to bottom, #66BB6A, #388E3C);
+            transform: translateY(-2px);
+        }
+        
+        .animation-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .anim-btn {
+            padding: 8px 12px;
+            background-color: #9C27B0;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .anim-btn:hover {
+            background-color: #7B1FA2;
+        }
+        
+        .alpha-particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #FF9800;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #FF9800;
+        }
+        
+        .gold-foil {
+            position: absolute;
+            width: 200px;
+            height: 300px;
+            background: linear-gradient(to right, #FFD700, #D4AF37);
+            opacity: 0.7;
+            border-radius: 5px;
+        }
+        
+        .quantum-jump {
+            transition: all 1.5s ease-in-out;
+        }
+        
+        @media (max-width: 768px) {
+            .timeline {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .model-btn {
+                width: 100%;
+                margin: 5px 0;
+            }
+            
+            .content {
+                flex-direction: column;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .control-btn {
+                width: 100%;
+                max-width: 200px;
+            }
+        }
+
+        /* Animações */
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes orbit {
+            0% { transform: rotate(0deg) translateX(100px) rotate(0deg); }
+            100% { transform: rotate(360deg) translateX(100px) rotate(-360deg); }
+        }
+        
+        @keyframes orbit2 {
+            0% { transform: rotate(0deg) translateX(150px) rotate(0deg); }
+            100% { transform: rotate(360deg) translateX(150px) rotate(-360deg); }
+        }
+        
+        @keyframes orbit3 {
+            0% { transform: rotate(0deg) translateX(200px) rotate(0deg); }
+            100% { transform: rotate(360deg) translateX(200px) rotate(-360deg); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.7; }
+        }
+        
+        @keyframes electronJump {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0); }
+        }
+        
+        @keyframes alphaParticle {
+            0% { left: -50px; opacity: 1; }
+            70% { opacity: 1; }
+            100% { left: 550px; opacity: 0; }
+        }
+        
+        @keyframes alphaDeflect {
+            0% { left: -50px; opacity: 1; }
+            30% { left: 200px; top: 200px; opacity: 1; }
+            100% { left: -100px; top: 400px; opacity: 0; }
+        }
+        
+        @keyframes alphaBackscatter {
+            0% { left: -50px; opacity: 1; }
+            20% { left: 250px; top: 200px; opacity: 1; }
+            100% { left: -50px; top: -100px; opacity: 0; }
+        }
+        
+        .rotating {
+            animation: rotate 10s linear infinite;
+        }
+        
+        .orbiting {
+            animation: orbit 5s linear infinite;
+        }
+        
+        .orbiting2 {
+            animation: orbit2 7s linear infinite;
+        }
+        
+        .orbiting3 {
+            animation: orbit3 9s linear infinite;
+        }
+        
+        .pulsing {
+            animation: pulse 3s ease-in-out infinite;
+        }
+        
+        .electron-jump {
+            animation: electronJump 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Evolução dos Modelos Atômicos</h1>
+            <p class="subtitle">Simule as características principais de cada modelo atômico</p>
+        </header>
+        
+        <div class="timeline">
+            <button class="model-btn active" data-model="dalton">Dalton (1803)</button>
+            <button class="model-btn" data-model="thomson">Thomson (1897)</button>
+            <button class="model-btn" data-model="rutherford">Rutherford (1911)</button>
+            <button class="model-btn" data-model="bohr">Bohr (1913)</button>
+            <button class="model-btn" data-model="schrodinger">Schrödinger (1926)</button>
+            <button class="model-btn" data-model="moderno">Modelo Moderno</button>
+        </div>
+        
+        <div class="content">
+            <div class="visualization">
+                <div class="model-canvas" id="atom-canvas">
+                    <!-- O modelo atômico será renderizado aqui pelo JavaScript -->
+                </div>
+                <div class="controls">
+                    <button class="control-btn" id="rotate-btn">Rotacionar</button>
+                    <button class="control-btn" id="zoom-in-btn">Aproximar</button>
+                    <button class="control-btn" id="zoom-out-btn">Afastar</button>
+                    <button class="control-btn" id="reset-btn">Resetar</button>
+                    <button class="control-btn" id="animate-btn">Animar/Parar</button>
+                </div>
+                
+                <div class="experiment-area" id="experiment-area">
+                    <div class="experiment-title" id="experiment-title">Teste as Características do Modelo</div>
+                    <div id="experiment-description">Clique no botão abaixo para testar uma característica principal deste modelo atômico.</div>
+                    <button class="test-btn" id="test-btn">Testar Característica</button>
+                    
+                    <div class="animation-controls">
+                        <button class="anim-btn" id="slow-btn">Lento</button>
+                        <button class="anim-btn" id="normal-btn">Normal</button>
+                        <button class="anim-btn" id="fast-btn">Rápido</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info">
+                <h2 class="model-title" id="model-name">Modelo de Dalton (1803)</h2>
+                <p class="model-description" id="model-description">
+                    John Dalton propôs que toda matéria é composta de átomos, que são partículas indivisíveis e indestrutíveis. 
+                    Átomos de um mesmo elemento são idênticos em massa e propriedades, e compostos são formados pela combinação 
+                    de átomos de elementos diferentes em proporções fixas.
+                </p>
+                
+                <div class="key-points">
+                    <h3>Pontos-chave do modelo:</h3>
+                    <ul id="key-points">
+                        <li>Átomos são esferas maciças e indivisíveis</li>
+                        <li>Átomos do mesmo elemento são idênticos</li>
+                        <li>Átomos de elementos diferentes têm propriedades diferentes</li>
+                        <li>Reações químicas envolvem o rearranjo de átomos</li>
+                        <li>Átomos não podem ser criados nem destruídos</li>
+                    </ul>
+                </div>
+                
+                <div class="key-points" id="experiments-section">
+                    <h3>Característica Principal para Testar:</h3>
+                    <p id="main-feature">Esfera maciça e indivisível - os átomos são vistos como partículas sólidas e uniformes sem estrutura interna.</p>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Simulador de Modelos Atômicos &copy; 2023 - Desenvolvido para fins educacionais</p>
+        </footer>
+    </div>
+
+    <script>
+        // Dados dos modelos atômicos
+        const models = {
+            dalton: {
+                name: "Modelo de Dalton (1803)",
+                description: "John Dalton propôs que toda matéria é composta de átomos, que são partículas indivisíveis e indestrutíveis. Átomos de um mesmo elemento são idênticos em massa e propriedades, e compostos são formados pela combinação de átomos de elementos diferentes em proporções fixas.",
+                keyPoints: [
+                    "Átomos são esferas maciças e indivisíveis",
+                    "Átomos do mesmo elemento são idênticos",
+                    "Átomos de elementos diferentes têm propriedades diferentes",
+                    "Reações químicas envolvem o rearranjo de átomos",
+                    "Átomos não podem ser criados nem destruídos"
+                ],
+                mainFeature: "Esfera maciça e indivisível - os átomos são vistos como partículas sólidas e uniformes sem estrutura interna.",
+                testDescription: "Clique para visualizar a indivisibilidade do átomo de Dalton",
+                draw: function() {
+                    const canvas = document.getElementById('atom-canvas');
+                    canvas.innerHTML = '';
+                    
+                    // Criar esfera maciça (modelo de Dalton)
+                    const sphere = document.createElement('div');
+                    sphere.className = 'atom nucleus';
+                    sphere.style.width = '300px';
+                    sphere.style.height = '300px';
+                    sphere.style.background = 'radial-gradient(circle at 30% 30%, #8B4513, #5D2906)';
+                    sphere.style.boxShadow = '0 0 30px rgba(139, 69, 19, 0.8)';
+                    sphere.id = 'dalton-sphere';
+                    
+                    canvas.appendChild(sphere);
+                    
+                    // Adicionar rótulo
+                    const label = document.createElement('div');
+                    label.style.position = 'absolute';
+                    label.style.bottom = '20px';
+                    label.style.color = '#2c3e50';
+                    label.style.fontWeight = 'bold';
+                    label.style.textAlign = 'center';
+                    label.style.width = '100%';
+                    label.textContent = 'Átomo como esfera maciça e indivisível';
+                    
+                    canvas.appendChild(label);
+                },
+                test: function() {
+                    const sphere = document.getElementById('dalton-sphere');
+                    if (sphere) {
+                        sphere.classList.toggle('pulsing');
+                        
+                        // Adicionar texto de explicação
+                        const canvas = document.getElementById('atom-canvas');
+                        let explanation = document.getElementById('explanation-text');
+                        
+                        if (!explanation) {
+                            explanation = document.createElement('div');
+                            explanation.id = 'explanation-text';
+                            explanation.style.position = 'absolute';
+                            explanation.style.top = '20px';
+                            explanation.style.color = '#2c3e50';
+                            explanation.style.fontWeight = 'bold';
+                            explanation.style.textAlign = 'center';
+                            explanation.style.width = '100%';
+                            explanation.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+                            explanation.style.padding = '10px';
+                            explanation.style.borderRadius = '5px';
+                            canvas.appendChild(explanation);
+                        }
+                        
+                        if (sphere.classList.contains('pulsing')) {
+                            explanation.textContent = 'O átomo de Dalton é uma esfera MACIÇA e INDIVISÍVEL';
+                        } else {
+                            explanation.textContent = '';
+                        }
+                    }
+                }
+            },
+            
+            thomson: {
+                name: "Modelo de Thomson (1897)",
+                description: "J.J. Thomson descobriu o elétron através de experimentos com raios catódicos, propondo o modelo de 'pudim de passas'. Neste modelo, o átomo seria uma esfera de carga positiva com elétrons (carga negativa) incrustados, como passas em um pudim.",
+                keyPoints: [
+                    "Átomo é uma esfera de carga positiva",
+                    "Elétrons estão incrustados na esfera positiva",
+                    "O átomo é eletricamente neutro",
+                    "Elétrons podem ser removidos do átomo",
+                    "Modelo também conhecido como 'pudim de passas'"
+                ],
+                mainFeature: "Elétrons incrustados em uma esfera positiva - modelo do 'pudim de passas'.",
+                testDescription: "Clique para mostrar/ocultar os elétrons no modelo de Thomson",
+                draw: function() {
+                    const canvas = document.getElementById('atom-canvas');
+                    canvas.innerHTML = '';
+                    
+                    // Criar esfera positiva
+                    const sphere = document.createElement('div');
+                    sphere.className = 'atom nucleus';
+                    sphere.style.width = '350px';
+                    sphere.style.height = '350px';
+                    sphere.style.background = 'radial-gradient(circle at 30% 30%, #FF6B6B, #C23636)';
+                    sphere.style.boxShadow = '0 0 40px rgba(255, 107, 107, 0.6)';
+                    sphere.style.opacity = '0.7';
+                    sphere.id = 'thomson-sphere';
+                    
+                    canvas.appendChild(sphere);
+                    
+                    // Adicionar elétrons (passas)
+                    for (let i = 0; i < 8; i++) {
+                        const angle = (i / 8) * 2 * Math.PI;
+                        const radius = 120;
+                        const x = 175 + radius * Math.cos(angle) - 15;
+                        const y = 175 + radius * Math.sin(angle) - 15;
+                        
+                        const electron = document.createElement('div');
+                        electron.className = 'atom electron';
+                        electron.style.width = '30px';
+                        electron.style.height = '30px';
+                        electron.style.left = `${x}px`;
+                        electron.style.top = `${y}px`;
+                        electron.style.opacity = '0';
+                        electron.id = `thomson-electron-${i}`;
+                        
+                        canvas.appendChild(electron);
+                    }
+                    
+                    // Adicionar rótulo
+                    const label = document.createElement('div');
+                    label.style.position = 'absolute';
+                    label.style.bottom = '20px';
+                    label.style.color = '#2c3e50';
+                    label.style.fontWeight = 'bold';
+                    label.style.textAlign = 'center';
+                    label.style.width = '100%';
+                    label.textContent = 'Modelo do Pudim de Passas';
+                    
+                    canvas.appendChild(label);
+                },
+                test: function() {
+                    // Alternar a visibilidade dos elétrons
+                    for (let i = 0; i < 8; i++) {
+                        const electron = document.getElementById(`thomson-electron-${i}`);
+                        if (electron) {
+                            if (electron.style.opacity === '0') {
+                                electron.style.opacity = '1';
+                                electron.classList.add('electron-jump');
+                            } else {
+                                electron.style.opacity = '0';
+                                electron.classList.remove('electron-jump');
+                            }
+                        }
+                    }
+                    
+                    // Adicionar texto de explicação
+                    const canvas = document.getElementById('atom-canvas');
+                    let explanation = document.getElementById('explanation-text');
+                    
+                    if (!explanation) {
+                        explanation = document.createElement('div');
+                        explanation.id = 'explanation-text';
+                        explanation.style.position = 'absolute';
+                        explanation.style.top = '20px';
+                        explanation.style.color = '#2c3e50';
+                        explanation.style.fontWeight = 'bold';
+                        explanation.style.textAlign = 'center';
+                        explanation.style.width = '100%';
+                        explanation.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+                        explanation.style.padding = '10px';
+                        explanation.style.borderRadius = '5px';
+                        canvas.appendChild(explanation);
+                    }
+                    
+                    const firstElectron = document.getElementById('thomson-electron-0');
+                    if (firstElectron && firstElectron.style.opacity === '1') {
+                        explanation.textContent = 'Elétrons incrustados na esfera positiva - como passas em um pudim!';
+                    } else {
+                        explanation.textContent = '';
+                    }
+                }
+            },
+            
+            rutherford: {
+                name: "Modelo de Rutherford (1911)",
+                description: "Ernest Rutherford realizou o experimento da folha de ouro, bombardeando uma fina lâmina de ouro com partículas alfa. A observação de que algumas partículas eram desviadas levou à conclusão de que o átomo possui um núcleo pequeno, denso e positivo, com elétrons orbitando ao redor.",
+                keyPoints: [
+                    "Átomo possui um núcleo pequeno, denso e positivo",
+                    "Elétrons orbitam ao redor do núcleo",
+                    "Maior parte do átomo é espaço vazio",
+                    "Núcleo contém prótons e nêutrons (descobertos depois)",
+                    "Modelo planetário ou nuclear"
+                ],
+                mainFeature: "Núcleo central positivo com elétrons em órbitas - demonstração do experimento da folha de ouro.",
+                testDescription: "Clique para simular o experimento da folha de ouro",
+                draw: function() {
+                    const canvas = document.getElementById('atom-canvas');
+                    canvas.innerHTML = '';
+                    
+                    // Criar núcleo
+                    const nucleus = document.createElement('div');
+                    nucleus.className = 'atom nucleus';
+                    nucleus.style.width = '80px';
+                    nucleus.style.height = '80px';
+                    nucleus.style.left = 'calc(50% - 40px)';
+                    nucleus.style.top = 'calc(50% - 40px)';
+                    nucleus.id = 'rutherford-nucleus';
+                    
+                    canvas.appendChild(nucleus);
+                    
+                    // Adicionar órbitas e elétrons
+                    const orbits = [120, 180, 240];
+                    
+                    orbits.forEach(radius => {
+                        const orbit = document.createElement('div');
+                        orbit.className = 'electron-path';
+                        orbit.style.width = `${radius * 2}px`;
+                        orbit.style.height = `${radius * 2}px`;
+                        orbit.style.left = `calc(50% - ${radius}px)`;
+                        orbit.style.top = `calc(50% - ${radius}px)`;
+                        
+                        canvas.appendChild(orbit);
+                        
+                        // Adicionar elétrons em cada órbita
+                        const electronsCount = radius === 120 ? 2 : radius === 180 ? 8 : 8;
+                        
+                        for (let i = 0; i < electronsCount; i++) {
+                            const angle = (i / electronsCount) * 2 * Math.PI;
+                            const x = 250 + radius * Math.cos(angle) - 10;
+                            const y = 200 + radius * Math.sin(angle) - 10;
+                            
+                            const electron = document.createElement('div');
+                            electron.className = 'atom electron';
+                            electron.style.width = '20px';
+                            electron.style.height = '20px';
+                            electron.style.left = `${x}px`;
+                            electron.style.top = `${y}px`;
+                            electron.id = `rutherford-electron-${radius}-${i}`;
+                            
+                            canvas.appendChild(electron);
+                        }
+                    });
+                    
+                    // Adicionar rótulo
+                    const label = document.createElement('div');
+                    label.style.position = 'absolute';
+                    label.style.bottom = '20px';
+                    label.style.color = '#2c3e50';
+                    label.style.fontWeight = 'bold';
+                    label.style.textAlign = 'center';
+                    label.style.width = '100%';
+                    label.textContent = 'Modelo Planetário ou Nuclear';
+                    
+                    canvas.appendChild(label);
+                },
+                test: function() {
+                    // Simular partículas alfa no experimento da folha de ouro
+                    const canvas = document.getElementById('atom-canvas');
+                    
+                    // Criar partículas alfa
+                    for (let i = 0; i < 15; i++) {
+                        const alpha = document.createElement('div');
+                        alpha.className = 'alpha-particle';
+                        alpha.style.width = '10px';
+                        alpha.style.height = '10px';
+                        alpha.style.top = `${50 + i * 20}px`;
+                        alpha.style.left = '-50px';
+                        alpha.style.position = 'absolute';
+                        alpha.id = `alpha-particle-${i}`;
+                        
+                        canvas.appendChild(alpha);
+                        
+                        // Animar as partículas - maioria passa direto, algumas são desviadas
+                        setTimeout(() => {
+                            if (i < 12) {
+                                // Maioria passa direto (atravessa o espaço vazio)
+                                alpha.classList.add('alphaParticle');
+                                alpha.style.animation = 'alphaParticle 3s linear forwards';
+                            } else if (i < 14) {
+                                // Algumas são desviadas (passam perto do núcleo)
+                                alpha.classList.add('alphaDeflect');
+                                alpha.style.animation = 'alphaDeflect 3s linear forwards';
+                            } else {
+                                // Pouquíssimas retroespalham (atingem o núcleo)
+                                alpha.classList.add('alphaBackscatter');
+                                alpha.style.animation = 'alphaBackscatter 3s linear forwards';
+                            }
+                        }, i * 200);
+                        
+                        // Remover após a animação
+                        setTimeout(() => {
+                            if (alpha.parentNode) {
+                                alpha.parentNode.removeChild(alpha);
+                            }
+                        }, 4000 + i * 200);
+                    }
+                    
+                    // Adicionar texto de explicação
+                    let explanation = document.getElementById('explanation-text');
+                    
+                    if (!explanation) {
+                        explanation = document.createElement('div');
+                        explanation.id = 'explanation-text';
+                        explanation.style.position = 'absolute';
+                        explanation.style.top = '20px';
+                        explanation.style.color = '#2c3e50';
+                        explanation.style.fontWeight = 'bold';
+                        explanation.style.textAlign = 'center';
+                        explanation.style.width = '100%';
+                        explanation.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+                        explanation.style.padding = '10px';
+                        explanation.style.borderRadius = '5px';
+                        canvas.appendChild(explanation);
+                    }
+                    
+                    explanation.textContent = 'Experimento da folha de ouro: partículas alfa sendo disparadas contra o átomo';
+                    
+                    // Remover explicação após alguns segundos
+                    setTimeout(() => {
+                        explanation.textContent = 'Observe: maioria passa direto, algumas desviam, poucas retroespalham!';
+                    }, 2000);
+                    
+                    setTimeout(() => {
+                        explanation.textContent = '';
+                    }, 6000);
+                }
+            },
+            
+            bohr: {
+                name: "Modelo de Bohr (1913)",
+                description: "Niels Bohr propôs que os elétrons orbitam o núcleo em órbitas específicas ou níveis de energia, sem emitir radiação. Elétrons podem saltar entre órbitas ao ganhar ou perder energia quantizada. Este modelo explicava com sucesso o espectro de emissão do hidrogênio.",
+                keyPoints: [
+                    "Elétrons orbitam em níveis de energia discretos",
+                    "Elétrons não emitem radiação enquanto permanecem na mesma órbita",
+                    "Transições entre órbitas envolvem absorção ou emissão de fótons",
+                    "As órbitas permitidas são quantizadas",
+                    "Explica o espectro de linhas do hidrogênio"
+                ],
+                mainFeature: "Elétrons em órbitas quantizadas com saltos quânticos entre níveis de energia.",
+                testDescription: "Clique para demonstrar saltos quânticos de elétrons",
+                draw: function() {
+                    const canvas = document.getElementById('atom-canvas');
+                    canvas.innerHTML = '';
+                    
+                    // Criar núcleo
+                    const nucleus = document.createElement('div');
+                    nucleus.className = 'atom nucleus';
+                    nucleus.style.width = '60px';
+                    nucleus.style.height = '60px';
+                    nucleus.style.left = 'calc(50% - 30px)';
+                    nucleus.style.top = 'calc(50% - 30px)';
+                    nucleus.id = 'bohr-nucleus';
+                    
+                    canvas.appendChild(nucleus);
+                    
+                    // Adicionar órbitas quantizadas e elétrons
+                    const orbits = [100, 160, 220];
+                    const electronsPerOrbit = [2, 8, 8];
+                    
+                    orbits.forEach((radius, index) => {
+                        const orbit = document.createElement('div');
+                        orbit.className = 'electron-path';
+                        orbit.style.width = `${radius * 2}px`;
+                        orbit.style.height = `${radius * 2}px`;
+                        orbit.style.left = `calc(50% - ${radius}px)`;
+                        orbit.style.top = `calc(50% - ${radius}px)`;
+                        orbit.style.border = '2px solid rgba(74, 144, 226, 0.7)';
+                        orbit.id = `bohr-orbit-${index}`;
+                        
+                        canvas.appendChild(orbit);
+                        
+                        // Adicionar elétrons em cada órbita
+                        for (let i = 0; i < electronsPerOrbit[index]; i++) {
+                            const angle = (i / electronsPerOrbit[index]) * 2 * Math.PI;
+                            const x = 250 + radius * Math.cos(angle) - 10;
+                            const y = 200 + radius * Math.sin(angle) - 10;
+                            
+                            const electron = document.createElement('div');
+                            electron.className = 'atom electron';
+                            electron.style.width = '20px';
+                            electron.style.height = '20px';
+                            electron.style.left = `${x}px`;
+                            electron.style.top = `${y}px`;
+                            electron.id = `bohr-electron-${index}-${i}`;
+                            
+                            canvas.appendChild(electron);
+                        }
+                        
+                        // Adicionar rótulos de nível de energia
+                        const energyLabel = document.createElement('div');
+                        energyLabel.style.position = 'absolute';
+                        energyLabel.style.left = `${250 + radius + 10}px`;
+                        energyLabel.style.top = '200px';
+                        energyLabel.style.color = '#2c3e50';
+                        energyLabel.style.fontSize = '14px';
+                        energyLabel.textContent = `n=${index+1}`;
+                        
+                        canvas.appendChild(energyLabel);
+                    });
+                    
+                    // Adicionar rótulo
+                    const label = document.createElement('div');
+                    label.style.position = 'absolute';
+                    label.style.bottom = '20px';
+                    label.style.color = '#2c3e50';
+                    label.style.fontWeight = 'bold';
+                    label.style.textAlign = 'center';
+                    label.style.width = '100%';
+                    label.textContent = 'Modelo de Órbitas Quantizadas';
+                    
+                    canvas.appendChild(label);
+                },
+                test: function() {
+                    // Simular salto quântico de um elétron
+                    const electron1 = document.getElementById('bohr-electron-0-0');
+                    const electron2 = document.getElementById('bohr-electron-1-0');
+                    
+                    if (electron1 && electron2) {
+                        // Alternar posições para simular salto quântico
+                        electron1.classList.add('quantum-jump');
+                        electron2.classList.add('quantum-jump');
+                        
+                        const tempLeft = electron1.style.left;
+                        const tempTop = electron1.style.top;
+                        
+                        electron1.style.left = electron2.style.left;
+                        electron1.style.top = electron2.style.top;
+                        
+                        electron2.style.left = tempLeft;
+                        electron2.style.top = tempTop;
+                        
+                        // Criar efeito de fóton
+                        const canvas = document.getElementById('atom-canvas');
+                        const photon = document.createElement('div');
+                        photon.style.position = 'absolute';
+                        photon.style.width = '30px';
+                        photon.style.height = '10px';
+                        photon.style.background = 'linear-gradient(90deg, #fdbb2d, #b21f1f)';
+                        photon.style.borderRadius = '5px';
+                        photon.style.left = '250px';
+                        photon.style.top = '150px';
+                        photon.style.boxShadow = '0 0 10px #fdbb2d';
+                        photon.style.opacity = '0';
+                        photon.style.transition = 'opacity 0.5s';
+                        
+                        canvas.appendChild(photon);
+                        
+                        // Mostrar fóton
+                        setTimeout(() => {
+                            photon.style.opacity = '1';
+                        }, 100);
+                        
+                        // Esconder fóton
+                        setTimeout(() => {
+                            photon.style.opacity = '0';
+                        }, 1000);
+                        
+                        // Remover fóton
+                        setTimeout(() => {
+                            if (photon.parentNode) {
+                                photon.parentNode.removeChild(photon);
+                            }
+                        }, 1500);
+                        
+                        // Remover a classe de transição após a animação
+                        setTimeout(() => {
+                            electron1.classList.remove('quantum-jump');
+                            electron2.classList.remove('quantum-jump');
+                        }, 1500);
+                    }
+                    
+                    // Adicionar texto de explicação
+                    const canvas = document.getElementById('atom-canvas');
+                    let explanation = document.getElementById('explanation-text');
+                    
+                    if (!explanation) {
+                        explanation = document.createElement('div');
+                        explanation.id = 'explanation-text';
+                        explanation.style.position = 'absolute';
+                        explanation.style.top = '20px';
+                        explanation.style.color = '#2c3e50';
+                        explanation.style.fontWeight = 'bold';
+                        explanation.style.textAlign = 'center';
+                        explanation.style.width = '100%';
+                        explanation.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+                        explanation.style.padding = '10px';
+                        explanation.style.borderRadius = '5px';
+                        canvas.appendChild(explanation);
+                    }
+                    
+                    explanation.textContent = 'Salto quântico! O elétron absorveu/emitiu um fóton para mudar de órbita.';
+                    
+                    // Remover explicação após alguns segundos
+                    setTimeout(() => {
+                        explanation.textContent = '';
+                    }, 3000);
+                }
+            },
+            
+            schrodinger: {
+                name: "Modelo de Schrödinger (1926)",
+                description: "Erwin Schrödinger desenvolveu a mecânica quântica ondulatória, descrevendo os elétrons como funções de onda. O modelo não define órbitas precisas, mas regiões de probabilidade (orbitais) onde é mais provável encontrar um elétron. Este é o fundamento do modelo atômico moderno.",
+                keyPoints: [
+                    "Elétrons são descritos por funções de onda (Ψ)",
+                    "Orbitais representam regiões de probabilidade",
+                    "Equação de Schrödinger descreve o comportamento eletrônico",
+                    "Princípio da incerteza de Heisenberg",
+                    "Quatro números quânticos definem o estado do elétron"
+                ],
+                mainFeature: "Nuvem eletrônica - probabilidade de encontrar elétrons em regiões específicas.",
+                testDescription: "Clique para visualizar a nuvem de probabilidade eletrônica",
+                draw: function() {
+                    const canvas = document.getElementById('atom-canvas');
+                    canvas.innerHTML = '';
+                    
+                    // Criar núcleo
+                    const nucleus = document.createElement('div');
+                    nucleus.className = 'atom nucleus';
+                    nucleus.style.width = '50px';
+                    nucleus.style.height = '50px';
+                    nucleus.style.left = 'calc(50% - 25px)';
+                    nucleus.style.top = 'calc(50% - 25px)';
+                    nucleus.id = 'schrodinger-nucleus';
+                    
+                    canvas.appendChild(nucleus);
+                    
+                    // Criar representação de nuvem eletrônica (orbital s)
+                    const electronCloud = document.createElement('div');
+                    electronCloud.style.position = 'absolute';
+                    electronCloud.style.width = '300px';
+                    electronCloud.style.height = '300px';
+                    electronCloud.style.left = 'calc(50% - 150px)';
+                    electronCloud.style.top = 'calc(50% - 150px)';
+                    electronCloud.style.borderRadius = '50%';
+                    electronCloud.style.background = 'radial-gradient(circle at center, rgba(74, 144, 226, 0.3) 0%, rgba(74, 144, 226, 0.1) 70%, transparent 100%)';
+                    electronCloud.style.boxShadow = '0 0 60px rgba(74, 144, 226, 0.5)';
+                    electronCloud.id = 'schrodinger-cloud';
+                    electronCloud.style.opacity = '0.5';
+                    
+                    canvas.appendChild(electronCloud);
+                    
+                    // Adicionar pontos representando a probabilidade
+                    for (let i = 0; i < 150; i++) {
+                        const angle = Math.random() * 2 * Math.PI;
+                        const distance = Math.random() * 150;
+                        const x = 250 + distance * Math.cos(angle);
+                        const y = 200 + distance * Math.sin(angle);
+                        
+                        // Maior densidade perto do núcleo para orbital s
+                        const probability = Math.exp(-distance / 100);
+                        if (Math.random() < probability) {
+                            const dot = document.createElement('div');
+                            dot.style.position = 'absolute';
+                            dot.style.width = '3px';
+                            dot.style.height = '3px';
+                            dot.style.backgroundColor = 'rgba(74, 144, 226, 0.7)';
+                            dot.style.borderRadius = '50%';
+                            dot.style.left = `${x}px`;
+                            dot.style.top = `${y}px`;
+                            dot.className = 'probability-dot';
+                            
+                            canvas.appendChild(dot);
+                        }
+                    }
+                    
+                    // Adicionar rótulo
+                    const label = document.createElement('div');
+                    label.style.position = 'absolute';
+                    label.style.bottom = '20px';
+                    label.style.color = '#2c3e50';
+                    label.style.fontWeight = 'bold';
+                    label.style.textAlign = 'center';
+                    label.style.width = '100%';
+                    label.textContent = 'Modelo da Nuvem Eletrônica';
+                    
+                    canvas.appendChild(label);
+                },
+                test: function() {
+                    const cloud = document.getElementById('schrodinger-cloud');
+                    const dots = document.getElementsByClassName('probability-dot');
+                    
+                    if (cloud) {
+                        // Alternar a visibilidade da nuvem
+                        if (cloud.style.opacity === '0.5') {
+                            cloud.style.opacity = '1';
+                            
+                            // Fazer os pontos piscarem
+                            for (let dot of dots) {
+                                dot.style.animation = 'pulse 2s infinite';
+                            }
+                        } else {
+                            cloud.style.opacity = '0.5';
+                            
+                            // Parar a animação dos pontos
+                            for (let dot of dots) {
+                                dot.style.animation = 'none';
+                            }
+                        }
+                    }
+                    
+                    // Adicionar texto de explicação
+                    const canvas = document.getElementById('atom-canvas');
+                    let explanation = document.getElementById('explanation-text');
+                    
+                    if (!explanation) {
+                        explanation = document.createElement('div');
+                        explanation.id = 'explanation-text';
+                        explanation.style.position = 'absolute';
+                        explanation.style.top = '20px';
+                        explanation.style.color = '#2c3e50';
+                        explanation.style.fontWeight = 'bold';
+                        explanation.style.textAlign = 'center';
+                        explanation.style.width = '100%';
+                        explanation.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+                        explanation.style.padding = '10px';
+                        explanation.style.borderRadius = '5px';
+                        canvas.appendChild(explanation);
+                    }
+                    
+                    if (cloud && cloud.style.opacity === '1') {
+                        explanation.textContent = 'Nuvem de probabilidade - regiões onde é mais provável encontrar elétrons';
+                    } else {
+                        explanation.textContent = '';
+                    }
+                }
+            },
+            
+            moderno: {
+                name: "Modelo Atômico Moderno",
+                description: "O modelo atômico atual incorpora princípios da mecânica quântica, descrevendo elétrons como both partículas e ondas. Os elétrons ocupam orbitais (regiões de probabilidade) organizados em níveis e subníveis de energia. O núcleo é composto por prótons e nêutrons, mantidos pela força nuclear forte.",
+                keyPoints: [
+                    "Elétrons exibem dualidade partícula-onda",
+                    "Orbitais definem regiões de probabilidade",
+                    "Configuração eletrônica segue o princípio de Aufbau",
+                    "Núcleo contém prótons e nêutrons unidos pela força forte",
+                    "Quarks são os constituintes fundamentais dos prótons e nêutrons"
+                ],
+                mainFeature: "Dualidade partícula-onda e estrutura de quarks no núcleo.",
+                testDescription: "Clique para alternar entre visualização de partícula e onda",
+                draw: function() {
+                    const canvas = document.getElementById('atom-canvas');
+                    canvas.innerHTML = '';
+                    
+                    // Criar núcleo com prótons e nêutrons
+                    const nucleusContainer = document.createElement('div');
+                    nucleusContainer.style.position = 'absolute';
+                    nucleusContainer.style.width = '80px';
+                    nucleusContainer.style.height = '80px';
+                    nucleusContainer.style.left = 'calc(50% - 40px)';
+                    nucleusContainer.style.top = 'calc(50% - 40px)';
+                    nucleusContainer.style.display = 'flex';
+                    nucleusContainer.style.flexWrap = 'wrap';
+                    nucleusContainer.style.justifyContent = 'center';
+                    nucleusContainer.style.alignItems = 'center';
+                    nucleusContainer.id = 'modern-nucleus';
+                    
+                    canvas.appendChild(nucleusContainer);
+                    
+                    // Adicionar prótons e nêutrons ao núcleo
+                    for (let i = 0; i < 6; i++) {
+                        const proton = document.createElement('div');
+                        proton.className = 'atom proton';
+                        proton.style.width = '20px';
+                        proton.style.height = '20px';
+                        proton.style.margin = '2px';
+                        
+                        nucleusContainer.appendChild(proton);
+                        
+                        const neutron = document.createElement('div');
+                        neutron.className = 'atom neutron';
+                        neutron.style.width = '20px';
+                        neutron.style.height = '20px';
+                        neutron.style.margin = '2px';
+                        
+                        nucleusContainer.appendChild(neutron);
+                    }
+                    
+                    // Adicionar múltiplas nuvens eletrônicas (diferentes orbitais)
+                    const orbitals = [
+                        { type: 's', size: 120, color: 'rgba(74, 144, 226, 0.3)' },
+                        { type: 'p', size: 180, color: 'rgba(100, 200, 100, 0.2)' },
+                        { type: 'd', size: 240, color: 'rgba(200, 100, 200, 0.2)' }
+                    ];
+                    
+                    orbitals.forEach(orbital => {
+                        const electronCloud = document.createElement('div');
+                        electronCloud.style.position = 'absolute';
+                        electronCloud.style.width = `${orbital.size * 2}px`;
+                        electronCloud.style.height = `${orbital.size * 2}px`;
+                        electronCloud.style.left = `calc(50% - ${orbital.size}px)`;
+                        electronCloud.style.top = `calc(50% - ${orbital.size}px)`;
+                        electronCloud.style.borderRadius = orbital.type === 's' ? '50%' : '50%';
+                        electronCloud.style.background = `radial-gradient(circle at center, ${orbital.color} 0%, transparent 70%)`;
+                        electronCloud.className = 'modern-orbital';
+                        electronCloud.style.opacity = '0.7';
+                        
+                        canvas.appendChild(electronCloud);
+                    });
+                    
+                    // Adicionar pontos representando elétrons
+                    for (let i = 0; i < 200; i++) {
+                        const angle = Math.random() * 2 * Math.PI;
+                        const distance = Math.random() * 250;
+                        const x = 250 + distance * Math.cos(angle);
+                        const y = 200 + distance * Math.sin(angle);
+                        
+                        // Distribuição de probabilidade variada
+                        let probability;
+                        if (distance < 120) {
+                            probability = Math.exp(-distance / 60); // Orbital s
+                        } else if (distance < 180) {
+                            probability = Math.exp(-Math.abs(distance - 150) / 40); // Orbital p
+                        } else {
+                            probability = Math.exp(-Math.abs(distance - 220) / 50); // Orbital d
+                        }
+                        
+                        if (Math.random() < probability) {
+                            const dot = document.createElement('div');
+                            dot.style.position = 'absolute';
+                            dot.style.width = '3px';
+                            dot.style.height = '3px';
+                            dot.style.backgroundColor = 'rgba(74, 144, 226, 0.7)';
+                            dot.style.borderRadius = '50%';
+                            dot.style.left = `${x}px`;
+                            dot.style.top = `${y}px`;
+                            dot.className = 'modern-electron';
+                            
+                            canvas.appendChild(dot);
+                        }
+                    }
+                    
+                    // Adicionar rótulo
+                    const label = document.createElement('div');
+                    label.style.position = 'absolute';
+                    label.style.bottom = '20px';
+                    label.style.color = '#2c3e50';
+                    label.style.fontWeight = 'bold';
+                    label.style.textAlign = 'center';
+                    label.style.width = '100%';
+                    label.textContent = 'Modelo da Mecânica Quântica';
+                    
+                    canvas.appendChild(label);
+                },
+                test: function() {
+                    // Alternar entre visualização de partícula e onda
+                    const orbitals = document.getElementsByClassName('modern-orbital');
+                    const electrons = document.getElementsByClassName('modern-electron');
+                    const nucleus = document.getElementById('modern-nucleus');
+                    
+                    // Verificar o estado atual
+                    const isWaveView = orbitals[0].style.opacity === '0.7';
+                    
+                    if (isWaveView) {
+                        // Mudar para visualização de partícula
+                        for (let orbital of orbitals) {
+                            orbital.style.opacity = '0.3';
+                        }
+                        
+                        for (let electron of electrons) {
+                            electron.style.width = '10px';
+                            electron.style.height = '10px';
+                            electron.style.backgroundColor = 'rgba(74, 144, 226, 1)';
+                            electron.style.boxShadow = '0 0 8px rgba(74, 144, 226, 0.8)';
+                        }
+                        
+                        if (nucleus) {
+                            nucleus.style.transform = 'scale(1.1)';
+                            nucleus.style.transition = 'transform 0.5s';
+                        }
+                    } else {
+                        // Voltar para visualização de onda
+                        for (let orbital of orbitals) {
+                            orbital.style.opacity = '0.7';
+                        }
+                        
+                        for (let electron of electrons) {
+                            electron.style.width = '3px';
+                            electron.style.height = '3px';
+                            electron.style.backgroundColor = 'rgba(74, 144, 226, 0.7)';
+                            electron.style.boxShadow = 'none';
+                        }
+                        
+                        if (nucleus) {
+                            nucleus.style.transform = 'scale(1)';
+                        }
+                    }
+                    
+                    // Adicionar texto de explicação
+                    const canvas = document.getElementById('atom-canvas');
+                    let explanation = document.getElementById('explanation-text');
+                    
+                    if (!explanation) {
+                        explanation = document.createElement('div');
+                        explanation.id = 'explanation-text';
+                        explanation.style.position = 'absolute';
+                        explanation.style.top = '20px';
+                        explanation.style.color = '#2c3e50';
+                        explanation.style.fontWeight = 'bold';
+                        explanation.style.textAlign = 'center';
+                        explanation.style.width = '100%';
+                        explanation.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+                        explanation.style.padding = '10px';
+                        explanation.style.borderRadius = '5px';
+                        canvas.appendChild(explanation);
+                    }
+                    
+                    if (isWaveView) {
+                        explanation.textContent = 'Visualização de PARTÍCULA - elétrons como partículas discretas';
+                    } else {
+                        explanation.textContent = 'Visualização de ONDA - elétrons como nuvens de probabilidade';
+                    }
+                }
+            }
+        };
+
+        // Estado global para animação
+        let isAnimating = false;
+        let animationSpeed = 'normal';
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            // Configurar botões dos modelos
+            const modelButtons = document.querySelectorAll('.model-btn');
+            modelButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const modelId = this.getAttribute('data-model');
+                    
+                    // Atualizar botão ativo
+                    modelButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Atualizar conteúdo
+                    updateModelDisplay(modelId);
+                    
+                    // Parar animações anteriores
+                    isAnimating = false;
+                    document.getElementById('animate-btn').textContent = 'Animar';
+                });
+            });
+            
+            // Configurar botões de controle
+            document.getElementById('rotate-btn').addEventListener('click', rotateModel);
+            document.getElementById('zoom-in-btn').addEventListener('click', zoomIn);
+            document.getElementById('zoom-out-btn').addEventListener('click', zoomOut);
+            document.getElementById('reset-btn').addEventListener('click', resetView);
+            document.getElementById('animate-btn').addEventListener('click', toggleAnimation);
+            document.getElementById('test-btn').addEventListener('click', testFeature);
+            
+            // Configurar botões de velocidade
+            document.getElementById('slow-btn').addEventListener('click', () => setAnimationSpeed('slow'));
+            document.getElementById('normal-btn').addEventListener('click', () => setAnimationSpeed('normal'));
+            document.getElementById('fast-btn').addEventListener('click', () => setAnimationSpeed('fast'));
+            
+            // Inicializar com o modelo de Dalton
+            updateModelDisplay('dalton');
+        });
+
+        // Função para atualizar a exibição do modelo
+        function updateModelDisplay(modelId) {
+            const model = models[modelId];
+            
+            // Atualizar informações textuais
+            document.getElementById('model-name').textContent = model.name;
+            document.getElementById('model-description').textContent = model.description;
+            
+            // Atualizar pontos-chave
+            const keyPointsList = document.getElementById('key-points');
+            keyPointsList.innerHTML = '';
+            model.keyPoints.forEach(point => {
+                const li = document.createElement('li');
+                li.textContent = point;
+                keyPointsList.appendChild(li);
+            });
+            
+            // Atualizar característica principal
+            document.getElementById('main-feature').textContent = model.mainFeature;
+            
+            // Atualizar descrição do teste
+            document.getElementById('experiment-description').textContent = model.testDescription;
+            
+            // Desenhar o modelo
+            model.draw();
+            
+            // Aplicar animação se estiver ativa
+            if (isAnimating) {
+                applyAnimation(modelId);
+            }
+        }
+
+        // Função para testar a característica do modelo
+        function testFeature() {
+            const activeButton = document.querySelector('.model-btn.active');
+            const modelId = activeButton.getAttribute('data-model');
+            models[modelId].test();
+        }
+
+        // Funções de controle
+        function rotateModel() {
+            const canvas = document.getElementById('atom-canvas');
+            canvas.classList.toggle('rotating');
+        }
+        
+        function zoomIn() {
+            const canvas = document.getElementById('atom-canvas');
+            const currentTransform = canvas.style.transform || 'scale(1)';
+            const currentScale = parseFloat(currentTransform.replace('scale(', '').replace(')', '')) || 1;
+            canvas.style.transform = `scale(${currentScale * 1.2})`;
+        }
+        
+        function zoomOut() {
+            const canvas = document.getElementById('atom-canvas');
+            const currentTransform = canvas.style.transform || 'scale(1)';
+            const currentScale = parseFloat(currentTransform.replace('scale(', '').replace(')', '')) || 1;
+            canvas.style.transform = `scale(${currentScale / 1.2})`;
+        }
+        
+        function resetView() {
+            const canvas = document.getElementById('atom-canvas');
+            canvas.style.transform = 'scale(1)';
+            canvas.classList.remove('rotating');
+            
+            // Recarregar o modelo atual
+            const activeButton = document.querySelector('.model-btn.active');
+            const modelId = activeButton.getAttribute('data-model');
+            updateModelDisplay(modelId);
+        }
+        
+        function toggleAnimation() {
+            isAnimating = !isAnimating;
+            const animateBtn = document.getElementById('animate-btn');
+            
+            if (isAnimating) {
+                animateBtn.textContent = 'Parar';
+                const activeButton = document.querySelector('.model-btn.active');
+                const modelId = activeButton.getAttribute('data-model');
+                applyAnimation(modelId);
+            } else {
+                animateBtn.textContent = 'Animar';
+                removeAnimation();
+            }
+        }
+        
+        function setAnimationSpeed(speed) {
+            animationSpeed = speed;
+            if (isAnimating) {
+                const activeButton = document.querySelector('.model-btn.active');
+                const modelId = activeButton.getAttribute('data-model');
+                applyAnimation(modelId);
+            }
+        }
+        
+        function applyAnimation(modelId) {
+            removeAnimation();
+            
+            const canvas = document.getElementById('atom-canvas');
+            const electrons = canvas.getElementsByClassName('electron');
+            const orbits = canvas.getElementsByClassName('electron-path');
+            
+            // Definir velocidade com base na seleção
+            let orbitSpeed, electronSpeed;
+            switch(animationSpeed) {
+                case 'slow':
+                    orbitSpeed = '20s';
+                    electronSpeed = '10s';
+                    break;
+                case 'fast':
+                    orbitSpeed = '2s';
+                    electronSpeed = '1s';
+                    break;
+                default: // normal
+                    orbitSpeed = '5s';
+                    electronSpeed = '3s';
+            }
+            
+            // Aplicar animação com base no modelo
+            switch(modelId) {
+                case 'rutherford':
+                case 'bohr':
+                    // Animar órbitas e elétrons
+                    for (let orbit of orbits) {
+                        orbit.style.animation = `rotate ${orbitSpeed} linear infinite`;
+                    }
+                    
+                    // Animar elétrons em órbitas específicas
+                    let electronIndex = 0;
+                    for (let electron of electrons) {
+                        const orbitClass = electronIndex % 3 === 0 ? 'orbiting' : 
+                                          electronIndex % 3 === 1 ? 'orbiting2' : 'orbiting3';
+                        electron.classList.add(orbitClass);
+                        electron.style.animationDuration = electronSpeed;
+                        electronIndex++;
+                    }
+                    break;
+                    
+                case 'thomson':
+                    // Pulsar elétrons no pudim de passas
+                    for (let electron of electrons) {
+                        electron.classList.add('electron-jump');
+                    }
+                    break;
+                    
+                case 'schrodinger':
+                case 'moderno':
+                    // Pulsar nuvem de probabilidade
+                    const cloud = document.getElementById('schrodinger-cloud') || 
+                                 document.getElementsByClassName('modern-orbital')[0];
+                    if (cloud) {
+                        cloud.classList.add('pulsing');
+                    }
+                    break;
+                    
+                default:
+                    // Para Dalton, apenas pulsar a esfera
+                    const sphere = document.getElementById('dalton-sphere');
+                    if (sphere) {
+                        sphere.classList.add('pulsing');
+                    }
+            }
+        }
+        
+        function removeAnimation() {
+            const canvas = document.getElementById('atom-canvas');
+            const animatedElements = canvas.querySelectorAll('*');
+            
+            for (let element of animatedElements) {
+                element.style.animation = 'none';
+                element.classList.remove('orbiting', 'orbiting2', 'orbiting3', 'pulsing', 'electron-jump');
+            }
+            
+            // Reaplicar transformações de zoom
+            const currentTransform = canvas.style.transform;
+            canvas.style.transform = 'none';
+            setTimeout(() => {
+                canvas.style.transform = currentTransform;
+            }, 10);
+        }
+    </script>
+</body>
+</html>

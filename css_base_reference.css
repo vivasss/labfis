@@ -1,0 +1,101 @@
+/* 
+ * CSS Base Padronizado - Programa de Física
+ * Versão: 1.0
+ * Dark mode responsivo para todas as simulações
+ */
+
+:root {
+    --bg: #071028;
+    --card: #0f1724;
+    --muted: #94a3b8;
+    --primary: #4dd0e1;
+    --accent: #8a2be2;
+    --success: #10b981;
+    --warning: #f59e0b;
+    color-scheme: dark;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    transition: all 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: system-ui, 'Segoe UI', Roboto, Arial;
+    background: linear-gradient(180deg, #071028 0%, #071021 60%);
+    color: #e6eef8;
+    min-height: 100vh;
+    overflow-x: hidden;
+    touch-action: manipulation;
+}
+
+header {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    animation: fadeIn 0.8s ease-out;
+}
+
+h1 {
+    font-size: 18px;
+    margin: 0;
+    background: linear-gradient(to right, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: textGlow 3s infinite alternate;
+}
+
+/* Animações */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes textGlow {
+    0% {
+        text-shadow: 0 0 5px rgba(77, 208, 225, 0.5);
+    }
+
+    100% {
+        text-shadow: 0 0 15px rgba(77, 208, 225, 0.8), 0 0 20px rgba(138, 43, 226, 0.6);
+    }
+}
+
+/* Responsividade */
+@media (max-width: 1024px) {
+    main {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    button {
+        padding: 12px 16px;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 10px;
+    }
+}

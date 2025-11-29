@@ -1,0 +1,2037 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Queda Livre — Simulação Dinâmica</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #071028;
+            --card: #0f1724;
+            --muted: #94a3b8;
+            --primary: #8a2be2;
+            --accent: #00bfff;
+            --success: #10b981;
+            --warning: #f59e0b;
+            color-scheme: dark;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: system-ui, 'Segoe UI', Roboto, Arial;
+            background: linear-gradient(180deg, #071028 0%, #071021 60%);
+            color: #e6eef8;
+            min-height: 100vh;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+
+        header {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        h1 {
+            font-size: 18px;
+            margin: 0;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGlow 3s infinite alternate;
+        }
+
+        .tab-container {
+            display: flex;
+            background: var(--card);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .tab {
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            font-weight: 700;
+            box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
+        }
+
+        .tab::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        .tab.active::after {
+            width: 100%;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 18px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 18px;
+            height: calc(100vh - 134px);
+            padding: 0 18px 18px;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        .simulation-container {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .simulation-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(138, 43, 226, 0.05) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+            pointer-events: none;
+        }
+
+        #simCanvas {
+            width: 100%;
+            height: 560px;
+            border-radius: 8px;
+            background: transparent;
+            display: block;
+            animation: canvasAppear 1s ease-out;
+            touch-action: none;
+            cursor: pointer;
+        }
+
+        .info-panel {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .info-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            border-left: 3px solid var(--primary);
+            position: relative;
+            overflow: hidden;
+            animation: cardSlideIn 0.5s ease-out;
+        }
+
+        .info-card:nth-child(2) {
+            border-left-color: var(--accent);
+            animation-delay: 0.1s;
+        }
+
+        .info-card:nth-child(3) {
+            border-left-color: var(--success);
+            animation-delay: 0.2s;
+        }
+
+        .info-card:nth-child(4) {
+            border-left-color: var(--warning);
+            animation-delay: 0.3s;
+        }
+
+        .info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .info-card:hover::before {
+            left: 100%;
+        }
+
+        .info-card .label {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .info-card .value {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .controls {
+            background: var(--card);
+            padding: 16px;
+            border-radius: 12px;
+            height: 100%;
+            overflow-y: auto;
+            animation: slideInRight 0.6s ease-out;
+        }
+
+        .controls::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .controls::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        .controls::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 3px;
+        }
+
+        .group {
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .group:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .group:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+
+        .group:nth-child(4) {
+            animation-delay: 0.3s;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        input[type='range'] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type='range']::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        input[type='range']::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(138, 43, 226, 0.8);
+        }
+
+        input[type='number'],
+        select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.02);
+            color: inherit;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+        input[type='number']:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2);
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background: linear-gradient(90deg, var(--primary), #6a0dad);
+            border: 0;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: linear-gradient(90deg, #444, #666);
+        }
+
+        button.secondary:hover {
+            box-shadow: 0 5px 15px rgba(102, 102, 102, 0.4);
+        }
+
+        .muted {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .chart-panel {
+            background: var(--card);
+            border-radius: 10px;
+            padding: 12px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .chart-panel:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .chart-container {
+            height: 240px;
+            width: 100%;
+        }
+
+        .explanation-container {
+            padding: 18px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .explanation-content {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            margin-bottom: 18px;
+        }
+
+        .explanation-content h2 {
+            margin-bottom: 15px;
+            color: var(--accent);
+            font-size: 1.5rem;
+        }
+
+        .explanation-content h3 {
+            margin: 20px 0 10px;
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        .explanation-content p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .explanation-content ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .explanation-content li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .highlight {
+            background: linear-gradient(90deg, transparent, rgba(138, 43, 226, 0.1), transparent);
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .formula {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+            text-align: center;
+            border-left: 3px solid var(--accent);
+        }
+
+        .example {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 3px solid var(--success);
+        }
+
+        .concept-card {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 3px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .concept-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Botão de ajuda flutuante */
+        .help-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            transition: all 0.3s ease;
+            border: none;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .help-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(138, 43, 226, 0.5);
+        }
+
+        .help-button:active {
+            transform: scale(0.95);
+        }
+
+        /* Painel de ajuda */
+        .help-panel {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 320px;
+            max-height: 70vh;
+            background: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            overflow-y: auto;
+            transform: translateY(20px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .help-panel.active {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .help-panel h2 {
+            margin-bottom: 15px;
+            color: var(--accent);
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .help-panel h3 {
+            margin: 15px 0 8px;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .help-panel p {
+            margin-bottom: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .help-panel ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .help-panel li {
+            margin-bottom: 6px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .help-panel .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 20px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .help-panel .close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        footer {
+            padding: 12px 20px;
+            font-size: 13px;
+            color: var(--muted);
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            animation: fadeIn 1s ease-out;
+        }
+
+        .footer-name {
+            font-weight: bold;
+            color: var(--accent);
+            margin-top: 5px;
+        }
+
+        /* Animações personalizadas */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes canvasAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes cardSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes textGlow {
+            0% {
+                text-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+            }
+            100% {
+                text-shadow: 0 0 15px rgba(0, 191, 255, 0.8), 0 0 20px rgba(138, 43, 226, 0.6);
+            }
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsividade */
+        @media (max-width: 1024px) {
+            main {
+                grid-template-columns: 1fr;
+                height: auto;
+                padding-bottom: 18px;
+            }
+            
+            #simCanvas {
+                height: 420px;
+            }
+            
+            .info-panel {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .help-panel {
+                width: 280px;
+                right: 10px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .info-panel {
+                grid-template-columns: 1fr;
+            }
+            
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .tab-container {
+                width: 100%;
+            }
+            
+            .tab {
+                flex: 1;
+                text-align: center;
+                padding: 12px 8px;
+            }
+            
+            .simulation-container {
+                padding: 8px;
+            }
+            
+            #simCanvas {
+                height: 60vh;
+                min-height: 400px;
+            }
+            
+            .controls {
+                padding: 12px;
+            }
+            
+            button {
+                padding: 12px 16px;
+                font-size: 16px;
+            }
+            
+            .help-button {
+                width: 50px;
+                height: 50px;
+                bottom: 15px;
+                right: 15px;
+                font-size: 20px;
+            }
+            
+            .help-panel {
+                width: calc(100% - 30px);
+                right: 15px;
+                bottom: 75px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #simCanvas {
+                height: 50vh;
+                min-height: 350px;
+            }
+        }
+
+        /* Estilos específicos para queda livre */
+        .toggle {
+            background: var(--card);
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: #e6eef8;
+            min-width: 180px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .toggle.on {
+            background: var(--success);
+        }
+
+        .impact-time {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.7);
+            color: var(--warning);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .impact-time.show {
+            opacity: 1;
+        }
+
+        /* Estilos para o seletor de modo */
+        .mode-selector {
+            display: flex;
+            background: var(--card);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 12px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .mode-option {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .mode-option:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .mode-option.active {
+            background: var(--primary);
+            font-weight: 700;
+        }
+
+        .mode-option.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--accent);
+        }
+
+        /* Classes para mostrar/esconder controles baseados no modo */
+        .ideal-only, .drag-only, .both-only {
+            transition: all 0.3s ease;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+
+        /* Indicador de pausa discreto */
+        .pause-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: var(--warning);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 5;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .pause-indicator.active {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Queda Livre — Simulação Dinâmica</h1>
+        <div class="tab-container">
+            <div class="tab active" data-tab="simulation">Simulação</div>
+            <div class="tab" data-tab="charts">Gráficos</div>
+            <div class="tab" data-tab="explanation">Explicação</div>
+        </div>
+    </header>
+
+    <div class="tab-content active" id="simulation-tab">
+        <main>
+            <div class="simulation-container">
+                <!-- Indicador de pausa discreto -->
+                <div class="pause-indicator" id="pauseIndicator">⏸ Pausado</div>
+                
+                <canvas id="simCanvas"></canvas>
+
+                <div class="info-panel">
+                    <div class="info-card">
+                        <div class="label">Tempo</div>
+                        <div class="value" id="timeValue">0.00 s</div>
+                    </div>
+                    <div class="info-card ideal-only">
+                        <div class="label">Altura (Ideal)</div>
+                        <div class="value" id="idealHeightValue">100.0 m</div>
+                    </div>
+                    <div class="info-card ideal-only">
+                        <div class="label">Velocidade (Ideal)</div>
+                        <div class="value" id="idealVelocityValue">0.00 m/s</div>
+                    </div>
+                    <div class="info-card drag-only">
+                        <div class="label">Altura (Arraste)</div>
+                        <div class="value" id="dragHeightValue">100.0 m</div>
+                    </div>
+                    <div class="info-card drag-only">
+                        <div class="label">Velocidade (Arraste)</div>
+                        <div class="value" id="dragVelocityValue">0.00 m/s</div>
+                    </div>
+                    <div class="info-card ideal-only">
+                        <div class="label">Impacto (Ideal)</div>
+                        <div class="value" id="idealImpactValue">-- s</div>
+                    </div>
+                    <div class="info-card drag-only">
+                        <div class="label">Impacto (Arraste)</div>
+                        <div class="value" id="dragImpactValue">-- s</div>
+                    </div>
+                    <div class="info-card both-only">
+                        <div class="label">Diferença</div>
+                        <div class="value" id="differenceValue">-- s</div>
+                    </div>
+                </div>
+
+                <div style="margin-top:12px; display:flex; gap:10px;">
+                    <button id="startBtn">▶ Iniciar</button>
+                    <button id="pauseBtn" class="secondary">⏸ Pausar</button>
+                    <button id="resetBtn" class="secondary">⏹ Reset</button>
+                </div>
+            </div>
+
+            <aside class="controls">
+                <!-- Seletor de modo -->
+                <div class="group">
+                    <label><strong>Modo de Exibição</strong></label>
+                    <div class="mode-selector">
+                        <div class="mode-option active" data-mode="both">Ambos</div>
+                        <div class="mode-option" data-mode="ideal">Apenas Ideal</div>
+                        <div class="mode-option" data-mode="drag">Apenas Arraste</div>
+                    </div>
+                </div>
+
+                <div class="group">
+                    <label><strong>Parâmetros Gerais</strong></label>
+                    <div class="row">
+                        <div style="flex:1">
+                            <label class="small">Gravidade (m/s²)</label>
+                            <input id="gravity" type="number" step="0.1" value="9.81">
+                        </div>
+                        <div style="flex:1">
+                            <label class="small">Altura (m)</label>
+                            <input id="height" type="number" step="1" value="100">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="group">
+                    <label><strong>Objeto</strong></label>
+                    <div class="row">
+                        <div style="flex:1">
+                            <label class="small">Massa (kg)</label>
+                            <input id="mass" type="number" step="0.1" value="1.0">
+                        </div>
+                        <div style="flex:1" class="drag-only">
+                            <label class="small">Área (m²)</label>
+                            <input id="area" type="number" step="0.01" value="0.03">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="group drag-only">
+                    <label><strong>Arraste</strong></label>
+                    <div class="row">
+                        <div style="flex:1">
+                            <label class="small">Coef. Arraste (Cd)</label>
+                            <input id="cd" type="number" step="0.01" value="0.47">
+                        </div>
+                        <div style="flex:1">
+                            <label class="small">Densidade Ar (kg/m³)</label>
+                            <input id="rho" type="number" step="0.01" value="1.225">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="group">
+                    <label><strong>Controles de Tempo</strong></label>
+                    <div class="row">
+                        <div style="flex:1">
+                            <label class="small">Tempo Alvo (s)</label>
+                            <input id="targetTime" type="number" step="0.01" value="2.0">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <button id="gotoBtn" style="flex:1">⏩ Ir para t</button>
+                        <button id="analyticBtn" style="flex:1" class="ideal-only">⚡ Ajuste Ideal</button>
+                    </div>
+                    <div class="row">
+                        <button id="autoPauseBtn" class="toggle" style="flex:1">Pausar ao Alcançar: OFF</button>
+                    </div>
+                </div>
+
+                <div class="group">
+                    <label><strong>Visual</strong></label>
+                    <label class="small"><input id="trail" type="checkbox" checked> Mostrar rastro</label>
+                    <label class="small"><input id="grid" type="checkbox" checked> Mostrar grade</label>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <div class="tab-content" id="charts-tab">
+        <div class="charts-container" style="padding:12px 18px;">
+            <div class="chart-panel">
+                <h3 style="margin:0 0 8px 0">Posição vs Tempo</h3>
+                <div class="chart-container"><canvas id="positionChart"></canvas></div>
+            </div>
+
+            <div class="chart-panel" style="margin-top:10px">
+                <h3 style="margin:0 0 8px 0">Velocidade vs Tempo</h3>
+                <div class="chart-container"><canvas id="velocityChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="explanation-tab">
+        <div class="explanation-container">
+            <div class="explanation-content">
+                <h2>Como Usar o Simulador</h2>
+                <p>Este simulador permite explorar diferentes aspectos da queda livre de forma interativa:</p>
+                
+                <div class="concept-card">
+                    <h3>Dois Tipos de Queda</h3>
+                    <p>O simulador mostra simultaneamente dois objetos em queda: um em queda livre ideal (sem resistência do ar) e outro com arrasto aerodinâmico.</p>
+                </div>
+                
+                <div class="concept-card">
+                    <h3>Controles</h3>
+                    <p>Use os botões Iniciar, Pausar e Resetar para controlar a simulação. Ajuste os parâmetros físicos nos controles laterais para ver como afetam o movimento.</p>
+                </div>
+                
+                <div class="concept-card">
+                    <h3>Pausa</h3>
+                    <p>Clique em qualquer bola para pausar toda a simulação. Clique novamente em qualquer bola para retomar.</p>
+                </div>
+                
+                <p>Experimente diferentes configurações e observe como os objetos se comportam!</p>
+            </div>
+
+            <div class="explanation-content">
+                <h2>O que é Queda Livre?</h2>
+                <p>Queda livre é o movimento de um corpo que cai sujeito apenas à força da gravidade, desprezando a resistência do ar. Na prática, a resistência do ar sempre afeta objetos em queda, especialmente em altas velocidades ou com grandes áreas de superfície.</p>
+                
+                <div class="concept-card">
+                    <h3>Queda Livre Ideal</h3>
+                    <p>Na queda livre ideal, a única força atuando no objeto é a gravidade. O movimento é uniformemente acelerado com aceleração igual à gravidade (g ≈ 9.81 m/s² na Terra).</p>
+                </div>
+                
+                <div class="concept-card">
+                    <h3>Queda com Arraste</h3>
+                    <p>Na queda com arraste, a resistência do ar se opõe ao movimento. À medida que a velocidade aumenta, a força de arrasto também aumenta, eventualmente equilibrando a força da gravidade e resultando em uma velocidade terminal.</p>
+                </div>
+            </div>
+
+            <div class="explanation-content">
+                <h2>Princípios Físicos</h2>
+                
+                <div class="formula">
+                    Queda Livre Ideal: h(t) = h₀ - ½gt²
+                </div>
+                
+                <p>Onde:</p>
+                <ul>
+                    <li><span class="highlight">h(t)</span> é a altura no tempo t</li>
+                    <li><span class="highlight">h₀</span> é a altura inicial</li>
+                    <li><span class="highlight">g</span> é a aceleração da gravidade</li>
+                    <li><span class="highlight">t</span> é o tempo decorrido</li>
+                </ul>
+                
+                <div class="formula">
+                    Força de Arraste: F<sub>d</sub> = ½ρv²C<sub>d</sub>A
+                </div>
+                
+                <p>Onde:</p>
+                <ul>
+                    <li><span class="highlight">F<sub>d</sub></span> é a força de arrasto</li>
+                    <li><span class="highlight">ρ</span> é a densidade do ar</li>
+                    <li><span class="highlight">v</span> é a velocidade do objeto</li>
+                    <li><span class="highlight">C<sub>d</sub></span> é o coeficiente de arrasto</li>
+                    <li><span class="highlight">A</span> é a área de seção transversal</li>
+                </ul>
+                
+                <div class="example">
+                    <h3>Exemplo Prático</h3>
+                    <p>Um objeto em queda livre de 100m de altura levaria aproximadamente:</p>
+                    <p>t = √(2h/g) = √(2×100/9.81) ≈ 4.52 segundos</p>
+                    <p>para atingir o solo, sem considerar a resistência do ar.</p>
+                </div>
+            </div>
+
+            <div class="explanation-content">
+                <h2>Velocidade Terminal</h2>
+                
+                <p>Quando um objeto cai através de um fluido (como o ar), a força de arrasto aumenta com a velocidade. Eventualmente, a força de arrasto se iguala à força da gravidade, resultando em aceleração zero e velocidade constante - a velocidade terminal.</p>
+                
+                <div class="formula">
+                    Velocidade Terminal: v<sub>t</sub> = √(2mg/ρC<sub>d</sub>A)
+                </div>
+                
+                <p>Onde:</p>
+                <ul>
+                    <li><span class="highlight">v<sub>t</sub></span> é a velocidade terminal</li>
+                    <li><span class="highlight">m</span> é a massa do objeto</li>
+                    <li><span class="highlight">g</span> é a aceleração da gravidade</li>
+                    <li><span class="highlight">ρ</span> é a densidade do fluido</li>
+                    <li><span class="highlight">C<sub>d</sub></span> é o coeficiente de arrasto</li>
+                    <li><span class="highlight">A</span> é a área de seção transversal</li>
+                </ul>
+                
+                <p>Em sistemas reais, a velocidade terminal é alcançada quando a força de arrasto contrabalança completamente a força gravitacional.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botão de ajuda flutuante -->
+    <button class="help-button" id="helpButton">?</button>
+
+    <!-- Painel de ajuda -->
+    <div class="help-panel" id="helpPanel">
+        <button class="close-btn" id="closeHelp">&times;</button>
+        <h2>💡 Como Usar o Simulador</h2>
+        
+        <h3>Dois Tipos de Queda</h3>
+        <p>O simulador mostra simultaneamente:</p>
+        <ul>
+            <li><strong>Queda Livre Ideal</strong> (azul): Sem resistência do ar</li>
+            <li><strong>Queda com Arraste</strong> (laranja): Com resistência do ar</li>
+        </ul>
+        
+        <h3>Interação</h3>
+        <p>Você pode interagir com a simulação de várias formas:</p>
+        <ul>
+            <li><strong>Clique nas bolas</strong> para pausar/continuar toda a simulação</li>
+            <li><strong>Use os controles</strong> para ajustar parâmetros físicos</li>
+            <li><strong>Observe as animações</strong> de impacto quando as bolas chegam ao chão</li>
+        </ul>
+        
+        <h3>Parâmetros Ajustáveis</h3>
+        <ul>
+            <li><strong>Altura:</strong> Altura inicial da queda</li>
+            <li><strong>Massa:</strong> Massa do objeto em queda</li>
+            <li><strong>Área:</strong> Área de seção transversal para cálculo do arrasto</li>
+            <li><strong>Coeficiente de Arraste (Cd):</strong> Forma aerodinâmica do objeto</li>
+            <li><strong>Densidade do Ar:</strong> Densidade do meio (ar)</li>
+            <li><strong>Gravidade:</strong> Aceleração gravitacional</li>
+        </ul>
+        
+        <h3>Fórmulas Importantes</h3>
+        <div class="formula">Queda Livre: h(t) = h₀ - ½gt²</div>
+        <div class="formula">Arraste: F<sub>d</sub> = ½ρv²C<sub>d</sub>A</div>
+        
+        <p style="margin-top: 15px; font-style: italic; text-align: center;">
+            Explore diferentes configurações e observe como os objetos se comportam!
+        </p>
+    </div>
+
+    <footer>
+        Simulador de Queda Livre — HTML5 & Canvas & Chart.js
+        <div class="footer-name">Desenvolvido por Josué Jr</div>
+    </footer>
+
+    <script>
+        // Canvas and context
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Charts variables
+        let positionChart, velocityChart;
+
+        // Chart data buffers
+        const chartData = { 
+            time: [], 
+            idealHeight: [], 
+            dragHeight: [], 
+            idealVelocity: [], 
+            dragVelocity: [] 
+        };
+        const maxDataPoints = 200;
+
+        // Controls
+        const gravityInput = document.getElementById('gravity');
+        const heightInput = document.getElementById('height');
+        const massInput = document.getElementById('mass');
+        const areaInput = document.getElementById('area');
+        const cdInput = document.getElementById('cd');
+        const rhoInput = document.getElementById('rho');
+        const targetTimeInput = document.getElementById('targetTime');
+        const autoPauseBtn = document.getElementById('autoPauseBtn');
+        const gotoBtn = document.getElementById('gotoBtn');
+        const analyticBtn = document.getElementById('analyticBtn');
+
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const trailChk = document.getElementById('trail');
+        const gridChk = document.getElementById('grid');
+
+        // Modo de exibição
+        const modeOptions = document.querySelectorAll('.mode-option');
+        let displayMode = 'both'; // 'both', 'ideal', 'drag'
+
+        // Info displays
+        const timeValue = document.getElementById('timeValue');
+        const idealHeightValue = document.getElementById('idealHeightValue');
+        const idealVelocityValue = document.getElementById('idealVelocityValue');
+        const dragHeightValue = document.getElementById('dragHeightValue');
+        const dragVelocityValue = document.getElementById('dragVelocityValue');
+        const idealImpactValue = document.getElementById('idealImpactValue');
+        const dragImpactValue = document.getElementById('dragImpactValue');
+        const differenceValue = document.getElementById('differenceValue');
+
+        // Help elements
+        const helpButton = document.getElementById('helpButton');
+        const helpPanel = document.getElementById('helpPanel');
+        const closeHelp = document.getElementById('closeHelp');
+
+        // Indicador de pausa discreto
+        const pauseIndicator = document.getElementById('pauseIndicator');
+
+        // Simulation state
+        let running = false;
+        let lastTime = null;
+        let chartTime = 0;
+        let autoPause = false;
+
+        // Physics state
+        let simState = {
+            t: 0,
+            ideal: { 
+                y: 100, 
+                v: 0, 
+                impactTime: null, 
+                trails: [], 
+                particles: [], 
+                impactTriggered: false
+            },
+            drag: { 
+                y: 100, 
+                v: 0, 
+                impactTime: null, 
+                trails: [], 
+                particles: [], 
+                impactTriggered: false
+            },
+            params: {
+                h0: 100,
+                mass: 1.0,
+                area: 0.03,
+                cd: 0.47,
+                rho: 1.225,
+                g: 9.81
+            }
+        };
+
+        // Resize canvas properly for high-dpi
+        function resizeCanvas(){
+            const ratio = devicePixelRatio || 1;
+            canvas.width = canvas.clientWidth * ratio;
+            canvas.height = canvas.clientHeight * ratio;
+            ctx.setTransform(ratio,0,0,ratio,0,0);
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        // Tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const id = tab.getAttribute('data-tab');
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(id + '-tab').classList.add('active');
+                
+                // Animate content when switching to explanation tab
+                if (id === 'explanation') {
+                    document.querySelectorAll('.explanation-content').forEach((content, index) => {
+                        content.style.animation = `slideUp 0.6s ease-out ${index * 0.1}s both`;
+                    });
+                }
+            });
+        });
+
+        // Help panel functionality
+        helpButton.addEventListener('click', () => {
+            helpPanel.classList.toggle('active');
+        });
+
+        closeHelp.addEventListener('click', () => {
+            helpPanel.classList.remove('active');
+        });
+
+        // Close help panel when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!helpPanel.contains(e.target) && e.target !== helpButton) {
+                helpPanel.classList.remove('active');
+            }
+        });
+
+        // Função para atualizar a visibilidade dos controles baseado no modo
+        function updateControlsVisibility() {
+            // Esconder todos os controles específicos primeiro
+            document.querySelectorAll('.ideal-only, .drag-only, .both-only').forEach(el => {
+                el.classList.add('hidden');
+            });
+            
+            // Mostrar controles baseado no modo selecionado
+            if (displayMode === 'both') {
+                document.querySelectorAll('.ideal-only, .drag-only, .both-only').forEach(el => {
+                    el.classList.remove('hidden');
+                });
+            } else if (displayMode === 'ideal') {
+                document.querySelectorAll('.ideal-only').forEach(el => {
+                    el.classList.remove('hidden');
+                });
+            } else if (displayMode === 'drag') {
+                document.querySelectorAll('.drag-only').forEach(el => {
+                    el.classList.remove('hidden');
+                });
+            }
+        }
+
+        // Modo de exibição
+        modeOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                modeOptions.forEach(opt => opt.classList.remove('active'));
+                option.classList.add('active');
+                displayMode = option.getAttribute('data-mode');
+                
+                // Atualizar a exibição
+                updateControlsVisibility();
+                if (!running) renderOnce();
+            });
+        });
+
+        // Auto-pause toggle
+        function updateAutoPauseUI() {
+            autoPauseBtn.classList.toggle('on', autoPause);
+            autoPauseBtn.textContent = 'Pausar ao Alcançar: ' + (autoPause ? 'ON' : 'OFF');
+        }
+        
+        autoPauseBtn.addEventListener('click', () => {
+            autoPause = !autoPause;
+            updateAutoPauseUI();
+        });
+        
+        updateAutoPauseUI();
+
+        // Charts initialization
+        function initCharts() {
+            const positionCtx = document.getElementById('positionChart').getContext('2d');
+            positionChart = new Chart(positionCtx, {
+                type: 'line',
+                data: {
+                    labels: chartData.time,
+                    datasets: [
+                        { 
+                            label: 'Altura Ideal (m)', 
+                            data: chartData.idealHeight, 
+                            borderColor: '#6fb8ff', 
+                            backgroundColor: 'transparent', 
+                            tension: 0.3 
+                        },
+                        { 
+                            label: 'Altura com Arraste (m)', 
+                            data: chartData.dragHeight, 
+                            borderColor: '#ffd66b', 
+                            backgroundColor: 'transparent', 
+                            tension: 0.3 
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { 
+                            ticks: { color: '#cbd5e1' }, 
+                            title: { display: true, text: 'Tempo (s)', color: '#9ca3af' } 
+                        },
+                        y: { 
+                            ticks: { color: '#cbd5e1' }, 
+                            title: { display: true, text: 'Altura (m)', color: '#9ca3af' } 
+                        }
+                    },
+                    plugins: { legend: { labels: { color: '#e6eef8' } } }
+                }
+            });
+
+            const velocityCtx = document.getElementById('velocityChart').getContext('2d');
+            velocityChart = new Chart(velocityCtx, {
+                type: 'line',
+                data: {
+                    labels: chartData.time,
+                    datasets: [
+                        { 
+                            label: 'Velocidade Ideal (m/s)', 
+                            data: chartData.idealVelocity, 
+                            borderColor: '#6fb8ff', 
+                            backgroundColor: 'transparent', 
+                            tension: 0.3 
+                        },
+                        { 
+                            label: 'Velocidade com Arraste (m/s)', 
+                            data: chartData.dragVelocity, 
+                            borderColor: '#ffd66b', 
+                            backgroundColor: 'transparent', 
+                            tension: 0.3 
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { 
+                            ticks: { color: '#cbd5e1' }, 
+                            title: { display: true, text: 'Tempo (s)', color: '#9ca3af' } 
+                        },
+                        y: { 
+                            ticks: { color: '#cbd5e1' }, 
+                            title: { display: true, text: 'Velocidade (m/s)', color: '#9ca3af' } 
+                        }
+                    },
+                    plugins: { legend: { labels: { color: '#e6eef8' } } }
+                }
+            });
+        }
+
+        // Update params from controls
+        function updateParams() {
+            simState.params.h0 = parseFloat(heightInput.value);
+            simState.params.mass = parseFloat(massInput.value);
+            simState.params.area = parseFloat(areaInput.value);
+            simState.params.cd = parseFloat(cdInput.value);
+            simState.params.rho = parseFloat(rhoInput.value);
+            simState.params.g = parseFloat(gravityInput.value);
+
+            // Reset simulation state
+            simState.ideal.y = simState.params.h0;
+            simState.ideal.v = 0;
+            simState.ideal.impactTime = null;
+            simState.ideal.trails = [];
+            simState.ideal.particles = [];
+            simState.ideal.impactTriggered = false;
+            
+            simState.drag.y = simState.params.h0;
+            simState.drag.v = 0;
+            simState.drag.impactTime = null;
+            simState.drag.trails = [];
+            simState.drag.particles = [];
+            simState.drag.impactTriggered = false;
+            
+            simState.t = 0;
+        }
+
+        // Attach input listeners
+        [
+            gravityInput, heightInput, massInput, areaInput, cdInput, rhoInput
+        ].forEach(el => el.addEventListener('input', () => { 
+            updateParams(); 
+            if (!running) renderOnce(); 
+        }));
+
+        // Buttons
+        startBtn.onclick = () => { 
+            running = true; 
+            lastTime = null; 
+            chartTime = 0; 
+            clearChartBuffers(); 
+            pauseIndicator.classList.remove('active'); // Esconder indicador de pausa
+        };
+        
+        pauseBtn.onclick = () => { 
+            running = false; 
+            pauseIndicator.classList.add('active'); // Mostrar indicador de pausa
+        };
+        
+        resetBtn.onclick = () => { 
+            resetSimulation(); 
+        };
+
+        gotoBtn.onclick = () => {
+            const target = parseFloat(targetTimeInput.value);
+            if (isFinite(target) && target >= 0) gotoTime(target);
+        };
+
+        analyticBtn.onclick = () => {
+            const target = parseFloat(targetTimeInput.value);
+            if (isFinite(target) && target >= 0) analyticJump(target);
+        };
+
+        function clearChartBuffers(){
+            chartData.time.length = 0; 
+            chartData.idealHeight.length = 0; 
+            chartData.dragHeight.length = 0; 
+            chartData.idealVelocity.length = 0; 
+            chartData.dragVelocity.length = 0;
+            
+            if (positionChart) positionChart.update();
+            if (velocityChart) velocityChart.update();
+        }
+
+        function resetSimulation(){
+            running = false;
+            updateParams();
+            chartTime = 0;
+            clearChartBuffers();
+            pauseIndicator.classList.remove('active'); // Esconder indicador de pausa
+            renderOnce();
+        }
+
+        // Physics functions
+        function dragForce(v, p) {
+            if (v === 0) return 0;
+            const s = 0.5 * p.rho * p.cd * p.area * v * Math.abs(v);
+            return -s;
+        }
+
+        // Create impact effect
+        function createImpactEffect(obj, x) {
+            const groundY = toCanvasY(0);
+            
+            // Create particles
+            for (let i = 0; i < 25; i++) {
+                obj.particles.push({
+                    x: x,
+                    y: groundY,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: -Math.random() * 15,
+                    life: 1.0,
+                    color: obj === simState.ideal ? '#6fb8ff' : '#ffd66b',
+                    size: Math.random() * 4 + 2
+                });
+            }
+            
+            // Create impact time element
+            const impactTimeEl = document.createElement('div');
+            impactTimeEl.className = 'impact-time show';
+            impactTimeEl.textContent = `t = ${obj.impactTime.toFixed(2)}s`;
+            impactTimeEl.style.left = `${x - 30}px`;
+            impactTimeEl.style.top = `${groundY - 40}px`;
+            document.querySelector('.simulation-container').appendChild(impactTimeEl);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                impactTimeEl.classList.remove('show');
+                setTimeout(() => {
+                    if (impactTimeEl.parentNode) {
+                        impactTimeEl.parentNode.removeChild(impactTimeEl);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // Convert world Y coordinate to canvas coordinate
+        function toCanvasY(worldY) {
+            const ratio = devicePixelRatio || 1;
+            const W = canvas.width / ratio;
+            const H = canvas.height / ratio;
+            const margin = Math.max(20, W / 15);
+            const hMax = Math.max(simState.params.h0, 1);
+            return margin + (H - margin * 2) * (1 - Math.min(worldY, hMax) / hMax);
+        }
+
+        // Convert world X coordinate to canvas coordinate for ideal ball
+        function toCanvasXIdeal() {
+            const ratio = devicePixelRatio || 1;
+            const W = canvas.width / ratio;
+            if (displayMode === 'both') {
+                return W * 0.33;
+            } else {
+                return W * 0.5; // Centralizado quando apenas um objeto
+            }
+        }
+
+        // Convert world X coordinate to canvas coordinate for drag ball
+        function toCanvasXDrag() {
+            const ratio = devicePixelRatio || 1;
+            const W = canvas.width / ratio;
+            if (displayMode === 'both') {
+                return W * 0.66;
+            } else {
+                return W * 0.5; // Centralizado quando apenas um objeto
+            }
+        }
+
+        // Physics update
+        function updatePhysics(dt) {
+            simState.t += dt;
+            const p = simState.params;
+            
+            // Calculate current canvas positions
+            const xI = toCanvasXIdeal();
+            const xD = toCanvasXDrag();
+            
+            // Ideal - no drag
+            if (simState.ideal.y > 0) {
+                // CORREÇÃO: usando a equação correta da física
+                simState.ideal.v += p.g * dt;  // Aceleração positiva (para baixo)
+                simState.ideal.y -= simState.ideal.v * dt;  // Movimento para baixo
+                
+                // Add trail
+                if (simState.t % 0.05 < dt && trailChk.checked && running) {
+                    simState.ideal.trails.push({
+                        x: xI,
+                        y: toCanvasY(simState.ideal.y),
+                        life: 1.0
+                    });
+                }
+                
+                if (simState.ideal.y <= 0) {
+                    simState.ideal.y = 0;
+                    simState.ideal.impactTime = simState.t;
+                    
+                    // Trigger impact effect only once
+                    if (!simState.ideal.impactTriggered) {
+                        createImpactEffect(simState.ideal, xI);
+                        simState.ideal.impactTriggered = true;
+                    }
+                }
+            }
+
+            // Drag - with air resistance
+            if (simState.drag.y > 0) {
+                const Fd = dragForce(simState.drag.v, p);
+                const a = p.g - Fd / p.mass;  // Gravidade menos arrasto
+                simState.drag.v += a * dt;
+                simState.drag.y -= simState.drag.v * dt;  // Movimento para baixo
+                
+                // Add trail
+                if (simState.t % 0.05 < dt && trailChk.checked && running) {
+                    simState.drag.trails.push({
+                        x: xD,
+                        y: toCanvasY(simState.drag.y),
+                        life: 1.0
+                    });
+                }
+                
+                if (simState.drag.y <= 0) {
+                    simState.drag.y = 0;
+                    simState.drag.impactTime = simState.t;
+                    
+                    // Trigger impact effect only once
+                    if (!simState.drag.impactTriggered) {
+                        createImpactEffect(simState.drag, xD);
+                        simState.drag.impactTriggered = true;
+                    }
+                }
+            }
+        }
+
+        // Update trails and particles
+        function updateEffects(obj, dt) {
+            // Update trails
+            for (let i = obj.trails.length - 1; i >= 0; i--) {
+                obj.trails[i].life -= dt * 0.5;
+                if (obj.trails[i].life <= 0) {
+                    obj.trails.splice(i, 1);
+                }
+            }
+            
+            // Update particles
+            for (let i = obj.particles.length - 1; i >= 0; i--) {
+                const p = obj.particles[i];
+                p.vy += 0.3; // gravity
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= dt * 1.5;
+                
+                if (p.life <= 0) {
+                    obj.particles.splice(i, 1);
+                }
+            }
+        }
+
+        // Update info display
+        function updateInfo(){
+            timeValue.textContent = simState.t.toFixed(2) + ' s';
+            
+            // Atualizar apenas os objetos que estão sendo exibidos
+            if (displayMode === 'both' || displayMode === 'ideal') {
+                idealHeightValue.textContent = simState.ideal.y.toFixed(1) + ' m';
+                idealVelocityValue.textContent = Math.abs(simState.ideal.v).toFixed(2) + ' m/s';
+                idealImpactValue.textContent = simState.ideal.impactTime ? simState.ideal.impactTime.toFixed(2) + ' s' : '--';
+            } else {
+                idealHeightValue.textContent = '--';
+                idealVelocityValue.textContent = '--';
+                idealImpactValue.textContent = '--';
+            }
+            
+            if (displayMode === 'both' || displayMode === 'drag') {
+                dragHeightValue.textContent = simState.drag.y.toFixed(1) + ' m';
+                dragVelocityValue.textContent = Math.abs(simState.drag.v).toFixed(2) + ' m/s';
+                dragImpactValue.textContent = simState.drag.impactTime ? simState.drag.impactTime.toFixed(2) + ' s' : '--';
+            } else {
+                dragHeightValue.textContent = '--';
+                dragVelocityValue.textContent = '--';
+                dragImpactValue.textContent = '--';
+            }
+            
+            if (simState.ideal.impactTime && simState.drag.impactTime) {
+                const diff = Math.abs(simState.drag.impactTime - simState.ideal.impactTime);
+                differenceValue.textContent = diff.toFixed(2) + ' s';
+            } else {
+                differenceValue.textContent = '--';
+            }
+        }
+
+        // Update chart buffers and refresh charts
+        function pushChartData(){
+            if (chartData.time.length >= maxDataPoints) {
+                chartData.time.shift(); 
+                chartData.idealHeight.shift(); 
+                chartData.dragHeight.shift(); 
+                chartData.idealVelocity.shift(); 
+                chartData.dragVelocity.shift();
+            }
+            
+            chartData.time.push(chartTime.toFixed(2));
+            
+            // Adicionar apenas dados dos objetos que estão sendo exibidos
+            if (displayMode === 'both' || displayMode === 'ideal') {
+                chartData.idealHeight.push(simState.ideal.y);
+                chartData.idealVelocity.push(Math.abs(simState.ideal.v));
+            } else {
+                chartData.idealHeight.push(null);
+                chartData.idealVelocity.push(null);
+            }
+            
+            if (displayMode === 'both' || displayMode === 'drag') {
+                chartData.dragHeight.push(simState.drag.y);
+                chartData.dragVelocity.push(Math.abs(simState.drag.v));
+            } else {
+                chartData.dragHeight.push(null);
+                chartData.dragVelocity.push(null);
+            }
+
+            if (positionChart) positionChart.update();
+            if (velocityChart) velocityChart.update();
+        }
+
+        // Drawing the simulation
+        function renderOnce(){
+            // ensure canvas size matches CSS
+            resizeCanvas();
+
+            // Clear
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+
+            // Visual grid
+            if (gridChk.checked) {
+                ctx.save();
+                ctx.globalAlpha = 0.06;
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1;
+                const gridSize = 60;
+                for (let x = 0; x < canvas.width; x += gridSize) {
+                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+                }
+                for (let y = 0; y < canvas.height; y += gridSize) {
+                    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            const ratio = devicePixelRatio || 1;
+            const W = canvas.width / ratio;
+            const H = canvas.height / ratio;
+            
+            // Ground
+            ctx.fillStyle = '#092231';
+            const groundY = toCanvasY(0);
+            ctx.fillRect(0, groundY, W, H - groundY);
+            
+            // Ground line
+            ctx.strokeStyle = '#0fa3ff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, groundY);
+            ctx.lineTo(W, groundY);
+            ctx.stroke();
+
+            // Calcular posições X baseadas no modo de exibição
+            let xI = toCanvasXIdeal();
+            let xD = toCanvasXDrag();
+            
+            // Draw trails (apenas para objetos visíveis)
+            if (displayMode === 'both' || displayMode === 'ideal') {
+                drawTrails(simState.ideal, '#6fb8ff');
+            }
+            if (displayMode === 'both' || displayMode === 'drag') {
+                drawTrails(simState.drag, '#ffd66b');
+            }
+            
+            // Draw particles (apenas para objetos visíveis)
+            if (displayMode === 'both' || displayMode === 'ideal') {
+                drawParticles(simState.ideal);
+            }
+            if (displayMode === 'both' || displayMode === 'drag') {
+                drawParticles(simState.drag);
+            }
+            
+            // Draw objects (apenas para objetos visíveis)
+            const objRadius = Math.max(8, W / 50);
+            
+            // Ideal object
+            if ((displayMode === 'both' || displayMode === 'ideal') && simState.ideal.y >= 0) {
+                // Glow effect for moving objects
+                if (simState.ideal.y > 0) {
+                    ctx.beginPath();
+                    ctx.fillStyle = 'rgba(111, 184, 255, 0.3)';
+                    ctx.arc(xI, toCanvasY(simState.ideal.y), objRadius * 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Object
+                ctx.beginPath();
+                ctx.fillStyle = '#6fb8ff';
+                ctx.arc(xI, toCanvasY(simState.ideal.y), objRadius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Drag object
+            if ((displayMode === 'both' || displayMode === 'drag') && simState.drag.y >= 0) {
+                // Glow effect for moving objects
+                if (simState.drag.y > 0) {
+                    ctx.beginPath();
+                    ctx.fillStyle = 'rgba(255, 214, 107, 0.3)';
+                    ctx.arc(xD, toCanvasY(simState.drag.y), objRadius * 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Object
+                ctx.beginPath();
+                ctx.fillStyle = '#ffd66b';
+                ctx.arc(xD, toCanvasY(simState.drag.y), objRadius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Labels
+            ctx.fillStyle = '#cfe8ff';
+            const fontSize = Math.max(12, W / 40);
+            ctx.font = `bold ${fontSize}px system-ui, Segoe UI, Roboto, Arial`;
+            ctx.textAlign = 'center';
+            
+            if (displayMode === 'both') {
+                ctx.fillText('Sem arrasto', xI, 20);
+                ctx.fillText('Com arrasto', xD, 20);
+            } else if (displayMode === 'ideal') {
+                ctx.fillText('Sem arrasto', xI, 20);
+            } else if (displayMode === 'drag') {
+                ctx.fillText('Com arrasto', xD, 20);
+            }
+
+            // Height markers
+            ctx.textAlign = 'right';
+            const markerFontSize = Math.max(10, W / 50);
+            ctx.font = `${markerFontSize}px system-ui, Segoe UI, Roboto, Arial`;
+            ctx.fillStyle = '#bcd6ff';
+            
+            const hMax = Math.max(simState.params.h0, 1);
+            for (let h = 0; h <= hMax; h += hMax / 5) {
+                const y = toCanvasY(h);
+                ctx.fillText(h.toFixed(0) + 'm', W - 10, y - 5);
+                ctx.beginPath();
+                ctx.moveTo(W - 30, y);
+                ctx.lineTo(W - 10, y);
+                ctx.strokeStyle = 'rgba(188, 214, 255, 0.5)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+        }
+
+        // Draw trails
+        function drawTrails(obj, color) {
+            for (const trail of obj.trails) {
+                ctx.beginPath();
+                ctx.fillStyle = color.replace(')', `, ${trail.life})`).replace('rgb', 'rgba');
+                ctx.arc(trail.x, trail.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Draw particles
+        function drawParticles(obj) {
+            for (const p of obj.particles) {
+                ctx.beginPath();
+                ctx.fillStyle = p.color.replace(')', `, ${p.life})`).replace('rgb', 'rgba');
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // "Go to time" function
+        async function gotoTime(target) {
+            if (!isFinite(target) || target < 0) return;
+            
+            // If target < current, reset to t=0 and recompute until target
+            if (target < simState.t) {
+                resetSimulation();
+            }
+            
+            const timeBudgetMs = 200; // Maximum time spent on synchronous operation (ms)
+            const maxMicroDt = 0.01;  // Maximum step per micro-step
+            let startClock = performance.now();
+            
+            while (simState.t < target) {
+                const now = performance.now();
+                if (now - startClock > timeBudgetMs) {
+                    // Short pause to release thread and continue later
+                    await new Promise(r => setTimeout(r, 10));
+                    startClock = performance.now();
+                }
+                
+                const remaining = target - simState.t;
+                const dt = Math.min(maxMicroDt, remaining);
+                updatePhysics(dt);
+                
+                // Update effects even during jump
+                updateEffects(simState.ideal, dt);
+                updateEffects(simState.drag, dt);
+                
+                // Safety: break if stuck
+                if (simState.t > 1e6) break;
+            }
+            
+            // After reaching or approximating, update display and pause
+            running = false;
+            pauseIndicator.classList.add('active'); // Mostrar indicador de pausa
+            updateInfo();
+            renderOnce();
+        }
+
+        // Analytic adjustment for ideal object
+        function analyticJump(target) {
+            if (!isFinite(target) || target < 0) return;
+            updateParams();
+            
+            // y(t) = h0 + v0*t - 0.5*g*t^2, v0 initial = 0
+            const h0 = simState.params.h0;
+            const g = simState.params.g;
+            let y = h0 - 0.5 * g * target * target;
+            let v = g * target;
+            
+            if (y < 0) {
+                y = 0;
+                v = 0;
+                if (!simState.ideal.impactTime) {
+                    simState.ideal.impactTime = target;
+                    simState.ideal.impactTriggered = true;
+                    createImpactEffect(simState.ideal, toCanvasXIdeal());
+                }
+            }
+            
+            simState.ideal.y = y;
+            simState.ideal.v = v;
+            
+            // Update time
+            simState.t = target;
+            
+            updateInfo();
+            renderOnce();
+        }
+
+        // Handle click on balls to pause/continue the entire simulation
+        function handleCanvasClick(e) {
+            const rect = canvas.getBoundingClientRect();
+            const ratio = devicePixelRatio || 1;
+            const W = canvas.width / ratio;
+            const x = (e.clientX - rect.left) * (canvas.width / rect.width) / ratio;
+            const y = (e.clientY - rect.top) * (canvas.height / rect.height) / ratio;
+            
+            // Calcular posições X baseadas no modo de exibição
+            let xI = toCanvasXIdeal();
+            let xD = toCanvasXDrag();
+            
+            const objRadius = Math.max(8, W / 50) * 1.5; // Slightly larger hit area
+            
+            // Check if click is on ideal ball (apenas se estiver visível)
+            let clicked = false;
+            
+            if (displayMode === 'both' || displayMode === 'ideal') {
+                const idealY = toCanvasY(simState.ideal.y);
+                const distI = Math.sqrt((x - xI) ** 2 + (y - idealY) ** 2);
+                
+                if (distI < objRadius) {
+                    clicked = true;
+                }
+            }
+            
+            // Check if click is on drag ball (apenas se estiver visível)
+            if (!clicked && (displayMode === 'both' || displayMode === 'drag')) {
+                const dragY = toCanvasY(simState.drag.y);
+                const distD = Math.sqrt((x - xD) ** 2 + (y - dragY) ** 2);
+                
+                if (distD < objRadius) {
+                    clicked = true;
+                }
+            }
+            
+            // If clicked on any ball, toggle the global running state
+            if (clicked) {
+                running = !running;
+                if (running) {
+                    lastTime = performance.now();
+                    pauseIndicator.classList.remove('active'); // Esconder indicador de pausa
+                } else {
+                    pauseIndicator.classList.add('active'); // Mostrar indicador de pausa
+                }
+            }
+        }
+
+        // Add click event listener to canvas
+        canvas.addEventListener('click', handleCanvasClick);
+
+        // Main draw loop
+        function loop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            
+            // Calcular delta time em segundos
+            const dt = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+
+            // Limitar dt para evitar problemas quando a aba está inativa
+            const limitedDt = Math.min(dt, 0.05);
+
+            if (running) {
+                updatePhysics(limitedDt);
+                chartTime += limitedDt;
+                
+                // Update effects
+                updateEffects(simState.ideal, limitedDt);
+                updateEffects(simState.drag, limitedDt);
+                
+                pushChartData();
+                
+                // Check auto-pause
+                const target = parseFloat(targetTimeInput.value);
+                if (autoPause && isFinite(target) && target >= 0 && simState.t >= target) {
+                    running = false;
+                    pauseIndicator.classList.add('active'); // Mostrar indicador de pausa
+                }
+            }
+
+            renderOnce();
+            updateInfo();
+            requestAnimationFrame(loop);
+        }
+
+        // Initial setup
+        function start() {
+            resizeCanvas();
+            initCharts();
+            updateParams();
+            updateControlsVisibility(); // Atualizar visibilidade dos controles
+            renderOnce();
+            // Iniciar o loop de animação
+            requestAnimationFrame(loop);
+        }
+
+        // Iniciar a simulação quando a página carregar
+        window.addEventListener('load', start);
+    </script>
+</body>
+</html>

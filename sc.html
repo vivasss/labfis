@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gráfico Interativo - Funções Seno e Cosseno (Responsivo)</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #071028;
+      --card: #0f1724;
+      --muted: #94a3b8;
+      --primary: #8a2be2;
+      --accent: #00bfff;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      color-scheme: dark;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: all .3s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      font-family: system-ui, 'Segoe UI', Roboto, Arial;
+      background: linear-gradient(180deg, #071028 0%, #071021 60%);
+      color: #e6eef8;
+      min-height: 100vh;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+    
+    header {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, .03);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      animation: fadeIn .8s ease-out;
+    }
+    
+    h1 {
+      font-size: clamp(16px, 4vw, 18px);
+      margin: 0;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: textGlow 3s infinite alternate;
+    }
+    
+    .tab-container {
+      display: flex;
+      background: var(--card);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .2);
+    }
+    
+    .tab {
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, .03);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all .3s ease;
+      position: relative;
+      overflow: hidden;
+      flex: 1;
+      text-align: center;
+    }
+    
+    .tab:hover {
+      background: rgba(255, 255, 255, .08);
+      transform: translateY(-2px);
+    }
+    
+    .tab.active {
+      background: var(--primary);
+      font-weight: 700;
+      box-shadow: 0 0 15px rgba(138, 43, 226, .5);
+    }
+    
+    .tab::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 3px;
+      background: var(--accent);
+      transition: width .3s ease;
+    }
+    
+    .tab.active::after {
+      width: 100%;
+    }
+    
+    .tab-content {
+      display: none;
+      padding: 18px;
+      animation: fadeIn .5s ease-out;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    main {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 18px;
+      height: calc(100vh - 134px);
+      padding: 0 18px 18px;
+      animation: slideUp .6s ease-out;
+    }
+    
+    .graph-container {
+      background: linear-gradient(180deg, rgba(255, 255, 255, .02), transparent);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 6px 30px rgba(2, 6, 23, .6);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+    }
+    
+    .chart-wrapper {
+      width: 100%;
+      height: 560px;
+      border-radius: 8px;
+      background: transparent;
+      display: block;
+      animation: canvasAppear 1s ease-out;
+      touch-action: none;
+      position: relative;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, .1);
+    }
+    
+    #trigChart {
+      width: 100%;
+      height: 100%;
+      border-radius: 8px;
+      cursor: crosshair;
+    }
+    
+    .selection-point {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 3px solid white;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 10;
+      box-shadow: 0 0 10px rgba(0, 0, 0, .8);
+      animation: pulse 1.5s infinite;
+    }
+    
+    .point-a {
+      background: #ef4444;
+      border-color: #ef4444;
+    }
+    
+    .point-b {
+      background: #10b981;
+      border-color: #10b981;
+    }
+    
+    .info-panel {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+    
+    .info-card {
+      background: rgba(0, 0, 0, .2);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      border-left: 3px solid var(--primary);
+      position: relative;
+      overflow: hidden;
+      animation: cardSlideIn .5s ease-out;
+    }
+    
+    .info-card .label {
+      font-size: .75rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    
+    .info-card .value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    
+    .controls {
+      background: var(--card);
+      padding: 16px;
+      border-radius: 12px;
+      height: 100%;
+      overflow-y: auto;
+      animation: slideInRight .6s ease-out;
+    }
+    
+    .group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, .1);
+      outline: none;
+      -webkit-appearance: none;
+    }
+    
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, .06);
+      background: rgba(255, 255, 255, .02);
+      color: inherit;
+      margin-bottom: 8px;
+      transition: all .3s ease;
+    }
+    
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    
+    button {
+      background: linear-gradient(90deg, var(--primary), #6a0dad);
+      border: 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all .3s ease;
+      position: relative;
+      overflow: hidden;
+      flex: 1;
+    }
+    
+    button.secondary {
+      background: linear-gradient(90deg, #444, #666);
+    }
+    
+    button.danger {
+      background: linear-gradient(90deg, var(--danger), #b91c1c);
+    }
+    
+    .integral-panel {
+      background: rgba(0, 0, 0, .2);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 15px;
+      border-left: 3px solid var(--success);
+    }
+    
+    .roots-panel {
+      background: rgba(0, 0, 0, .2);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 15px;
+      border-left: 3px solid var(--warning);
+    }
+    
+    .roots-list {
+      max-height: 120px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+    
+    .root-item {
+      background: rgba(255, 255, 255, .05);
+      padding: 5px 10px;
+      border-radius: 4px;
+      margin-bottom: 5px;
+      font-size: 12px;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    footer {
+      padding: 12px 20px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, .03);
+      animation: fadeIn 1s ease-out;
+    }
+    
+    /* Funções selector */
+    .function-selector {
+      display: flex;
+      background: rgba(255, 255, 255, .05);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 15px;
+    }
+    
+    .function-btn {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .3s ease;
+    }
+    
+    .function-btn.active {
+      background: var(--primary);
+      font-weight: 700;
+    }
+    
+    .slider-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .slider-value {
+      font-size: 12px;
+      color: var(--accent);
+    }
+    
+    /* Animações */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes slideInRight {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    
+    @keyframes canvasAppear {
+      from { opacity: 0; transform: scale(.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    
+    @keyframes cardSlideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes textGlow {
+      0% { text-shadow: 0 0 5px rgba(138, 43, 226, .5); }
+      100% { text-shadow: 0 0 15px rgba(0, 191, 255, .8), 0 0 20px rgba(138, 43, 226, .6); }
+    }
+    
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    
+    @keyframes pulse {
+      0% { opacity: .7; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+      100% { opacity: .7; transform: translate(-50%, -50%) scale(1); }
+    }
+    
+    /* Responsividade */
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+        height: auto;
+        padding-bottom: 18px;
+      }
+      
+      .chart-wrapper {
+        height: 420px;
+      }
+      
+      .info-panel {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    @media (max-width: 768px) {
+      main {
+        padding: 0 10px 10px;
+        gap: 12px;
+      }
+      
+      .chart-wrapper {
+        height: 300px;
+      }
+      
+      .info-panel {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      
+      .info-card {
+        padding: 8px;
+      }
+      
+      .info-card .value {
+        font-size: 0.9rem;
+      }
+      
+      .controls {
+        padding: 12px;
+      }
+      
+      .tab {
+        padding: 8px 12px;
+        font-size: 13px;
+      }
+      
+      .integral-panel,
+      .roots-panel {
+        padding: 10px;
+      }
+      
+      .row {
+        flex-direction: column;
+      }
+      
+      button {
+        padding: 12px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      header {
+        padding: 12px 15px;
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .tab-container {
+        width: 100%;
+      }
+      
+      .chart-wrapper {
+        height: 250px;
+      }
+      
+      .info-panel {
+        grid-template-columns: 1fr 1fr;
+      }
+      
+      .function-selector {
+        flex-direction: column;
+      }
+      
+      .function-btn {
+        padding: 12px;
+      }
+      
+      .slider-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+      }
+      
+      footer {
+        padding: 10px 15px;
+        font-size: 12px;
+      }
+    }
+    
+    /* Melhorias para toque */
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+    }
+    
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      border: none;
+    }
+    
+    /* Melhorias para visualização em dispositivos móveis */
+    .mobile-optimized {
+      touch-action: manipulation;
+    }
+    
+    /* Melhorias para o painel de explicação */
+    .explanation-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    
+    .concept-card {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-left: 3px solid var(--accent);
+    }
+    
+    .concept-card h3 {
+      margin-bottom: 10px;
+      color: var(--accent);
+    }
+    
+    .concept-card p {
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    
+    @media (max-width: 768px) {
+      .explanation-container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gráfico Interativo - Funções Seno e Cosseno</h1>
+    <div class="tab-container">
+      <div class="tab active" data-tab="graph">Gráfico</div>
+      <div class="tab" data-tab="explanation">Explicação</div>
+    </div>
+  </header>
+
+  <div class="tab-content active" id="graph-tab">
+    <main>
+      <div class="graph-container">
+        <div class="chart-wrapper">
+          <canvas id="trigChart"></canvas>
+        </div>
+        <div class="info-panel">
+          <div class="info-card"><div class="label">Função Ativa</div><div class="value" id="activeFunction">Seno</div></div>
+          <div class="info-card"><div class="label">Amplitude (A)</div><div class="value" id="amplitudeValue">1</div></div>
+          <div class="info-card"><div class="label">Frequência (B)</div><div class="value" id="frequencyValue">1</div></div>
+          <div class="info-card"><div class="label">Fase (C)</div><div class="value" id="phaseValue">0</div></div>
+        </div>
+      </div>
+
+      <aside class="controls">
+        <div class="group">
+          <label><strong>Seleção de Função</strong></label>
+          <div class="function-selector">
+            <div class="function-btn active" data-function="sin">Seno</div>
+            <div class="function-btn" data-function="cos">Cosseno</div>
+            <div class="function-btn" data-function="both">Ambas</div>
+          </div>
+        </div>
+
+        <div class="group">
+          <label><strong>Coeficientes da Função</strong></label>
+          <div class="slider-container">
+            <label for="amplitude">Amplitude (A)</label>
+            <span id="amplitudeDisplay" class="slider-value">1</span>
+          </div>
+          <input id="amplitude" type="range" min="0.1" max="3" step="0.1" value="1">
+          
+          <div class="slider-container">
+            <label for="frequency">Frequência (B)</label>
+            <span id="frequencyDisplay" class="slider-value">1</span>
+          </div>
+          <input id="frequency" type="range" min="0.1" max="3" step="0.1" value="1">
+          
+          <div class="slider-container">
+            <label for="phase">Fase (C)</label>
+            <span id="phaseDisplay" class="slider-value">0</span>
+          </div>
+          <input id="phase" type="range" min="-3.14" max="3.14" step="0.1" value="0">
+          
+          <div class="slider-container">
+            <label for="verticalShift">Deslocamento Vertical (D)</label>
+            <span id="verticalShiftDisplay" class="slider-value">0</span>
+          </div>
+          <input id="verticalShift" type="range" min="-2" max="2" step="0.1" value="0">
+        </div>
+
+        <div class="group">
+          <label><strong>Configurações do Gráfico</strong></label>
+          <label><input id="showGrid" type="checkbox" checked> Mostrar grade</label>
+          <label><input id="showPoints" type="checkbox"> Mostrar pontos</label>
+          <label><input id="smoothLines" type="checkbox" checked> Linhas suaves</label>
+          <label><input id="showRoots" type="checkbox" checked> Mostrar raízes</label>
+        </div>
+
+        <div class="group">
+          <label><strong>Intervalo do Gráfico</strong></label>
+          <div class="slider-container">
+            <label for="xRange">Intervalo de X</label>
+            <span id="xRangeDisplay" class="slider-value">2π</span>
+          </div>
+          <input id="xRange" type="range" min="1" max="6" step="1" value="2">
+        </div>
+
+        <div class="integral-panel">
+          <h3 style="margin-top:0;color:var(--success);">Cálculo de Integral</h3>
+          <p class="muted">Clique em dois pontos no gráfico para calcular a integral entre eles</p>
+          <div class="integral-points">
+            <div class="integral-point"><div class="label">Ponto A</div><div id="pointA" class="value">--</div></div>
+            <div class="integral-point"><div class="label">Ponto B</div><div id="pointB" class="value">--</div></div>
+          </div>
+          <div class="integral-info" style="margin-top:8px"><div class="label">Integral (área)</div><div id="integralValue" class="value">--</div></div>
+          <div class="row" style="margin-top:10px;">
+            <button id="clearPoints" class="secondary">Limpar Pontos</button>
+            <button id="calculateIntegral" class="danger">Calcular Integral</button>
+          </div>
+        </div>
+
+        <div class="roots-panel">
+          <h3 style="margin-top:0;color:var(--warning);">Raízes da Função</h3>
+          <div class="roots-list" id="rootsList"></div>
+        </div>
+
+        <button id="resetButton">Redefinir Valores</button>
+      </aside>
+    </main>
+  </div>
+
+  <div class="tab-content" id="explanation-tab">
+    <div class="explanation-container">
+      <div class="explanation-content">
+        <h2>Funções Seno e Cosseno</h2>
+        <p>As funções seno e cosseno são funções trigonométricas fundamentais que descrevem relações entre ângulos e lados de triângulos retângulos, bem como fenômenos periódicos como ondas sonoras e oscilações.</p>
+        
+        <div class="concept-card">
+          <h3>Forma Geral</h3>
+          <p>A forma geral das funções trigonométricas é:</p>
+          <p>y = A · sen(Bx + C) + D</p>
+          <p>y = A · cos(Bx + C) + D</p>
+          <p>Onde:
+            <ul>
+              <li>A = Amplitude</li>
+              <li>B = Frequência</li>
+              <li>C = Fase (deslocamento horizontal)</li>
+              <li>D = Deslocamento vertical</li>
+            </ul>
+          </p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Raízes das Funções</h3>
+          <p>As raízes (zeros) são os pontos onde a função cruza o eixo x (y = 0). Para as funções seno e cosseno, essas raízes ocorrem em intervalos regulares.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Integral das Funções</h3>
+          <p>∫ sin(x) dx = -cos(x) + C</p>
+          <p>∫ cos(x) dx = sin(x) + C</p>
+          <p>A integral representa a área sob a curva entre dois pontos.</p>
+        </div>
+      </div>
+      
+      <div class="explanation-content">
+        <h2>Como Usar as Ferramentas</h2>
+        
+        <div class="concept-card">
+          <h3>Controles de Função</h3>
+          <p>Use os controles deslizantes para ajustar os parâmetros da função e observar como eles afetam o gráfico.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Encontrando Raízes</h3>
+          <p>As raízes são calculadas numericamente com alta precisão e listadas no painel de raízes.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Calculando Integrais</h3>
+          <ol>
+            <li>Clique em um ponto no gráfico para definir o ponto A</li>
+            <li>Clique em outro ponto no gráfico para definir o ponto B</li>
+            <li>O valor da integral será calculado automaticamente usando o método de Simpson adaptativo</li>
+            <li>A área entre a função e o eixo x será destacada no gráfico</li>
+          </ol>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Dicas para Dispositivos Móveis</h3>
+          <p>Em telas menores, você pode:
+            <ul>
+              <li>Usar dois dedos para dar zoom no gráfico</li>
+              <li>Arrastar para navegar pelo gráfico</li>
+              <li>Tocar no gráfico para selecionar pontos para integração</li>
+            </ul>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>Gráfico Interativo de Funções Seno e Cosseno — Versão Responsiva</footer>
+
+  <script>
+    /**************************************************************************
+     * Variáveis DOM
+     **************************************************************************/
+    const sinBtn = document.querySelector('[data-function="sin"]');
+    const cosBtn = document.querySelector('[data-function="cos"]');
+    const bothBtn = document.querySelector('[data-function="both"]');
+    const amplitudeSlider = document.getElementById('amplitude');
+    const frequencySlider = document.getElementById('frequency');
+    const phaseSlider = document.getElementById('phase');
+    const verticalShiftSlider = document.getElementById('verticalShift');
+    const xRangeSlider = document.getElementById('xRange');
+    const resetButton = document.getElementById('resetButton');
+    const clearPointsButton = document.getElementById('clearPoints');
+    const calculateIntegralButton = document.getElementById('calculateIntegral');
+
+    const amplitudeDisplay = document.getElementById('amplitudeDisplay');
+    const frequencyDisplay = document.getElementById('frequencyDisplay');
+    const phaseDisplay = document.getElementById('phaseDisplay');
+    const verticalShiftDisplay = document.getElementById('verticalShiftDisplay');
+    const xRangeDisplay = document.getElementById('xRangeDisplay');
+
+    const amplitudeValue = document.getElementById('amplitudeValue');
+    const frequencyValue = document.getElementById('frequencyValue');
+    const phaseValue = document.getElementById('phaseValue');
+    const activeFunction = document.getElementById('activeFunction');
+
+    const pointAElement = document.getElementById('pointA');
+    const pointBElement = document.getElementById('pointB');
+    const integralValueElement = document.getElementById('integralValue');
+    const rootsListElement = document.getElementById('rootsList');
+
+    const showGrid = document.getElementById('showGrid');
+    const showPoints = document.getElementById('showPoints');
+    const smoothLines = document.getElementById('smoothLines');
+    const showRoots = document.getElementById('showRoots');
+
+    /**************************************************************************
+     * Estado
+     **************************************************************************/
+    let currentFunction = 'sin';
+    let amplitude = 1;
+    let frequency = 1;
+    let phase = 0;
+    let verticalShift = 0;
+    let xRange = 2; // multiplicador de π
+
+    // integral / seleção
+    let integralPoints = []; // [a, b]
+    let integralDataset = null;
+    let rootsDataset = null;
+    const selectionPointsVis = { a: null, b: null };
+
+    // Chart
+    const ctx = document.getElementById('trigChart').getContext('2d');
+    let trigChart = null;
+
+    /**************************************************************************
+     * Utilitários matemáticos
+     **************************************************************************/
+    function f_value(x, funcName = null) {
+      const func = funcName || currentFunction;
+      if (func === 'sin') return amplitude * Math.sin(frequency * x + phase) + verticalShift;
+      if (func === 'cos') return amplitude * Math.cos(frequency * x + phase) + verticalShift;
+      // se 'both', por padrão tratamos visualização como soma — mas para raízes/integrais
+      // mantemos comportamento anterior: use seno como default em "both" para integral
+      return amplitude * Math.sin(frequency * x + phase) + verticalShift;
+    }
+
+    // formata valores em múltiplos / frações de π quando possível
+    function formatPiValue(value) {
+      if (Math.abs(value) < 1e-12) return '0';
+      const piValue = value / Math.PI;
+      const tol = 1e-6; // mais fino
+      const nearestInt = Math.round(piValue);
+      if (Math.abs(piValue - nearestInt) < tol) {
+        if (nearestInt === 1) return 'π';
+        if (nearestInt === -1) return '-π';
+        return `${nearestInt}π`;
+      }
+      // checar frações comuns
+      const fracs = [
+        { v: 1/2, t: 'π/2' }, { v: 1/3, t: 'π/3' }, { v: 2/3, t: '2π/3' },
+        { v: 1/4, t: 'π/4' }, { v: 3/4, t: '3π/4' }, { v: 1/6, t: 'π/6' }, { v: 5/6, t: '5π/6' }
+      ];
+      for (const fr of fracs) {
+        if (Math.abs(piValue - fr.v) < tol) return fr.t;
+        if (Math.abs(piValue + fr.v) < tol) return `-${fr.t}`;
+      }
+      // fallback decimal
+      return value.toFixed(3);
+    }
+
+    /**************************************************************************
+     * Root finding (varredura + bisseção refinada)
+     * - robusto para funções trig com deslocamentos
+     **************************************************************************/
+    function findRoots(rangeMultiplier = xRange, options = {}) {
+      const range = rangeMultiplier * Math.PI;
+      const N = Math.max(1200, Math.round(120 * rangeMultiplier)); // pontos de amostragem (muitos para precisão)
+      const xs = [];
+      const ys = [];
+      const xmin = -range, xmax = range;
+      const step = (xmax - xmin) / N;
+      for (let i = 0; i <= N; i++) {
+        const x = xmin + i * step;
+        xs.push(x);
+        ys.push(f_value(x));
+      }
+
+      const roots = [];
+      const tol = 1e-10;
+
+      // detectar trocas de sinal (bracketing)
+      for (let i = 0; i < xs.length - 1; i++) {
+        const x1 = xs[i], x2 = xs[i+1];
+        const y1 = ys[i], y2 = ys[i+1];
+        if (isNaN(y1) || isNaN(y2)) continue;
+        if (y1 === 0) {
+          roots.push(x1);
+        }
+        if (y1 * y2 < 0) {
+          // bisseção entre x1 e x2
+          const r = bisectRoot(x1, x2, tol);
+          if (r !== null) roots.push(r);
+        } else {
+          // possível raiz tangente (y close to 0 but same sign)
+          if (Math.abs(y1) < 1e-3) {
+            // tentar refinamento em janela pequena
+            const a = Math.max(x1 - step, xmin), b = Math.min(x1 + step, xmax);
+            const r = refineRootNear(x1, a, b, tol);
+            if (r !== null) roots.push(r);
+          }
+        }
+      }
+
+      // remover duplicados (próximos)
+      const uniq = [];
+      roots.sort((a,b)=>a-b);
+      for (const r of roots) {
+        if (!uniq.some(u => Math.abs(u - r) < 1e-7)) uniq.push(r);
+      }
+      return uniq;
+    }
+
+    function bisectRoot(a, b, tol = 1e-10, maxIter = 80) {
+      let fa = f_value(a), fb = f_value(b);
+      if (isNaN(fa) || isNaN(fb)) return null;
+      if (fa === 0) return a;
+      if (fb === 0) return b;
+      if (fa * fb > 0) return null;
+      let left = a, right = b, mid;
+      for (let i = 0; i < maxIter; i++) {
+        mid = (left + right) / 2;
+        const fm = f_value(mid);
+        if (isNaN(fm)) break;
+        if (Math.abs(fm) < tol) return mid;
+        if (fa * fm <= 0) { right = mid; fb = fm; } else { left = mid; fa = fm; }
+      }
+      return mid;
+    }
+
+    function refineRootNear(x0, a, b, tol=1e-10) {
+      // tenta bisseção no pequeno intervalo [a,b]
+      return bisectRoot(a,b,tol);
+    }
+
+    /**************************************************************************
+     * Integral: Simpson adaptativo (implementado em JS)
+     **************************************************************************/
+    function adaptiveSimpson(f, a, b, eps = 1e-8, maxRecursionDepth = 20) {
+      function simpson(f, a, b) {
+        const c = (a + b) / 2;
+        return (b - a) / 6 * (f(a) + 4 * f(c) + f(b));
+      }
+      function recurse(f, a, b, eps, whole, depth) {
+        const c = (a + b) / 2;
+        const left = simpson(f, a, c);
+        const right = simpson(f, c, b);
+        const delta = left + right - whole;
+        if (depth <= 0 || Math.abs(delta) < 15 * eps) {
+          return left + right + delta / 15;
+        }
+        return recurse(f, a, c, eps/2, left, depth-1) + recurse(f, c, b, eps/2, right, depth-1);
+      }
+      const initial = simpson(f, a, b);
+      return recurse(f, a, b, eps, initial, maxRecursionDepth);
+    }
+
+    /**************************************************************************
+     * Gráfico: criação e atualização (Chart.js com datasets XY)
+     **************************************************************************/
+    function generateXYData(samples = 800) {
+      const range = xRange * Math.PI;
+      const xmin = -range, xmax = range;
+      const N = Math.max(samples, Math.round(400 * xRange));
+      const dataSin = [];
+      const dataCos = [];
+      const step = (xmax - xmin) / N;
+      for (let i = 0; i <= N; i++) {
+        const x = xmin + i * step;
+        dataSin.push({ x, y: amplitude * Math.sin(frequency * x + phase) + verticalShift });
+        dataCos.push({ x, y: amplitude * Math.cos(frequency * x + phase) + verticalShift });
+      }
+      return { dataSin, dataCos };
+    }
+
+    // formata ticks em π
+    function tickFormatter(value) {
+      return formatPiValue(value);
+    }
+
+    function initChart() {
+      const { dataSin, dataCos } = generateXYData(1200);
+      const config = {
+        type: 'line',
+        data: {
+          datasets: [
+            {
+              label: `Seno`,
+              data: dataSin,
+              parsing: false,
+              borderColor: '#8a2be2',
+              backgroundColor: 'rgba(138,43,226,0.08)',
+              borderWidth: 2,
+              tension: smoothLines.checked ? 0.4 : 0,
+              pointRadius: showPoints.checked ? 3 : 0,
+              fill: false,
+              yAxisID: 'y',
+              xAxisID: 'x'
+            },
+            {
+              label: `Cosseno`,
+              data: dataCos,
+              parsing: false,
+              borderColor: '#00bfff',
+              backgroundColor: 'rgba(0,191,255,0.08)',
+              borderWidth: 2,
+              tension: smoothLines.checked ? 0.4 : 0,
+              pointRadius: showPoints.checked ? 3 : 0,
+              fill: false,
+              hidden: currentFunction !== 'both',
+              yAxisID: 'y',
+              xAxisID: 'x'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              type: 'linear',
+              position: 'bottom',
+              title: { display: true, text: 'x (radianos)', color: '#94a3b8' },
+              grid: { color: 'rgba(255,255,255,0.08)', display: showGrid.checked },
+              ticks: { color: '#94a3b8', callback: function(v){ return tickFormatter(v); } }
+            },
+            y: {
+              title: { display: true, text: 'y', color: '#94a3b8' },
+              min: -3.5, max: 3.5,
+              grid: { color: 'rgba(255,255,255,0.08)', display: showGrid.checked },
+              ticks: { color: '#94a3b8' }
+            }
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  if (!ctx.parsed) return '';
+                  return `y = ${ctx.parsed.y.toFixed(4)}`;
+                }
+              }
+            },
+            legend: { labels: { color: '#e6eef8' } },
+            title: { display: true, text: 'Gráfico das Funções Trigonométricas', color: '#e6eef8' }
+          },
+          onClick: function(evt) {
+            // evt.native é o MouseEvent
+            const rect = trigChart.canvas.getBoundingClientRect();
+            const xPixel = evt.native.clientX - rect.left;
+            const yPixel = evt.native.clientY - rect.top;
+            const xScale = trigChart.scales.x;
+            const yScale = trigChart.scales.y;
+            const xValue = xScale.getValueForPixel(xPixel);
+            const yValue = yScale.getValueForPixel(yPixel);
+            addIntegralPoint(xValue);
+          }
+        }
+      };
+
+      trigChart = new Chart(ctx, config);
+
+      // dataset de raízes (scatter)
+      rootsDataset = {
+        label: 'Raízes',
+        data: [], parsing: false,
+        backgroundColor: 'rgba(245,158,11,0.9)',
+        showLine: false,
+        pointRadius: 6,
+        type: 'scatter',
+        xAxisID: 'x', yAxisID: 'y'
+      };
+      trigChart.data.datasets.push(rootsDataset);
+
+      // dataset de integral (área)
+      integralDataset = {
+        label: 'Área (Integral)',
+        data: [],
+        parsing: false,
+        backgroundColor: 'rgba(16,185,129,0.25)',
+        borderColor: 'rgba(16,185,129,0.7)',
+        borderWidth: 1,
+        fill: true,
+        pointRadius: 0,
+        tension: 0,
+        type: 'line',
+        xAxisID: 'x', yAxisID: 'y'
+      };
+      trigChart.data.datasets.push(integralDataset);
+
+      updateGraph(true);
+    }
+
+    /**************************************************************************
+     * Visual helpers: desenhar pontos selecionados (A e B)
+     **************************************************************************/
+    function createVisualPointOnCanvas(x, y, className) {
+      // remove existente com mesmo className
+      const wrapper = document.querySelector('.chart-wrapper');
+      // converter coords x,y para pixels via scales
+      const xPixel = trigChart.scales.x.getPixelForValue(x);
+      const yPixel = trigChart.scales.y.getPixelForValue(y);
+      const el = document.createElement('div');
+      el.className = `selection-point ${className}`;
+      el.style.left = `${xPixel}px`;
+      el.style.top = `${yPixel}px`;
+      wrapper.appendChild(el);
+      return el;
+    }
+
+    function clearVisualSelectionPoints() {
+      document.querySelectorAll('.selection-point').forEach(n => n.remove());
+      selectionPointsVis.a = null;
+      selectionPointsVis.b = null;
+    }
+
+    /**************************************************************************
+     * Área (dataset) entre a e b: cria polígono aproximado da área com muitos pontos
+     **************************************************************************/
+    function buildIntegralAreaDataset(a, b, funcName = null) {
+      const samples = Math.max(200, Math.round(200 * Math.abs(b - a) / Math.PI));
+      const data = [];
+      const step = (b - a) / samples;
+      // começar em a no eixo x
+      data.push({ x: a, y: 0 });
+      for (let i = 0; i <= samples; i++) {
+        const x = a + i * step;
+        data.push({ x, y: f_value(x, funcName) });
+      }
+      data.push({ x: b, y: 0 });
+      return data;
+    }
+
+    /**************************************************************************
+     * Add integral point (clique)
+     **************************************************************************/
+    function addIntegralPoint(x) {
+      // se já tem dois, limpar e começar de novo (comportamento escolhido)
+      if (integralPoints.length >= 2) clearIntegralSelection();
+
+      // guardar apenas X
+      integralPoints.push(x);
+      if (integralPoints.length === 1) {
+        pointAElement.textContent = formatPiValue(x);
+        pointBElement.textContent = '--';
+        integralValueElement.textContent = '--';
+        clearVisualSelectionPoints();
+        // criar ponto visual para A (usar f(x) para y)
+        const y = f_value(x);
+        selectionPointsVis.a = createVisualPointOnCanvas(x, y, 'point-a');
+      } else if (integralPoints.length === 2) {
+        const a = integralPoints[0], b = integralPoints[1];
+        pointBElement.textContent = formatPiValue(b);
+        // criar ponto visual para B
+        const yb = f_value(b);
+        selectionPointsVis.b = createVisualPointOnCanvas(b, yb, 'point-b');
+
+        // calcular integral com Simpson adaptativo (usar função ativa apropriada)
+        const activeFuncForIntegral = (currentFunction === 'cos') ? 'cos' : 'sin';
+        const fforInt = (x) => f_value(x, activeFuncForIntegral);
+        const I = adaptiveSimpson(fforInt, a, b, 1e-8);
+        integralValueElement.textContent = I.toFixed(8);
+
+        // construir polígono/linha para preenchimento
+        const pdata = buildIntegralAreaDataset(Math.min(a,b), Math.max(a,b), activeFuncForIntegral);
+        integralDataset.data = pdata;
+        trigChart.update();
+      }
+      trigChart.update();
+    }
+
+    function clearIntegralSelection() {
+      integralPoints = [];
+      pointAElement.textContent = '--';
+      pointBElement.textContent = '--';
+      integralValueElement.textContent = '--';
+      clearVisualSelectionPoints();
+      // limpar dataset de integral
+      integralDataset.data = [];
+      trigChart.update();
+    }
+
+    /**************************************************************************
+     * Atualizar raízes na UI e no gráfico
+     **************************************************************************/
+    function updateRootsOnChart() {
+      const roots = findRoots();
+      const points = roots.map(r => ({ x: r, y: 0 }));
+      rootsDataset.data = showRoots.checked ? points : [];
+      // atualizar lista textual
+      rootsListElement.innerHTML = '';
+      if (points.length === 0) {
+        rootsListElement.innerHTML = '<div class="root-item">Nenhuma raiz no intervalo</div>';
+      } else {
+        for (const p of points) {
+          const div = document.createElement('div');
+          div.className = 'root-item';
+          div.innerHTML = `<span>x = ${formatPiValue(p.x)}</span><span>${p.x.toFixed(6)}</span>`;
+          rootsListElement.appendChild(div);
+        }
+      }
+    }
+
+    /**************************************************************************
+     * Atualizar gráfico (dados e visuais)
+     **************************************************************************/
+    function updateGraph(initial=false) {
+      if (!trigChart) return;
+      const { dataSin, dataCos } = generateXYData(Math.max(600, Math.round(300 * xRange)));
+      trigChart.data.datasets[0].data = dataSin;
+      trigChart.data.datasets[1].data = dataCos;
+      // labels não usados (parsing:false)
+
+      // visibilidade por seleção
+      if (currentFunction === 'sin') {
+        trigChart.data.datasets[0].hidden = false;
+        trigChart.data.datasets[1].hidden = true;
+      } else if (currentFunction === 'cos') {
+        trigChart.data.datasets[0].hidden = true;
+        trigChart.data.datasets[1].hidden = false;
+      } else {
+        trigChart.data.datasets[0].hidden = false;
+        trigChart.data.datasets[1].hidden = false;
+      }
+
+      // estilos
+      trigChart.data.datasets[0].tension = smoothLines.checked ? 0.4 : 0;
+      trigChart.data.datasets[1].tension = smoothLines.checked ? 0.4 : 0;
+      trigChart.data.datasets[0].pointRadius = showPoints.checked ? 3 : 0;
+      trigChart.data.datasets[1].pointRadius = showPoints.checked ? 3 : 0;
+
+      // grid toggle
+      trigChart.options.scales.x.grid.display = showGrid.checked;
+      trigChart.options.scales.y.grid.display = showGrid.checked;
+
+      // atualizar raízes
+      updateRootsOnChart();
+
+      // se temos pontos de integral ativos, reconstruir a área e reposicionar marcadores visuais
+      if (integralPoints.length === 2) {
+        const a = integralPoints[0], b = integralPoints[1];
+        const activeFuncForIntegral = (currentFunction === 'cos') ? 'cos' : 'sin';
+        integralDataset.data = buildIntegralAreaDataset(Math.min(a,b), Math.max(a,b), activeFuncForIntegral);
+        // redesenhar marcadores
+        clearVisualSelectionPoints();
+        selectionPointsVis.a = createVisualPointOnCanvas(a, f_value(a, activeFuncForIntegral), 'point-a');
+        selectionPointsVis.b = createVisualPointOnCanvas(b, f_value(b, activeFuncForIntegral), 'point-b');
+      } else {
+        integralDataset.data = [];
+      }
+
+      // Atualizar painel de info
+      amplitudeValue.textContent = amplitude;
+      frequencyValue.textContent = frequency;
+      phaseValue.textContent = phase.toFixed(2);
+      activeFunction.textContent = (currentFunction === 'sin') ? 'Seno' : (currentFunction === 'cos') ? 'Cosseno' : 'Ambas';
+
+      trigChart.update();
+    }
+
+    /**************************************************************************
+     * Event listeners (controles)
+     **************************************************************************/
+    sinBtn.addEventListener('click', () => {
+      currentFunction = 'sin';
+      document.querySelectorAll('.function-btn').forEach(btn => btn.classList.remove('active'));
+      sinBtn.classList.add('active');
+      updateGraph();
+    });
+    cosBtn.addEventListener('click', () => {
+      currentFunction = 'cos';
+      document.querySelectorAll('.function-btn').forEach(btn => btn.classList.remove('active'));
+      cosBtn.classList.add('active');
+      updateGraph();
+    });
+    bothBtn.addEventListener('click', () => {
+      currentFunction = 'both';
+      document.querySelectorAll('.function-btn').forEach(btn => btn.classList.remove('active'));
+      bothBtn.classList.add('active');
+      updateGraph();
+    });
+
+    amplitudeSlider.addEventListener('input', () => { amplitude = parseFloat(amplitudeSlider.value); amplitudeDisplay.textContent = amplitude; updateGraph(); });
+    frequencySlider.addEventListener('input', () => { frequency = parseFloat(frequencySlider.value); frequencyDisplay.textContent = frequency; updateGraph(); });
+    phaseSlider.addEventListener('input', () => { phase = parseFloat(phaseSlider.value); phaseDisplay.textContent = phase.toFixed(2); updateGraph(); });
+    verticalShiftSlider.addEventListener('input', () => { verticalShift = parseFloat(verticalShiftSlider.value); verticalShiftDisplay.textContent = verticalShift; updateGraph(); });
+    xRangeSlider.addEventListener('input', () => { xRange = parseInt(xRangeSlider.value); xRangeDisplay.textContent = xRange === 1 ? 'π' : `${xRange}π`; updateGraph(); });
+
+    resetButton.addEventListener('click', () => {
+      amplitudeSlider.value = 1; frequencySlider.value = 1; phaseSlider.value = 0; verticalShiftSlider.value = 0; xRangeSlider.value = 2;
+      amplitude = 1; frequency = 1; phase = 0; verticalShift = 0; xRange = 2;
+      amplitudeDisplay.textContent = amplitude; frequencyDisplay.textContent = frequency; phaseDisplay.textContent = phase.toFixed(2); verticalShiftDisplay.textContent = verticalShift; xRangeDisplay.textContent = '2π';
+      currentFunction = 'sin'; document.querySelectorAll('.function-btn').forEach(btn => btn.classList.remove('active')); sinBtn.classList.add('active');
+      clearIntegralSelection();
+      updateGraph();
+    });
+
+    clearPointsButton.addEventListener('click', clearIntegralSelection);
+    calculateIntegralButton.addEventListener('click', () => {
+      if (integralPoints.length === 2) {
+        // recalcula integral e mostra (apenas reusando lógica já aplicada)
+        const a = integralPoints[0], b = integralPoints[1];
+        const activeFuncForIntegral = (currentFunction === 'cos') ? 'cos' : 'sin';
+        const fforInt = (x) => f_value(x, activeFuncForIntegral);
+        const I = adaptiveSimpson(fforInt, a, b, 1e-8);
+        integralValueElement.textContent = I.toFixed(8);
+        // atualizar área dataset
+        integralDataset.data = buildIntegralAreaDataset(Math.min(a,b), Math.max(a,b), activeFuncForIntegral);
+        trigChart.update();
+      }
+    });
+
+    showGrid.addEventListener('change', updateGraph);
+    showPoints.addEventListener('change', updateGraph);
+    smoothLines.addEventListener('change', updateGraph);
+    showRoots.addEventListener('change', updateGraph);
+
+    // abas
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const id = tab.getAttribute('data-tab');
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(id + '-tab').classList.add('active');
+      });
+    });
+
+    // inicializa quando a janela carrega
+    window.addEventListener('load', () => {
+      initChart();
+    });
+  </script>
+</body>
+</html>

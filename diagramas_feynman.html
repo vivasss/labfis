@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagramas de Feynman - Física Interativa</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #a0a0a0;
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 320px 1fr 380px;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-height: 800px;
+            overflow-y: auto;
+        }
+
+        .panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .panel::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .panel::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.5);
+            border-radius: 10px;
+        }
+
+        .panel h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .canvas-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+        }
+
+        #feynmanCanvas {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+            cursor: crosshair;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: block;
+        }
+
+        .particle-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            margin: 6px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #e0e0e0;
+            font-size: 13px;
+        }
+
+        .particle-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+            transform: translateX(5px);
+        }
+
+        .particle-btn.active {
+            background: rgba(102, 126, 234, 0.3);
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .particle-icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .fermion {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .boson {
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+        }
+
+        .gluon {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+        }
+
+        .higgs {
+            background: linear-gradient(135deg, #ffd89b, #19547b);
+        }
+
+        .tool-btn {
+            width: 100%;
+            padding: 10px;
+            margin: 6px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 13px;
+        }
+
+        .tool-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+        }
+
+        .preset-btn {
+            width: 100%;
+            padding: 9px;
+            margin: 5px 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 8px;
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+        }
+
+        .preset-btn:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.4), rgba(118, 75, 162, 0.4));
+            transform: scale(1.02);
+        }
+
+        .info-section {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            border-radius: 10px;
+            margin: 12px 0;
+            border-left: 3px solid #667eea;
+        }
+
+        .info-section h3 {
+            color: #667eea;
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+        }
+
+        .info-section p {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: #b0b0b0;
+        }
+
+        .particle-info {
+            display: none;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 12px;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .particle-info.visible {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .particle-property {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.85rem;
+        }
+
+        .particle-property:last-child {
+            border-bottom: none;
+        }
+
+        .property-label {
+            color: #a0a0a0;
+        }
+
+        .property-value {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            flex: 1;
+            min-width: 80px;
+            padding: 8px;
+            background: rgba(102, 126, 234, 0.2);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 8px;
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 11px;
+        }
+
+        .control-btn:hover {
+            background: rgba(102, 126, 234, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .control-btn.active {
+            background: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .legend {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 5px 0;
+            font-size: 0.8rem;
+        }
+
+        .legend-line {
+            width: 35px;
+            height: 2px;
+            border-radius: 1px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>⚛️ Diagramas de Feynman Avançado</h1>
+            <p class="subtitle">Visualize interações de partículas na física quântica com ferramentas avançadas</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Left Panel: Tools -->
+            <div class="panel">
+                <h2>🎨 Ferramentas</h2>
+
+                <h3 style="color: #a0a0a0; font-size: 0.85rem; margin: 12px 0 8px;">Léptons</h3>
+                <button class="particle-btn" data-particle="electron">
+                    <div class="particle-icon fermion">e⁻</div>
+                    <span>Elétron</span>
+                </button>
+                <button class="particle-btn" data-particle="positron">
+                    <div class="particle-icon fermion">e⁺</div>
+                    <span>Pósitron</span>
+                </button>
+                <button class="particle-btn" data-particle="muon">
+                    <div class="particle-icon fermion">μ⁻</div>
+                    <span>Múon</span>
+                </button>
+                <button class="particle-btn" data-particle="tau">
+                    <div class="particle-icon fermion">τ⁻</div>
+                    <span>Tau</span>
+                </button>
+                <button class="particle-btn" data-particle="neutrino">
+                    <div class="particle-icon fermion">ν</div>
+                    <span>Neutrino</span>
+                </button>
+
+                <h3 style="color: #a0a0a0; font-size: 0.85rem; margin: 12px 0 8px;">Quarks</h3>
+                <button class="particle-btn" data-particle="quark_up">
+                    <div class="particle-icon fermion">u</div>
+                    <span>Quark Up</span>
+                </button>
+                <button class="particle-btn" data-particle="quark_down">
+                    <div class="particle-icon fermion">d</div>
+                    <span>Quark Down</span>
+                </button>
+                <button class="particle-btn" data-particle="quark_charm">
+                    <div class="particle-icon fermion">c</div>
+                    <span>Quark Charm</span>
+                </button>
+                <button class="particle-btn" data-particle="quark_strange">
+                    <div class="particle-icon fermion">s</div>
+                    <span>Quark Strange</span>
+                </button>
+
+                <h3 style="color: #a0a0a0; font-size: 0.85rem; margin: 12px 0 8px;">Bósons</h3>
+                <button class="particle-btn" data-particle="photon">
+                    <div class="particle-icon boson">γ</div>
+                    <span>Fóton</span>
+                </button>
+                <button class="particle-btn" data-particle="gluon">
+                    <div class="particle-icon gluon">g</div>
+                    <span>Glúon</span>
+                </button>
+                <button class="particle-btn" data-particle="w_plus">
+                    <div class="particle-icon boson">W⁺</div>
+                    <span>Bóson W+</span>
+                </button>
+                <button class="particle-btn" data-particle="w_minus">
+                    <div class="particle-icon boson">W⁻</div>
+                    <span>Bóson W-</span>
+                </button>
+                <button class="particle-btn" data-particle="z_boson">
+                    <div class="particle-icon boson">Z⁰</div>
+                    <span>Bóson Z</span>
+                </button>
+                <button class="particle-btn" data-particle="higgs">
+                    <div class="particle-icon higgs">H</div>
+                    <span>Bóson de Higgs</span>
+                </button>
+
+                <h3 style="color: #a0a0a0; font-size: 0.85rem; margin: 12px 0 8px;">Ações</h3>
+                <button class="tool-btn" id="clearBtn">🗑️ Limpar Tudo</button>
+                <button class="tool-btn" id="undoBtn">↶ Desfazer</button>
+                <button class="tool-btn" id="exportBtn">📸 Exportar PNG</button>
+                <button class="tool-btn" id="saveBtn">💾 Salvar Diagrama</button>
+                <button class="tool-btn" id="loadBtn">📁 Carregar Diagrama</button>
+
+                <div class="legend">
+                    <h3 style="color: #667eea; font-size: 0.85rem; margin-bottom: 8px;">Legenda</h3>
+                    <div class="legend-item">
+                        <div class="legend-line" style="background: #667eea;"></div>
+                        <span>Férmions (→)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-line" style="background: #f5576c; height: 3px;"></div>
+                        <span>Fótons (∿)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-line" style="background: #00f2fe; height: 3px;"></div>
+                        <span>Glúons (⟲)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Panel: Canvas -->
+            <div>
+                <div class="controls">
+                    <button class="control-btn" id="gridToggle">📐 Grid</button>
+                    <button class="control-btn" id="timeToggle">⏱️ Tempo</button>
+                    <button class="control-btn" id="labelsToggle">🏷️ Rótulos</button>
+                    <button class="control-btn" id="animateBtn">▶️ Animar</button>
+                    <button class="control-btn" id="moveBtn">✋ Mover</button>
+                </div>
+
+                <div class="controls">
+                    <button class="control-btn" id="zoomInBtn">🔍+ Zoom In</button>
+                    <button class="control-btn" id="zoomOutBtn">🔍- Zoom Out</button>
+                    <button class="control-btn" id="resetZoomBtn">🔄 Reset Zoom</button>
+                </div>
+
+                <div class="canvas-container">
+                    <canvas id="feynmanCanvas"></canvas>
+                </div>
+            </div>
+
+            <!-- Right Panel: Presets & Info -->
+            <div class="panel">
+                <h2>📚 Diagrama Pré-definidos</h2>
+
+                <h3 style="color: #a0a0a0; font-size: 0.85rem; margin: 12px 0 8px;">QED - Eletrodinâmica Quântica</h3>
+                <button class="preset-btn" data-preset="qed_vertex">Vértice QED Básico</button>
+                <button class="preset-btn" data-preset="scattering">Espalhamento e⁻γ</button>
+                <button class="preset-btn" data-preset="compton">Espalhamento Compton</button>
+                <button class="preset-btn" data-preset="pair">Produção de Pares</button>
+                <button class="preset-btn" data-preset="annihilation">Aniquilação e⁺e⁻</button>
+                <button class="preset-btn" data-preset="bremsstrahlung">Bremsstrahlung</button>
+
+                <h3 style="color: #a0a0a0; font-size: 0.85rem; margin: 12px 0 8px;">Força Fraca</h3>
+                <button class="preset-btn" data-preset="beta_decay">Decaimento Beta</button>
+                <button class="preset-btn" data-preset="muon_decay">Decaimento Múon</button>
+                <button class="preset-btn" data-preset="w_exchange">Troca de Bóson W</button>
+                <button class="preset-btn" data-preset="z_exchange">Troca de Bóson Z</button>
+
+                <h3 style="color: #a0a0a0; font-size: 0.85rem; margin: 12px 0 8px;">QCD - Cromodinâmica Quântica</h3>
+                <button class="preset-btn" data-preset="qcd_vertex">Vértice QCD Básico</button>
+                <button class="preset-btn" data-preset="gluon_exchange">Troca de Glúon</button>
+                <button class="preset-btn" data-preset="three_gluon">3 Glúons</button>
+
+                <h3 style="color: #a0a0a0; font-size: 0.85rem; margin: 12px 0 8px;">Bóson de Higgs</h3>
+                <button class="preset-btn" data-preset="higgs_decay">Decaimento Higgs→γγ</button>
+                <button class="preset-btn" data-preset="higgs_ww">Higgs→W⁺W⁻</button>
+
+                <div class="info-section">
+                    <h3>📖 O que são?</h3>
+                    <p>Diagramas de Feynman representam interações entre partículas subatômicas desenvolvidas por
+                        Richard Feynman nos anos 1940.</p>
+                </div>
+
+                <div class="info-section">
+                    <h3>⚡ Regras Básicas</h3>
+                    <p>• Tempo flui esquerda→direita<br>
+                        • Linhas retas = férmions<br>
+                        • Linhas onduladas = bósons<br>
+                        • Vértices = pontos de interação<br>
+                        • Conservação de carga/energia</p>
+                </div>
+
+                <div class="particle-info" id="particleInfo">
+                    <h3 style="color: #667eea; margin-bottom: 8px; font-size: 0.95rem;">Propriedades</h3>
+                    <div id="particleProperties"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('feynmanCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let selectedParticle = null;
+        let showGrid = true;
+        let showTimeAxis = true;
+        let showLabels = true;
+        let elements = [];
+        let startPoint = null;
+        let mouseX = 0, mouseY = 0;
+        let isAnimating = false;
+        let animationTime = 0;
+        let moveMode = false;
+        let draggedElement = null;
+        let dragPoint = null;
+        let zoom = 1;
+        let panX = 0, panY = 0;
+
+        function resizeCanvas() {
+            const container = document.querySelector('.canvas-container');
+            const rect = container.getBoundingClientRect();
+            canvas.width = rect.width - 40;
+            canvas.height = 600;
+            draw();
+        }
+
+        setTimeout(resizeCanvas, 100);
+        window.addEventListener('resize', resizeCanvas);
+
+        const particles = {
+            electron: { name: 'Elétron', symbol: 'e⁻', charge: '-1', spin: '1/2', mass: '0.511 MeV/c²', type: 'lépton', color: '#667eea', lineStyle: 'solid' },
+            positron: { name: 'Pósitron', symbol: 'e⁺', charge: '+1', spin: '1/2', mass: '0.511 MeV/c²', type: 'antilépton', color: '#764ba2', lineStyle: 'solid' },
+            muon: { name: 'Múon', symbol: 'μ⁻', charge: '-1', spin: '1/2', mass: '105.7 MeV/c²', type: 'lépton', color: '#8e44ad', lineStyle: 'solid' },
+            tau: { name: 'Tau', symbol: 'τ⁻', charge: '-1', spin: '1/2', mass: '1.777 GeV/c²', type: 'lépton', color: '#9b59b6', lineStyle: 'solid' },
+            neutrino: { name: 'Neutrino', symbol: 'ν', charge: '0', spin: '1/2', mass: '< 1 eV/c²', type: 'lépton', color: '#5dade2', lineStyle: 'solid' },
+            quark_up: { name: 'Quark Up', symbol: 'u', charge: '+2/3', spin: '1/2', mass: '~2.2 MeV/c²', type: 'quark', color: '#48dbfb', lineStyle: 'solid' },
+            quark_down: { name: 'Quark Down', symbol: 'd', charge: '-1/3', spin: '1/2', mass: '~4.7 MeV/c²', type: 'quark', color: '#0abde3', lineStyle: 'solid' },
+            quark_charm: { name: 'Quark Charm', symbol: 'c', charge: '+2/3', spin: '1/2', mass: '~1.28 GeV/c²', type: 'quark', color: '#54a0ff', lineStyle: 'solid' },
+            quark_strange: { name: 'Quark Strange', symbol: 's', charge: '-1/3', spin: '1/2', mass: '~96 MeV/c²', type: 'quark', color: '#2e86de', lineStyle: 'solid' },
+            photon: { name: 'Fóton', symbol: 'γ', charge: '0', spin: '1', mass: '0', type: 'bóson gauge', color: '#f5576c', lineStyle: 'wavy' },
+            gluon: { name: 'Glúon', symbol: 'g', charge: '0', spin: '1', mass: '0', type: 'bóson gauge', color: '#00f2fe', lineStyle: 'spring' },
+            w_plus: { name: 'Bóson W+', symbol: 'W⁺', charge: '+1', spin: '1', mass: '80.4 GeV/c²', type: 'bóson gauge', color: '#ff9ff3', lineStyle: 'wavy' },
+            w_minus: { name: 'Bóson W-', symbol: 'W⁻', charge: '-1', spin: '1', mass: '80.4 GeV/c²', type: 'bóson gauge', color: '#feca57', lineStyle: 'wavy' },
+            z_boson: { name: 'Bóson Z', symbol: 'Z⁰', charge: '0', spin: '1', mass: '91.2 GeV/c²', type: 'bóson gauge', color: '#ff6b6b', lineStyle: 'wavy' },
+            higgs: { name: 'Bóson de Higgs', symbol: 'H', charge: '0', spin: '0', mass: '125.1 GeV/c²', type: 'bóson escalar', color: '#ffd93d', lineStyle: 'dashed' }
+        };
+
+        const presets = {
+            qed_vertex: [
+                { type: 'electron', x1: 50, y1: 200, x2: 250, y2: 250, label: 'e⁻ in' },
+                { type: 'photon', x1: 250, y1: 250, x2: 450, y2: 250, label: 'γ' },
+                { type: 'electron', x1: 250, y1: 250, x2: 450, y2: 350, label: 'e⁻ out' }
+            ],
+            scattering: [
+                { type: 'electron', x1: 50, y1: 200, x2: 250, y2: 200, label: 'e⁻' },
+                { type: 'photon', x1: 250, y1: 400, x2: 250, y2: 200, label: 'γ' },
+                { type: 'electron', x1: 250, y1: 200, x2: 450, y2: 150, label: 'e⁻' },
+                { type: 'photon', x1: 250, y1: 200, x2: 450, y2: 350, label: 'γ' }
+            ],
+            compton: [
+                { type: 'photon', x1: 50, y1: 200, x2: 250, y2: 200, label: 'γ in' },
+                { type: 'electron', x1: 250, y1: 400, x2: 250, y2: 200, label: 'e⁻' },
+                { type: 'photon', x1: 250, y1: 200, x2: 450, y2: 150, label: 'γ out' },
+                { type: 'electron', x1: 250, y1: 200, x2: 450, y2: 350, label: 'e⁻' }
+            ],
+            pair: [
+                { type: 'photon', x1: 50, y1: 250, x2: 250, y2: 250, label: 'γ' },
+                { type: 'electron', x1: 250, y1: 250, x2: 450, y2: 150, label: 'e⁻' },
+                { type: 'positron', x1: 250, y1: 250, x2: 450, y2: 350, label: 'e⁺' }
+            ],
+            annihilation: [
+                { type: 'electron', x1: 50, y1: 150, x2: 250, y2: 250, label: 'e⁻' },
+                { type: 'positron', x1: 50, y1: 350, x2: 250, y2: 250, label: 'e⁺' },
+                { type: 'photon', x1: 250, y1: 250, x2: 450, y2: 200, label: 'γ₁' },
+                { type: 'photon', x1: 250, y1: 250, x2: 450, y2: 300, label: 'γ₂' }
+            ],
+            bremsstrahlung: [
+                { type: 'electron', x1: 50, y1: 200, x2: 250, y2: 250, label: 'e⁻ in' },
+                { type: 'electron', x1: 250, y1: 250, x2: 450, y2: 300, label: 'e⁻ out' },
+                { type: 'photon', x1: 250, y1: 250, x2: 450, y2: 150, label: 'γ' }
+            ],
+            beta_decay: [
+                { type: 'quark_down', x1: 50, y1: 250, x2: 150, y2: 250, label: 'd' },
+                { type: 'quark_up', x1: 150, y1: 250, x2: 250, y2: 200, label: 'u' },
+                { type: 'w_minus', x1: 150, y1: 250, x2: 300, y2: 350, label: 'W⁻' },
+                { type: 'electron', x1: 300, y1: 350, x2: 450, y2: 400, label: 'e⁻' },
+                { type: 'neutrino', x1: 300, y1: 350, x2: 450, y2: 300, label: 'ν̄' }
+            ],
+            muon_decay: [
+                { type: 'muon', x1: 50, y1: 250, x2: 200, y2: 250, label: 'μ⁻' },
+                { type: 'w_minus', x1: 200, y1: 250, x2: 350, y2: 250, label: 'W⁻' },
+                { type: 'neutrino', x1: 200, y1: 250, x2: 350, y2: 150, label: 'νμ' },
+                { type: 'electron', x1: 350, y1: 250, x2: 500, y2: 200, label: 'e⁻' },
+                { type: 'neutrino', x1: 350, y1: 250, x2: 500, y2: 300, label: 'ν̄e' }
+            ],
+            w_exchange: [
+                { type: 'electron', x1: 50, y1: 150, x2: 200, y2: 200, label: 'e⁻' },
+                { type: 'neutrino', x1: 200, y1: 200, x2: 350, y2: 150, label: 'νe' },
+                { type: 'w_plus', x1: 200, y1: 200, x2: 200, y2: 350, label: 'W⁺' },
+                { type: 'neutrino', x1: 50, y1: 400, x2: 200, y2: 350, label: 'ν̄μ' },
+                { type: 'muon', x1: 200, y1: 350, x2: 350, y2: 400, label: 'μ⁻' }
+            ],
+            z_exchange: [
+                { type: 'electron', x1: 50, y1: 200, x2: 250, y2: 250, label: 'e⁻ in' },
+                { type: 'z_boson', x1: 250, y1: 250, x2: 250, y2: 400, label: 'Z⁰' },
+                { type: 'electron', x1: 250, y1: 250, x2: 450, y2: 200, label: 'e⁻ out' },
+                { type: 'muon', x1: 50, y1: 450, x2: 250, y2: 400, label: 'μ⁻ in' },
+                { type: 'muon', x1: 250, y1: 400, x2: 450, y2: 450, label: 'μ⁻ out' }
+            ],
+            qcd_vertex: [
+                { type: 'quark_up', x1: 50, y1: 150, x2: 250, y2: 250, label: 'q in' },
+                { type: 'gluon', x1: 250, y1: 250, x2: 450, y2: 250, label: 'g' },
+                { type: 'quark_up', x1: 250, y1: 250, x2: 450, y2: 350, label: 'q out' }
+            ],
+            gluon_exchange: [
+                { type: 'quark_up', x1: 50, y1: 150, x2: 200, y2: 200, label: 'u' },
+                { type: 'quark_up', x1: 200, y1: 200, x2: 350, y2: 150, label: 'u' },
+                { type: 'gluon', x1: 200, y1: 200, x2: 200, y2: 350, label: 'g' },
+                { type: 'quark_down', x1: 50, y1: 400, x2: 200, y2: 350, label: 'd' },
+                { type: 'quark_down', x1: 200, y1: 350, x2: 350, y2: 400, label: 'd' }
+            ],
+            three_gluon: [
+                { type: 'gluon', x1: 50, y1: 200, x2: 250, y2: 250, label: 'g₁' },
+                { type: 'gluon', x1: 250, y1: 250, x2: 450, y2: 200, label: 'g₂' },
+                { type: 'gluon', x1: 250, y1: 250, x2: 450, y2: 300, label: 'g₃' }
+            ],
+            higgs_decay: [
+                { type: 'higgs', x1: 50, y1: 250, x2: 250, y2: 250, label: 'H' },
+                { type: 'photon', x1: 250, y1: 250, x2: 450, y2: 150, label: 'γ₁' },
+                { type: 'photon', x1: 250, y1: 250, x2: 450, y2: 350, label: 'γ₂' }
+            ],
+            higgs_ww: [
+                { type: 'higgs', x1: 50, y1: 250, x2: 250, y2: 250, label: 'H' },
+                { type: 'w_plus', x1: 250, y1: 250, x2: 450, y2: 150, label: 'W⁺' },
+                { type: 'w_minus', x1: 250, y1: 250, x2: 450, y2: 350, label: 'W⁻' }
+            ]
+        };
+
+        function drawGrid() {
+            if (!showGrid) return;
+            ctx.strokeStyle = 'rgba(102, 126, 234, 0.1)';
+            ctx.lineWidth = 1;
+            const spacing = 50 * zoom;
+            for (let x = panX % spacing; x < canvas.width; x += spacing) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = panY % spacing; y < canvas.height; y += spacing) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+
+        function drawTimeAxis() {
+            if (!showTimeAxis) return;
+            const y = canvas.height - 30;
+            ctx.strokeStyle = 'rgba(102, 126, 234, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(30, y);
+            ctx.lineTo(canvas.width - 30, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(canvas.width - 30, y);
+            ctx.lineTo(canvas.width - 40, y - 5);
+            ctx.lineTo(canvas.width - 40, y + 5);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(102, 126, 234, 0.5)';
+            ctx.fill();
+            ctx.fillStyle = '#667eea';
+            ctx.font = '14px "Segoe UI"';
+            ctx.fillText('Tempo →', canvas.width - 90, y + 25);
+        }
+
+        function drawWavyLine(x1, y1, x2, y2, color, amplitude = 8, frequency = 0.3, animOffset = 0) {
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx);
+            ctx.save();
+            ctx.translate(x1, y1);
+            ctx.rotate(angle);
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            for (let i = 0; i <= dist; i++) {
+                const x = i;
+                const y = Math.sin((i + animOffset) * frequency) * amplitude;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawSpringLine(x1, y1, x2, y2, color, coils = 8, amplitude = 10, animOffset = 0) {
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx);
+            ctx.save();
+            ctx.translate(x1, y1);
+            ctx.rotate(angle);
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            const segmentLength = dist / (coils * 4);
+            for (let i = 0; i <= coils * 4; i++) {
+                const x = i * segmentLength;
+                const phase = (i + animOffset * 0.1) * Math.PI / 2;
+                const y = (i % 2 === 0 ? -1 : 1) * amplitude * Math.sin(phase);
+                if (i === 0) ctx.moveTo(x, 0);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawDashedLine(x1, y1, x2, y2, color) {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.setLineDash([10, 5]);
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.restore();
+        }
+
+        function drawArrow(x1, y1, x2, y2, color) {
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const angle = Math.atan2(dy, dx);
+            const midX = (x1 + x2) / 2;
+            const midY = (y1 + y2) / 2;
+            ctx.save();
+            ctx.translate(midX, midY);
+            ctx.rotate(angle);
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(-10, -5);
+            ctx.lineTo(-10, 5);
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawElement(element) {
+            const particle = particles[element.type];
+            const { x1, y1, x2, y2 } = element;
+            const animOffset = isAnimating ? animationTime : 0;
+
+            if (particle.lineStyle === 'wavy') {
+                drawWavyLine(x1, y1, x2, y2, particle.color, 8, 0.3, animOffset);
+            } else if (particle.lineStyle === 'spring') {
+                drawSpringLine(x1, y1, x2, y2, particle.color, 8, 10, animOffset);
+            } else if (particle.lineStyle === 'dashed') {
+                drawDashedLine(x1, y1, x2, y2, particle.color);
+            } else {
+                ctx.beginPath();
+                ctx.strokeStyle = particle.color;
+                ctx.lineWidth = 3;
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+                drawArrow(x1, y1, x2, y2, particle.color);
+            }
+
+            ctx.fillStyle = particle.color;
+            ctx.beginPath();
+            ctx.arc(x1, y1, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x2, y2, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (showLabels && element.label) {
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 12px "Segoe UI"';
+                const midX = (x1 + x2) / 2;
+                const midY = (y1 + y2) / 2;
+                ctx.fillText(element.label, midX + 10, midY - 10);
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.translate(panX, panY);
+            ctx.scale(zoom, zoom);
+            drawGrid();
+            drawTimeAxis();
+            elements.forEach(element => drawElement(element));
+            if (startPoint && selectedParticle) {
+                const particle = particles[selectedParticle];
+                ctx.setLineDash([5, 5]);
+                ctx.strokeStyle = particle.color;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(startPoint.x, startPoint.y);
+                ctx.lineTo((mouseX - panX) / zoom, (mouseY - panY) / zoom);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            ctx.restore();
+        }
+
+        function animate() {
+            if (!isAnimating) return;
+            animationTime += 2;
+            draw();
+            requestAnimationFrame(animate);
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left - panX) / zoom;
+            const y = (e.clientY - rect.top - panY) / zoom;
+
+            if (moveMode) {
+                for (let el of elements) {
+                    const dist1 = Math.sqrt((x - el.x1) ** 2 + (y - el.y1) ** 2);
+                    const dist2 = Math.sqrt((x - el.x2) ** 2 + (y - el.y2) ** 2);
+                    if (dist1 < 15) {
+                        draggedElement = el;
+                        dragPoint = 'start';
+                        return;
+                    }
+                    if (dist2 < 15) {
+                        draggedElement = el;
+                        dragPoint = 'end';
+                        return;
+                    }
+                }
+            } else if (selectedParticle) {
+                startPoint = { x, y };
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
+            const x = (mouseX - panX) / zoom;
+            const y = (mouseY - panY) / zoom;
+
+            if (draggedElement && moveMode) {
+                if (dragPoint === 'start') {
+                    draggedElement.x1 = x;
+                    draggedElement.y1 = y;
+                } else {
+                    draggedElement.x2 = x;
+                    draggedElement.y2 = y;
+                }
+                draw();
+            } else if (startPoint) {
+                draw();
+            }
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+            if (draggedElement) {
+                draggedElement = null;
+                dragPoint = null;
+                return;
+            }
+
+            if (!startPoint || !selectedParticle) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left - panX) / zoom;
+            const y = (e.clientY - rect.top - panY) / zoom;
+            elements.push({
+                type: selectedParticle,
+                x1: startPoint.x,
+                y1: startPoint.y,
+                x2: x,
+                y2: y,
+                label: particles[selectedParticle].symbol
+            });
+            startPoint = null;
+            draw();
+        });
+
+        document.querySelectorAll('.particle-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const particle = btn.dataset.particle;
+                selectedParticle = particle;
+                moveMode = false;
+                document.getElementById('moveBtn').classList.remove('active');
+                document.querySelectorAll('.particle-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const info = particles[particle];
+                const infoDiv = document.getElementById('particleInfo');
+                const propsDiv = document.getElementById('particleProperties');
+                propsDiv.innerHTML = `
+                    <div class="particle-property"><span class="property-label">Nome:</span><span class="property-value">${info.name}</span></div>
+                    <div class="particle-property"><span class="property-label">Símbolo:</span><span class="property-value">${info.symbol}</span></div>
+                    <div class="particle-property"><span class="property-label">Carga:</span><span class="property-value">${info.charge}</span></div>
+                    <div class="particle-property"><span class="property-label">Spin:</span><span class="property-value">${info.spin}</span></div>
+                    <div class="particle-property"><span class="property-label">Massa:</span><span class="property-value">${info.mass}</span></div>
+                    <div class="particle-property"><span class="property-label">Tipo:</span><span class="property-value">${info.type}</span></div>
+                `;
+                infoDiv.classList.add('visible');
+            });
+        });
+
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const preset = btn.dataset.preset;
+                elements = presets[preset].map(e => ({ ...e }));
+                draw();
+            });
+        });
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            elements = [];
+            draw();
+        });
+
+        document.getElementById('undoBtn').addEventListener('click', () => {
+            elements.pop();
+            draw();
+        });
+
+        document.getElementById('gridToggle').addEventListener('click', (e) => {
+            showGrid = !showGrid;
+            e.target.style.opacity = showGrid ? '1' : '0.5';
+            draw();
+        });
+
+        document.getElementById('timeToggle').addEventListener('click', (e) => {
+            showTimeAxis = !showTimeAxis;
+            e.target.style.opacity = showTimeAxis ? '1' : '0.5';
+            draw();
+        });
+
+        document.getElementById('labelsToggle').addEventListener('click', (e) => {
+            showLabels = !showLabels;
+            e.target.style.opacity = showLabels ? '1' : '0.5';
+            draw();
+        });
+
+        document.getElementById('animateBtn').addEventListener('click', (e) => {
+            isAnimating = !isAnimating;
+            e.target.classList.toggle('active');
+            e.target.textContent = isAnimating ? '⏸️ Pausar' : '▶️ Animar';
+            if (isAnimating) animate();
+        });
+
+        document.getElementById('moveBtn').addEventListener('click', (e) => {
+            moveMode = !moveMode;
+            e.target.classList.toggle('active');
+            if (moveMode) {
+                selectedParticle = null;
+                document.querySelectorAll('.particle-btn').forEach(b => b.classList.remove('active'));
+                canvas.style.cursor = 'move';
+            } else {
+                canvas.style.cursor = 'crosshair';
+            }
+        });
+
+        document.getElementById('zoomInBtn').addEventListener('click', () => {
+            zoom = Math.min(zoom * 1.2, 3);
+            draw();
+        });
+
+        document.getElementById('zoomOutBtn').addEventListener('click', () => {
+            zoom = Math.max(zoom / 1.2, 0.5);
+            draw();
+        });
+
+        document.getElementById('resetZoomBtn').addEventListener('click', () => {
+            zoom = 1;
+            panX = 0;
+            panY = 0;
+            draw();
+        });
+
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'diagrama_feynman.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            const data = JSON.stringify(elements, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.download = 'diagrama_feynman.json';
+            link.href = URL.createObjectURL(blob);
+            link.click();
+        });
+
+        document.getElementById('loadBtn').addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = e => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = event => {
+                    try {
+                        elements = JSON.parse(event.target.result);
+                        draw();
+                    } catch (err) {
+                        alert('Erro ao carregar arquivo!');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        });
+
+        setTimeout(() => {
+            elements = presets.qed_vertex.map(e => ({ ...e }));
+            draw();
+        }, 600);
+    </script>
+</body>
+
+</html>

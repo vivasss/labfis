@@ -1,0 +1,357 @@
+<div class="nav-container">
+  <div class="nav-title">Simulação de Resistor</div>
+  <div class="nav-links">
+    <a href="#" class="nav-link">Início</a>
+    <a href="#" class="nav-link">Sobre</a>
+    <a href="#" class="nav-link">Recursos</a>
+  </div>
+</div>
+</nav>
+
+<main class="container" style="margin-top: 20px;">
+  <div class="grid grid-2">
+
+    <!-- Left Column: Simulation -->
+    <div class="flex flex-col gap-md">
+      <div class="card canvas-container">
+        <canvas id="world"></canvas>
+        <div class="touch-hint" style="display: none;">Toque para interagir</div>
+      </div>
+
+      <div class="grid grid-3 gap-sm">
+        <div class="stat-card">
+          <div class="stat-label">Corrente (I)</div>
+          <div class="stat-value" id="I">0.050</div>
+          <div class="stat-label">A</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Potência (P)</div>
+          <div class="stat-value" id="P">0.250</div>
+          <div class="stat-label">W</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Resistência Efetiva</div>
+          <div class="stat-value" id="Reff">100</div>
+          <div class="stat-label">Ω</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Visualização do Resistor</h3>
+        <div class="flex flex-col items-center gap-md">
+          <div id="resistorBands"
+            style="display: flex; align-items: center; justify-content: center; width: 200px; height: 50px; background: linear-gradient(90deg, #d3a15c, #c69246, #d3a15c); border-radius: 8px; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+            <!-- Bands will be injected here -->
+          </div>
+          <div class="stat-value" id="resistorValue">100 Ω</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Controls -->
+    <div class="flex flex-col gap-md">
+      <div class="card">
+        <h3>Controles do Circuito</h3>
+
+        <div class="control-group">
+          <div class="flex justify-between">
+            <label for="V">Tensão (V)</label>
+            <span class="value-current" id="vVal">5.0 V</span>
+          </div>
+          <input id="V" type="range" min="0" max="24" step="0.1" value="5">
+        </div>
+
+        <div class="control-group">
+          <div class="flex justify-between">
+            <label for="R">Resistência (Ω)</label>
+            <span class="value-current" id="rVal">100 Ω</span>
+          </div>
+          <input id="R" type="range" min="1" max="2000" step="1" value="100">
+        </div>
+
+        <div class="control-group">
+          <div class="flex justify-between">
+            <label for="temp">Temperatura (°C)</label>
+            <span class="value-current" id="tempVal">25 °C</span>
+          </div>
+          <input id="temp" type="range" min="-20" max="120" step="1" value="25">
+        </div>
+
+        <button id="reset" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">Resetar</button>
+      </div>
+
+      <div class="card" id="powerWarning" style="display: none; border-left: 4px solid var(--danger);">
+        <h4 style="color: var(--danger); margin-bottom: 5px;">Atenção: Potência Elevada</h4>
+        <p style="font-size: 0.9rem; margin-bottom: 0;">
+          A potência dissipada está alta. Isso pode causar superaquecimento.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>Como Funciona</h3>
+        <p style="font-size: 0.9rem;">
+          A <strong>Lei de Ohm (V = I × R)</strong> determina a relação entre tensão, corrente e resistência.
+        </p>
+        <p style="font-size: 0.9rem;">
+          O aumento da temperatura eleva a resistência, reduzindo a corrente para uma mesma tensão.
+        </p>
+        <p style="font-size: 0.9rem;">
+          <strong>Correção física:</strong> A corrente convencional flui do positivo para o negativo, enquanto os
+          elétrons se movem na direção oposta.
+        </p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  (function () {
+    // Elementos DOM
+    const V = document.getElementById('V');
+    const R = document.getElementById('R');
+    const temp = document.getElementById('temp');
+    const vVal = document.getElementById('vVal');
+    const rVal = document.getElementById('rVal');
+    const tempVal = document.getElementById('tempVal');
+    const Iel = document.getElementById('I');
+    const Pel = document.getElementById('P');
+    const ReffEl = document.getElementById('Reff');
+    const resistorValue = document.getElementById('resistorValue');
+    const bands = document.getElementById('resistorBands');
+    const powerWarning = document.getElementById('powerWarning');
+    const canvas = document.getElementById('world');
+    const ctx = canvas.getContext('2d');
+
+    // Resize logic
+    function resize() {
+      const container = canvas.parentElement;
+      const rect = container.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.width < 768 ? 250 : 400;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Configurações da simulação
+    const electronCount = 60;
+    const arrowCount = 12;
+    let electrons = [];
+    let arrows = [];
+    let heatEffect = 0;
+
+    // Inicializar partículas
+    function initParticles() {
+      // Elétrons - movem do negativo para o positivo (direita para esquerda)
+      electrons = Array.from({ length: electronCount }, () => ({
+        x: Math.random() * canvas.width,
+        y: canvas.height / 2 + (Math.random() - 0.5) * 60,
+        vx: 0,
+        size: 3 + Math.random() * 2
+      }));
+
+      // Setas de corrente convencional (do positivo para o negativo)
+      arrows = Array.from({ length: arrowCount }, (_, i) => ({
+        x: 80 + i * 70,
+        y: canvas.height / 2 - 50
+      }));
+    }
+
+    // Desenhar as faixas do resistor (código de cores padrão)
+    function drawBands(Rval) {
+      bands.innerHTML = '';
+      const colors = ['black', 'brown', 'red', 'orange', 'yellow', 'green', 'blue', 'violet', 'grey', 'white'];
+      const toleranceColors = ['brown', 'red', 'gold', 'silver'];
+
+      let value = Rval;
+      let multiplier = 0;
+
+      while (value >= 100) {
+        value /= 10;
+        multiplier++;
+      }
+
+      const d1 = Math.floor(value / 10);
+      const d2 = Math.floor(value) % 10;
+      const tolerance = 1; // 1% tolerance (brown)
+
+      [colors[d1], colors[d2], colors[multiplier], toleranceColors[tolerance]].forEach(color => {
+        const band = document.createElement('div');
+        band.style.width = '15px';
+        band.style.height = '100%';
+        band.style.background = color;
+        band.style.margin = '0 5px';
+        band.style.borderRadius = '2px';
+        bands.appendChild(band);
+      });
+
+      resistorValue.textContent = `${Math.round(Rval)} Ω ±1%`;
+    }
+
+    // Atualizar cálculos e exibições
+    function update() {
+      const Vv = parseFloat(V.value);
+      const Rv = parseFloat(R.value);
+      const T = parseFloat(temp.value);
+
+      // Coeficiente de temperatura para resistores de carbono (α = 0.0005 a 0.005)
+      // Usando um valor médio para resistores de carbono
+      const alpha = 0.0005; // Corrigido para um valor mais realista
+      const Tref = 25; // Temperatura de referência
+
+      // Fórmula: R(T) = R₀[1 + α(T - T₀)]
+      const Reff = Rv * (1 + alpha * (T - Tref));
+      const I = Vv / Reff;
+      const P = Vv * I;
+
+      vVal.textContent = `${Vv.toFixed(1)} V`;
+      rVal.textContent = `${Math.round(Rv)} Ω`;
+      tempVal.textContent = `${T} °C`;
+      Iel.textContent = I.toFixed(3);
+      Pel.textContent = P.toFixed(3);
+      ReffEl.textContent = Math.round(Reff);
+
+      drawBands(Math.round(Rv));
+
+      // Ajuste do limite de potência com base no tipo de resistor
+      const maxPower = 0.25; // 1/4 watt é comum para resistores de carbono
+      if (P > maxPower) {
+        powerWarning.style.display = "block";
+      } else {
+        powerWarning.style.display = "none";
+      }
+
+      heatEffect = Math.min(1, P / (maxPower * 2));
+      return { I, Reff, P };
+    }
+
+    // Desenhar a simulação
+    function draw() {
+      const W = canvas.width;
+      const H = canvas.height;
+
+      ctx.clearRect(0, 0, W, H);
+
+      // Desenhar fios
+      ctx.lineWidth = 8;
+      ctx.strokeStyle = '#64748b';
+      ctx.beginPath();
+      ctx.moveTo(20, H / 2);
+      ctx.lineTo(W / 2 - 150, H / 2);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(W / 2 + 150, H / 2);
+      ctx.lineTo(W - 20, H / 2);
+      ctx.stroke();
+
+      // Terminais (corrigidos: positivo à direita, negativo à esquerda)
+      ctx.fillStyle = '#3b82f6'; // Azul para positivo
+      ctx.fillRect(30, H / 2 - 15, 10, 30);
+      ctx.fillStyle = '#ef4444'; // Vermelho para negativo
+      ctx.fillRect(W - 40, H / 2 - 15, 10, 30);
+
+      ctx.font = '12px Arial';
+      ctx.fillStyle = '#3b82f6'; // Azul para positivo
+      ctx.fillText('+', 32, H / 2 - 20);
+      ctx.fillStyle = '#ef4444'; // Vermelho para negativo
+      ctx.fillText('-', W - 38, H / 2 - 20);
+
+      // Resistor Body
+      const heatIntensity = heatEffect * 100;
+      const resistorColor = `rgb(${205 + heatIntensity}, ${160 - heatIntensity}, ${92 - heatIntensity / 2})`;
+
+      const grad = ctx.createLinearGradient(W / 2 - 150, 0, W / 2 + 150, 0);
+      grad.addColorStop(0, '#d3a15c');
+      grad.addColorStop(0.5, resistorColor);
+      grad.addColorStop(1, '#d3a15c');
+
+      ctx.fillStyle = grad;
+      ctx.fillRect(W / 2 - 150, H / 2 - 30, 300, 60);
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(W / 2 - 150, H / 2 - 30, 300, 60);
+
+      const { I, Reff } = update();
+      const electronSpeed = Math.max(0.5, Math.min(8, I * 80));
+      const resistanceFactor = Math.min(0.9, Math.log10(Reff / 10) / 4);
+
+      // Elétrons (movem-se do negativo para o positivo - direita para esquerda)
+      electrons.forEach(e => {
+        e.x -= electronSpeed * (1 - resistanceFactor) * 0.8;
+        if (Math.random() < resistanceFactor * 0.15) {
+          e.x += Math.random() * 8;
+        }
+        if (e.x < -10) e.x = W + 10;
+
+        ctx.beginPath();
+        ctx.fillStyle = '#3b82f6';
+        ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Glow
+        const glow = ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, e.size * 2);
+        glow.addColorStop(0, 'rgba(59, 130, 246, 0.5)');
+        glow.addColorStop(1, 'rgba(59, 130, 246, 0)');
+        ctx.fillStyle = glow;
+        ctx.fill();
+      });
+
+      // Setas de corrente convencional (do positivo para o negativo - esquerda para direita)
+      arrows.forEach(a => {
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(a.x + 30, a.y);
+        ctx.strokeStyle = 'rgba(100, 100, 100, 0.6)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Ponta da seta
+        ctx.beginPath();
+        ctx.moveTo(a.x + 30, a.y);
+        ctx.lineTo(a.x + 25, a.y - 5);
+        ctx.lineTo(a.x + 25, a.y + 5);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(100, 100, 100, 0.6)';
+        ctx.fill();
+      });
+
+      // Heat Particles
+      for (let i = 0; i < heatEffect * 20; i++) {
+        ctx.fillStyle = `rgba(255, ${100 + heatEffect * 100}, 80, ${0.2 + Math.random() * 0.3})`;
+        ctx.beginPath();
+        const rx = W / 2 - 150 + Math.random() * 300;
+        const ry = H / 2 + (Math.random() - 0.5) * 50;
+        ctx.arc(rx, ry, Math.random() * 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    function init() {
+      initParticles();
+      update();
+      draw();
+
+      [V, R, temp].forEach(el => el.addEventListener('input', update));
+
+      document.getElementById('reset').addEventListener('click', () => {
+        V.value = 5;
+        R.value = 100;
+        temp.value = 25;
+        initParticles();
+        update();
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
+</script>
+</body>
+
+</html>

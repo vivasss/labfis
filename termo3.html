@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3ª Lei da Termodinâmica - Simulação Totalmente Escalável</title>
+    <style>
+        :root {
+            --bg: #071028;
+            --card: #0f1724;
+            --muted: #94a3b8;
+            --primary: #8a2be2;
+            --accent: #00bfff;
+            --success: #10b981;
+            --warning: #f59e0b;
+            color-scheme: dark;
+            
+            /* Variáveis de escala baseadas no viewport */
+            --base-size: min(2.5vw, 24px);
+            --padding-base: min(2vw, 20px);
+            --margin-base: min(1.5vw, 15px);
+            --border-radius: min(1.5vw, 15px);
+            --gap-base: min(1.5vw, 15px);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: system-ui, 'Segoe UI', Roboto, Arial;
+            background: linear-gradient(180deg, #071028 0%, #071021 60%);
+            color: #e6eef8;
+            min-height: 100vh;
+            overflow-x: hidden;
+            touch-action: manipulation;
+            font-size: var(--base-size);
+        }
+
+        header {
+            padding: calc(var(--padding-base) * 0.8) var(--padding-base);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: calc(var(--gap-base) * 0.7);
+            flex-wrap: wrap;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        h1 {
+            font-size: calc(var(--base-size) * 1.2);
+            margin: 0;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGlow 3s infinite alternate;
+        }
+
+        .tab-container {
+            display: flex;
+            background: var(--card);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            margin: calc(var(--margin-base) * 0.7) 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .tab {
+            padding: calc(var(--padding-base) * 0.7) calc(var(--padding-base) * 0.9);
+            background: rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            font-size: calc(var(--base-size) * 0.9);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            font-weight: 700;
+            box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
+        }
+
+        .tab::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        .tab.active::after {
+            width: 100%;
+        }
+
+        .tab-content {
+            display: none;
+            padding: var(--padding-base);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 1fr minmax(25vw, 400px);
+            gap: var(--gap-base);
+            height: calc(100vh - 120px);
+            padding: 0 var(--padding-base) var(--padding-base);
+            animation: slideUp 0.6s ease-out;
+        }
+
+        .simulation-container {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+            border-radius: calc(var(--border-radius) * 1.2);
+            padding: calc(var(--padding-base) * 0.8);
+            box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .simulation-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(138, 43, 226, 0.05) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+            pointer-events: none;
+        }
+
+        .simulation-area {
+            width: 100%;
+            height: 65vh;
+            min-height: 350px;
+            background: rgba(20, 20, 30, 0.7);
+            border-radius: calc(var(--border-radius) * 0.8);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 150, 255, 0.2);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(100, 100, 255, 0.3);
+            animation: canvasAppear 1s ease-out;
+        }
+
+        .atom {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: min(40vw, 400px);
+            height: min(40vw, 400px);
+            z-index: 20;
+        }
+
+        .nucleus {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: min(6vw, 70px);
+            height: min(6vw, 70px);
+            background: radial-gradient(circle, var(--accent), var(--primary));
+            border-radius: 50%;
+            box-shadow: 0 0 min(2vw, 25px) rgba(0, 255, 255, 0.7);
+            z-index: 21;
+            transition: all 1s ease;
+        }
+
+        .electron {
+            position: absolute;
+            width: min(2vw, 20px);
+            height: min(2vw, 20px);
+            background: radial-gradient(circle, #ff00ff, var(--primary));
+            border-radius: 50%;
+            box-shadow: 0 0 min(1vw, 12px) #ff00ff;
+            transition: all 1s ease;
+            top: 50%;
+            left: 50%;
+            transform-origin: center;
+        }
+
+        .orbit {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 1px dashed rgba(100, 100, 255, 0.5);
+            border-radius: 50%;
+        }
+
+        .temperature-display {
+            position: absolute;
+            top: 70%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(10, 10, 20, 0.8);
+            padding: calc(var(--padding-base) * 0.6) calc(var(--padding-base) * 1.2);
+            border-radius: calc(var(--border-radius) * 0.8);
+            text-align: center;
+            border: 1px solid rgba(100, 100, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 150, 255, 0.2);
+            z-index: 25;
+            min-width: min(30vw, 280px);
+            font-size: calc(var(--base-size) * 0.9);
+        }
+
+        .temp-value {
+            color: var(--accent);
+            text-shadow: 0 0 10px var(--accent);
+            font-size: calc(var(--base-size) * 1.2);
+            font-weight: bold;
+        }
+
+        .velocity-indicator {
+            margin-top: calc(var(--margin-base) * 0.3);
+            font-size: calc(var(--base-size) * 0.8);
+            color: #ff00ff;
+        }
+
+        .entropy-meter {
+            width: 100%;
+            height: min(4vw, 40px);
+            background: rgba(20, 20, 30, 0.8);
+            border-radius: calc(var(--border-radius) * 0.8);
+            overflow: hidden;
+            border: 1px solid rgba(100, 100, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 150, 255, 0.2);
+            position: relative;
+            margin-top: var(--margin-base);
+        }
+
+        .entropy-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: calc(var(--border-radius) * 0.8);
+            transition: width 1s ease;
+            box-shadow: 0 0 10px rgba(128, 0, 255, 0.7);
+        }
+
+        .entropy-value {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+            font-size: calc(var(--base-size) * 0.9);
+        }
+
+        .entropy-label {
+            text-align: center;
+            margin-bottom: calc(var(--margin-base) * 0.5);
+            font-weight: bold;
+            color: var(--accent);
+            text-shadow: 0 0 10px var(--accent);
+            width: 100%;
+            font-size: calc(var(--base-size) * 1.1);
+        }
+
+        .info-panel {
+            background: var(--card);
+            border-radius: calc(var(--border-radius) * 1.2);
+            padding: var(--padding-base);
+            height: 100%;
+            overflow-y: auto;
+            animation: slideInRight 0.6s ease-out;
+        }
+
+        .info-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .info-panel::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        .info-panel::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 3px;
+        }
+
+        .group {
+            margin-bottom: var(--margin-base);
+            padding-bottom: calc(var(--padding-base) * 0.7);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .group:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .group:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+
+        .group:nth-child(4) {
+            animation-delay: 0.3s;
+        }
+
+        label {
+            display: block;
+            font-size: calc(var(--base-size) * 0.85);
+            color: var(--muted);
+            margin-bottom: calc(var(--margin-base) * 0.5);
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: calc(var(--gap-base) * 0.8);
+            width: 100%;
+            margin-top: var(--margin-base);
+        }
+
+        button {
+            background: linear-gradient(90deg, var(--primary), #6a0dad);
+            border: 0;
+            padding: calc(var(--padding-base) * 0.8) calc(var(--padding-base) * 0.7);
+            border-radius: calc(var(--border-radius) * 0.8);
+            color: white;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            font-size: calc(var(--base-size) * 0.9);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: linear-gradient(90deg, #444, #666);
+        }
+
+        button.secondary:hover {
+            box-shadow: 0 5px 15px rgba(102, 102, 102, 0.4);
+        }
+
+        .status {
+            text-align: center;
+            font-style: italic;
+            color: var(--accent);
+            text-shadow: 0 0 5px var(--accent);
+            width: 100%;
+            margin-top: var(--margin-base);
+            font-size: calc(var(--base-size) * 0.9);
+        }
+
+        .absolute-zero {
+            position: absolute;
+            bottom: min(3vw, 30px);
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--primary);
+            text-shadow: 0 0 10px var(--primary);
+            font-weight: bold;
+            z-index: 15;
+            font-size: calc(var(--base-size) * 0.9);
+        }
+
+        /* Botão de ajuda flutuante */
+        .help-button {
+            position: fixed;
+            bottom: min(3vw, 30px);
+            right: min(3vw, 30px);
+            width: min(8vw, 70px);
+            height: min(8vw, 70px);
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            transition: all 0.3s ease;
+            border: none;
+            color: white;
+            font-size: min(4vw, 35px);
+            font-weight: bold;
+        }
+
+        .help-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(138, 43, 226, 0.5);
+        }
+
+        .help-button:active {
+            transform: scale(0.95);
+        }
+
+        /* Painel de ajuda */
+        .help-panel {
+            position: fixed;
+            bottom: min(12vw, 120px);
+            right: min(3vw, 30px);
+            width: min(50vw, 450px);
+            max-height: 70vh;
+            background: var(--card);
+            border-radius: calc(var(--border-radius) * 1.2);
+            padding: var(--padding-base);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            overflow-y: auto;
+            transform: translateY(20px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .help-panel.active {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .help-panel h2 {
+            margin-bottom: calc(var(--margin-base) * 0.8);
+            color: var(--accent);
+            font-size: calc(var(--base-size) * 1.1);
+            display: flex;
+            align-items: center;
+            gap: calc(var(--gap-base) * 0.5);
+        }
+
+        .help-panel h3 {
+            margin: calc(var(--margin-base) * 0.8) 0 calc(var(--margin-base) * 0.5);
+            color: var(--primary);
+            font-size: calc(var(--base-size) * 1);
+        }
+
+        .help-panel p {
+            margin-bottom: calc(var(--margin-base) * 0.7);
+            font-size: calc(var(--base-size) * 0.85);
+            line-height: 1.5;
+        }
+
+        .help-panel ul {
+            margin-left: calc(var(--margin-base) * 1.2);
+            margin-bottom: calc(var(--margin-base) * 0.8);
+        }
+
+        .help-panel li {
+            margin-bottom: calc(var(--margin-base) * 0.4);
+            font-size: calc(var(--base-size) * 0.85);
+            line-height: 1.4;
+        }
+
+        .help-panel .close-btn {
+            position: absolute;
+            top: calc(var(--padding-base) * 0.8);
+            right: calc(var(--padding-base) * 0.8);
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: calc(var(--base-size) * 1.2);
+            cursor: pointer;
+            width: min(5vw, 35px);
+            height: min(5vw, 35px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .help-panel .close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        footer {
+            padding: calc(var(--padding-base) * 0.7);
+            font-size: calc(var(--base-size) * 0.8);
+            color: var(--muted);
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            animation: fadeIn 1s ease-out;
+        }
+
+        /* Animações personalizadas */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes canvasAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes cardSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes textGlow {
+            0% {
+                text-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+            }
+            100% {
+                text-shadow: 0 0 15px rgba(0, 191, 255, 0.8), 0 0 20px rgba(138, 43, 226, 0.6);
+            }
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.7;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0.7;
+            }
+        }
+
+        @keyframes glow {
+            0% { text-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }
+            100% { text-shadow: 0 0 20px rgba(128, 0, 255, 0.8); }
+        }
+
+        /* Animações corrigidas para os elétrons */
+        @keyframes electron-orbit-1 {
+            0% { transform: translate(-50%, -50%) rotate(0deg) translateX(min(8vw, 80px)) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg) translateX(min(8vw, 80px)) rotate(-360deg); }
+        }
+
+        @keyframes electron-orbit-2 {
+            0% { transform: translate(-50%, -50%) rotate(120deg) translateX(min(10vw, 100px)) rotate(-120deg); }
+            100% { transform: translate(-50%, -50%) rotate(480deg) translateX(min(10vw, 100px)) rotate(-480deg); }
+        }
+
+        @keyframes electron-orbit-3 {
+            0% { transform: translate(-50%, -50%) rotate(240deg) translateX(min(9vw, 90px)) rotate(-240deg); }
+            100% { transform: translate(-50%, -50%) rotate(600deg) translateX(min(9vw, 90px)) rotate(-600deg); }
+        }
+
+        /* Responsividade para telas muito pequenas */
+        @media (max-width: 768px) {
+            main {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            
+            .simulation-area {
+                height: 50vh;
+            }
+            
+            .controls {
+                grid-template-columns: 1fr;
+            }
+            
+            .help-panel {
+                width: calc(100% - 40px);
+                right: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .simulation-area {
+                height: 45vh;
+            }
+            
+            .atom {
+                width: min(60vw, 300px);
+                height: min(60vw, 300px);
+            }
+            
+            .temperature-display {
+                min-width: min(50vw, 250px);
+            }
+        }
+
+        /* Para telas muito grandes */
+        @media (min-width: 1600px) {
+            :root {
+                --base-size: 28px;
+                --padding-base: 24px;
+                --margin-base: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>3ª Lei da Termodinâmica - Simulação Totalmente Escalável</h1>
+        <div class="tab-container">
+            <div class="tab active" data-tab="simulation">Simulação</div>
+            <div class="tab" data-tab="explanation">Explicação</div>
+        </div>
+    </header>
+
+    <div class="tab-content active" id="simulation-tab">
+        <main>
+            <div class="simulation-container">
+                <div class="simulation-area">
+                    <div class="atom" id="atom">
+                        <div class="nucleus"></div>
+                        <div class="orbit" id="orbit1"></div>
+                        <div class="orbit" id="orbit2"></div>
+                        <div class="orbit" id="orbit3"></div>
+                        <div class="electron" id="electron1"></div>
+                        <div class="electron" id="electron2"></div>
+                        <div class="electron" id="electron3"></div>
+                    </div>
+                    <div class="temperature-display">
+                        <div>Temperatura: <span class="temp-value" id="temperatureValue">300 K</span></div>
+                        <div class="velocity-indicator" id="velocityIndicator">Velocidade: 100%</div>
+                    </div>
+                    <div class="absolute-zero">Zero Absoluto: 0 K</div>
+                </div>
+                
+                <div class="entropy-label">ENTROPIA DO SISTEMA</div>
+                <div class="entropy-meter">
+                    <div class="entropy-bar" id="entropyBar"></div>
+                    <div class="entropy-value" id="entropyValue">100%</div>
+                </div>
+                <div class="status" id="status">Sistema em temperatura ambiente...</div>
+                
+                <div class="controls">
+                    <button onclick="coolSystem()">Resfriar Sistema ❄️</button>
+                    <button onclick="heatSystem()">Aquecer Sistema 🔥</button>
+                    <button onclick="approachAbsoluteZero()">Aproximar do Zero Absoluto ⚡</button>
+                    <button onclick="resetSimulation()">Reiniciar 🔄</button>
+                </div>
+            </div>
+
+            <aside class="info-panel">
+                <div class="group">
+                    <label><strong>Terceira Lei da Termodinâmica</strong></label>
+                    <p>A entropia de um cristal puro e perfeito se aproxima de zero à medida que a temperatura se aproxima do zero absoluto (0 K).</p>
+                </div>
+                
+                <div class="group">
+                    <label><strong>Como Usar a Simulação</strong></label>
+                    <p>Observe como a velocidade dos elétrons diminui quando o sistema é resfriado. A velocidade é determinada automaticamente pela temperatura - quanto mais frio, mais lento o movimento!</p>
+                </div>
+                
+                <div class="group">
+                    <label><strong>Parâmetros da Simulação</strong></label>
+                    <div style="margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label class="small">Temperatura Atual</label>
+                            <div class="temp-value" id="tempDisplay">300 K</div>
+                        </div>
+                        <div>
+                            <label class="small">Velocidade Relativa</label>
+                            <div class="velocity-indicator" id="speedDisplay">100%</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="group">
+                    <label><strong>Entropia</strong></label>
+                    <p>A entropia mede a desordem do sistema. Na simulação, ela diminui conforme a temperatura se aproxima do zero absoluto, refletindo a 3ª Lei da Termodinâmica.</p>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <div class="tab-content" id="explanation-tab">
+        <div class="explanation-container" style="padding: var(--padding-base);">
+            <div class="info-panel">
+                <h2 style="margin-bottom: 15px; color: var(--accent);">Terceira Lei da Termodinâmica</h2>
+                
+                <div class="group">
+                    <label><strong>Definição</strong></label>
+                    <p>A Terceira Lei da Termodinâmica estabelece que a entropia de um sistema se aproxima de um valor constante (geralmente zero) à medida que a temperatura se aproxima do zero absoluto (0 K ou -273,15°C).</p>
+                </div>
+                
+                <div class="group">
+                    <label><strong>Implicações</strong></label>
+                    <p>Esta lei implica que é impossível alcançar o zero absoluto através de qualquer processo finito. Além disso, ela fornece uma base para o cálculo de entropias absolutas.</p>
+                </div>
+                
+                <div class="group">
+                    <label><strong>Entropia</strong></label>
+                    <p>A entropia é uma medida da desordem ou aleatoriedade em um sistema. Em temperaturas próximas do zero absoluto, os sistemas tendem a um estado de ordem máxima, com entropia mínima.</p>
+                </div>
+                
+                <div class="group">
+                    <label><strong>Aplicações</strong></label>
+                    <p>A Terceira Lei tem aplicações importantes em física de baixas temperaturas, criogenia e no estudo de materiais supercondutores e superfluidos.</p>
+                </div>
+                
+                <div class="group">
+                    <label><strong>Formulação Matemática</strong></label>
+                    <div style="background: rgba(0, 0, 0, 0.3); padding: 12px; border-radius: 8px; margin: 15px 0; font-family: monospace; text-align: center; border-left: 3px solid var(--accent);">
+                        lim<sub>T→0</sub> S(T) = 0
+                    </div>
+                    <p>Onde S(T) é a entropia do sistema na temperatura T.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botão de ajuda flutuante -->
+    <button class="help-button" id="helpButton">?</button>
+
+    <!-- Painel de ajuda -->
+    <div class="help-panel" id="helpPanel">
+        <button class="close-btn" id="closeHelp">&times;</button>
+        <h2>💡 Como Usar o Simulador</h2>
+        
+        <h3>Controles de Temperatura</h3>
+        <p>Você pode controlar a temperatura do sistema usando os botões:</p>
+        <ul>
+            <li><strong>Resfriar Sistema:</strong> Diminui a temperatura em 10 K</li>
+            <li><strong>Aquecer Sistema:</strong> Aumenta a temperatura em 10 K</li>
+            <li><strong>Aproximar do Zero Absoluto:</strong> Reduz a temperatura para 70% do valor atual</li>
+            <li><strong>Reiniciar:</strong> Volta à temperatura ambiente (300 K)</li>
+        </ul>
+        
+        <h3>O que Observar</h3>
+        <p>À medida que a temperatura muda, observe:</p>
+        <ul>
+            <li><strong>Velocidade dos elétrons:</strong> Diminui com o resfriamento</li>
+            <li><strong>Entropia:</strong> Diminui conforme o sistema se ordena</li>
+            <li><strong>Cor do núcleo:</strong> Muda com a temperatura</li>
+        </ul>
+        
+        <h3>Terceira Lei da Termodinâmica</h3>
+        <p>Esta simulação demonstra visualmente como a entropia (desordem) de um sistema se aproxima de zero quando a temperatura se aproxima do zero absoluto.</p>
+        
+        <p style="margin-top: 15px; font-style: italic; text-align: center;">
+            Experimente diferentes temperaturas e observe os efeitos no átomo!
+        </p>
+    </div>
+
+    <footer>Simulador da 3ª Lei da Termodinâmica — HTML5 & CSS3 — Josué JR</footer>
+
+    <script>
+        // Variáveis da simulação
+        let temperature = 300; // Kelvin
+        let entropy = 100; // Percentual
+        
+        // Função para inicializar as órbitas dos elétrons
+        function initializeElectrons() {
+            const electron1 = document.getElementById('electron1');
+            const electron2 = document.getElementById('electron2');
+            const electron3 = document.getElementById('electron3');
+            
+            // Definir animações iniciais
+            electron1.style.animation = 'electron-orbit-1 3s infinite linear';
+            electron2.style.animation = 'electron-orbit-2 4.5s infinite linear';
+            electron3.style.animation = 'electron-orbit-3 2.4s infinite linear';
+            
+            // Ajustar órbitas dinamicamente
+            const atom = document.getElementById('atom');
+            const atomWidth = atom.offsetWidth;
+            
+            document.getElementById('orbit1').style.width = `${atomWidth * 0.6}px`;
+            document.getElementById('orbit1').style.height = `${atomWidth * 0.6}px`;
+            
+            document.getElementById('orbit2').style.width = `${atomWidth * 0.8}px`;
+            document.getElementById('orbit2').style.height = `${atomWidth * 0.8}px`;
+            
+            document.getElementById('orbit3').style.width = `${atomWidth * 0.7}px`;
+            document.getElementById('orbit3').style.height = `${atomWidth * 0.7}px`;
+        }
+        
+        // Atualizar velocidade baseada na temperatura
+        function updateVelocity() {
+            const velocityIndicator = document.getElementById('velocityIndicator');
+            const speedDisplay = document.getElementById('speedDisplay');
+            
+            // Velocidade proporcional à temperatura (0-100%)
+            const velocityPercent = Math.min(100, Math.max(0, (temperature / 300) * 100));
+            
+            // Atualizar indicador de velocidade
+            velocityIndicator.textContent = `Velocidade: ${velocityPercent.toFixed(0)}%`;
+            speedDisplay.textContent = `${velocityPercent.toFixed(0)}%`;
+            
+            // Atualizar velocidade dos elétrons
+            // Quanto mais quente, mais rápida a órbita
+            const speedFactor = velocityPercent / 100;
+            
+            // Aplicar animações com velocidades diferentes para cada elétron
+            document.getElementById('electron1').style.animationDuration = `${3 / speedFactor}s`;
+            document.getElementById('electron2').style.animationDuration = `${4.5 / speedFactor}s`;
+            document.getElementById('electron3').style.animationDuration = `${2.4 / speedFactor}s`;
+            
+            // Atualizar cor do indicador de velocidade baseado na velocidade
+            if (velocityPercent > 70) {
+                velocityIndicator.style.color = "#ff0000";
+                speedDisplay.style.color = "#ff0000";
+            } else if (velocityPercent > 40) {
+                velocityIndicator.style.color = "#ffff00";
+                speedDisplay.style.color = "#ffff00";
+            } else if (velocityPercent > 10) {
+                velocityIndicator.style.color = "#00ffff";
+                speedDisplay.style.color = "#00ffff";
+            } else {
+                velocityIndicator.style.color = "#8000ff";
+                speedDisplay.style.color = "#8000ff";
+            }
+        }
+        
+        function updateSimulation() {
+            // Atualizar temperatura
+            document.getElementById('temperatureValue').textContent = `${Math.round(temperature)} K`;
+            document.getElementById('tempDisplay').textContent = `${Math.round(temperature)} K`;
+            
+            // Atualizar entropia (baseado na 3ª Lei da Termodinâmica)
+            // A entropia se aproxima de zero quando T se aproxima de 0K
+            entropy = 100 * (temperature / 300) * (temperature / 300);
+            
+            const entropyBar = document.getElementById('entropyBar');
+            const entropyValue = document.getElementById('entropyValue');
+            
+            entropyBar.style.width = `${entropy}%`;
+            entropyValue.textContent = `${entropy.toFixed(1)}%`;
+            
+            // Atualizar cor do núcleo baseado na temperatura
+            const nucleus = document.querySelector('.nucleus');
+            const blueIntensity = Math.min(255, Math.floor(255 * (temperature / 300)));
+            const purpleIntensity = Math.min(255, Math.floor(255 * (1 - temperature / 300)));
+            
+            nucleus.style.background = `radial-gradient(circle, rgb(${purpleIntensity}, ${blueIntensity}, 255), rgb(0, ${blueIntensity}, 255))`;
+            
+            // Atualizar brilho dos elétrons baseado na temperatura
+            const electrons = document.querySelectorAll('.electron');
+            const electronGlow = Math.min(1, temperature / 300);
+            
+            electrons.forEach(electron => {
+                electron.style.boxShadow = `0 0 ${10 * electronGlow}px #ff00ff`;
+            });
+            
+            // Atualizar status
+            const status = document.getElementById('status');
+            
+            if (temperature < 10) {
+                status.textContent = "Sistema próximo do Zero Absoluto - Movimento quase parado!";
+                status.style.color = "#8000ff";
+            } else if (temperature < 50) {
+                status.textContent = "Sistema muito frio - Movimento muito lento";
+                status.style.color = "#0080ff";
+            } else if (temperature < 150) {
+                status.textContent = "Sistema frio - Movimento moderado";
+                status.style.color = "#00ffff";
+            } else {
+                status.textContent = "Sistema em temperatura ambiente - Movimento rápido";
+                status.style.color = "#00ffff";
+            }
+            
+            // Atualizar velocidade
+            updateVelocity();
+        }
+        
+        function coolSystem() {
+            if (temperature > 0.1) {
+                temperature -= 10;
+                if (temperature < 0.1) temperature = 0.1;
+                updateSimulation();
+            }
+        }
+        
+        function heatSystem() {
+            if (temperature < 300) {
+                temperature += 10;
+                if (temperature > 300) temperature = 300;
+                updateSimulation();
+            }
+        }
+        
+        function approachAbsoluteZero() {
+            if (temperature > 0.1) {
+                temperature = Math.max(0.1, temperature * 0.7);
+                updateSimulation();
+            }
+        }
+        
+        function resetSimulation() {
+            temperature = 300;
+            updateSimulation();
+        }
+
+        // Tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const id = tab.getAttribute('data-tab');
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(id + '-tab').classList.add('active');
+            });
+        });
+
+        // Help panel functionality
+        const helpButton = document.getElementById('helpButton');
+        const helpPanel = document.getElementById('helpPanel');
+        const closeHelp = document.getElementById('closeHelp');
+
+        helpButton.addEventListener('click', () => {
+            helpPanel.classList.toggle('active');
+        });
+
+        closeHelp.addEventListener('click', () => {
+            helpPanel.classList.remove('active');
+        });
+
+        // Close help panel when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!helpPanel.contains(e.target) && e.target !== helpButton) {
+                helpPanel.classList.remove('active');
+            }
+        });
+
+        // Ajustar órbitas quando a janela for redimensionada
+        window.addEventListener('resize', initializeElectrons);
+
+        // Inicialização
+        initializeElectrons();
+        updateSimulation();
+    </script>
+</body>
+</html>

@@ -1,0 +1,1372 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Simulação — Espalhamento Coulombiano (Rutherford)</title>
+  <style>
+    :root {
+      --bg: #071028;
+      --card: #0f1724;
+      --muted: #94a3b8;
+      --primary: #8a2be2;
+      --accent: #00bfff;
+      --success: #10b981;
+      --warning: #f59e0b;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: all 0.3s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, 'Segoe UI', Roboto, Arial;
+      background: linear-gradient(180deg, #071028 0%, #071021 60%);
+      color: #e6eef8;
+      min-height: 100vh;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+
+    header {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: textGlow 3s infinite alternate;
+    }
+
+    .tab-container {
+      display: flex;
+      background: var(--card);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .tab {
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tab:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .tab.active {
+      background: var(--primary);
+      font-weight: 700;
+      box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
+    }
+
+    .tab::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 3px;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    .tab.active::after {
+      width: 100%;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 18px;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 18px;
+      height: calc(100vh - 134px);
+      padding: 0 18px 18px;
+      animation: slideUp 0.6s ease-out;
+    }
+
+    .simulation-container {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .simulation-container::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(138, 43, 226, 0.05) 0%, transparent 70%);
+      animation: rotate 20s linear infinite;
+      pointer-events: none;
+    }
+
+    #world {
+      width: 100%;
+      height: 560px;
+      border-radius: 8px;
+      background: transparent;
+      display: block;
+      animation: canvasAppear 1s ease-out;
+      touch-action: none;
+    }
+
+    .info-panel {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .info-card {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      border-left: 3px solid var(--primary);
+      position: relative;
+      overflow: hidden;
+      animation: cardSlideIn 0.5s ease-out;
+    }
+
+    .info-card:nth-child(2) {
+      border-left-color: var(--accent);
+      animation-delay: 0.1s;
+    }
+
+    .info-card:nth-child(3) {
+      border-left-color: var(--success);
+      animation-delay: 0.2s;
+    }
+
+    .info-card:nth-child(4) {
+      border-left-color: var(--warning);
+      animation-delay: 0.3s;
+    }
+
+    .info-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .info-card:hover::before {
+      left: 100%;
+    }
+
+    .info-card .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .info-card .value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .controls {
+      background: var(--card);
+      padding: 16px;
+      border-radius: 12px;
+      height: 100%;
+      overflow-y: auto;
+      animation: slideInRight 0.6s ease-out;
+    }
+
+    .controls::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .controls::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    .controls::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 3px;
+    }
+
+    .group {
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .group:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .group:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+
+    .group:nth-child(4) {
+      animation-delay: 0.3s;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    input[type='range'] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type='range']::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+      transition: all 0.2s ease;
+    }
+
+    input[type='range']::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 10px rgba(138, 43, 226, 0.8);
+    }
+
+    input[type='number'],
+    select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.02);
+      color: inherit;
+      margin-bottom: 8px;
+      transition: all 0.3s ease;
+    }
+
+    input[type='number']:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background: linear-gradient(90deg, var(--primary), #6a0dad);
+      border: 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.secondary {
+      background: linear-gradient(90deg, #444, #666);
+    }
+
+    button.secondary:hover {
+      box-shadow: 0 5px 15px rgba(102, 102, 102, 0.4);
+    }
+
+    .muted {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .charts-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .chart-panel {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    .chart-panel:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .chart-container {
+      height: 240px;
+      width: 100%;
+    }
+
+    .explanation-container {
+      padding: 18px;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    .explanation-content {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      margin-bottom: 18px;
+    }
+
+    .explanation-content h2 {
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1.5rem;
+    }
+
+    .explanation-content h3 {
+      margin: 20px 0 10px;
+      color: var(--primary);
+      font-size: 1.2rem;
+    }
+
+    .explanation-content p {
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+
+    .explanation-content ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    .explanation-content li {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .highlight {
+      background: linear-gradient(90deg, transparent, rgba(138, 43, 226, 0.1), transparent);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .formula {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 12px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-family: monospace;
+      text-align: center;
+      border-left: 3px solid var(--accent);
+    }
+
+    .example {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 3px solid var(--success);
+    }
+
+    .concept-card {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 3px solid var(--primary);
+      transition: all 0.3s ease;
+    }
+
+    .concept-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Botão de ajuda flutuante */
+    .help-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      transition: all 0.3s ease;
+      border: none;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .help-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 25px rgba(138, 43, 226, 0.5);
+    }
+
+    .help-button:active {
+      transform: scale(0.95);
+    }
+
+    /* Painel de ajuda */
+    .help-panel {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 320px;
+      max-height: 70vh;
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      overflow-y: auto;
+      transform: translateY(20px);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    .help-panel.active {
+      transform: translateY(0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .help-panel h2 {
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .help-panel h3 {
+      margin: 15px 0 8px;
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+
+    .help-panel p {
+      margin-bottom: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .help-panel ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    .help-panel li {
+      margin-bottom: 6px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .help-panel .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .help-panel .close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    footer {
+      padding: 12px 20px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+      animation: fadeIn 1s ease-out;
+    }
+
+    /* Animações personalizadas */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes canvasAppear {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes cardSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes textGlow {
+      0% {
+        text-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+      }
+      100% {
+        text-shadow: 0 0 15px rgba(0, 191, 255, 0.8), 0 0 20px rgba(138, 43, 226, 0.6);
+      }
+    }
+
+    @keyframes rotate {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: 0.7;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0.7;
+      }
+    }
+
+    /* Responsividade */
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+        height: auto;
+        padding-bottom: 18px;
+      }
+      
+      #world {
+        height: 420px;
+      }
+      
+      .info-panel {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .help-panel {
+        width: 280px;
+        right: 10px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .info-panel {
+        grid-template-columns: 1fr;
+      }
+      
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .tab-container {
+        width: 100%;
+      }
+      
+      .tab {
+        flex: 1;
+        text-align: center;
+        padding: 12px 8px;
+      }
+      
+      .simulation-container {
+        padding: 8px;
+      }
+      
+      #world {
+        height: 60vh;
+        min-height: 400px;
+      }
+      
+      .controls {
+        padding: 12px;
+      }
+      
+      button {
+        padding: 12px 16px;
+        font-size: 16px;
+      }
+      
+      .help-button {
+        width: 50px;
+        height: 50px;
+        bottom: 15px;
+        right: 15px;
+        font-size: 20px;
+      }
+      
+      .help-panel {
+        width: calc(100% - 30px);
+        right: 15px;
+        bottom: 75px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #world {
+        height: 50vh;
+        min-height: 350px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Simulação — Espalhamento Coulombiano (Rutherford)</h1>
+    <div class="tab-container">
+      <div class="tab active" data-tab="simulation">Simulação</div>
+      <div class="tab" data-tab="charts">Gráficos</div>
+      <div class="tab" data-tab="explanation">Explicação</div>
+    </div>
+  </header>
+
+  <div class="tab-content active" id="simulation-tab">
+    <main>
+      <div class="simulation-container">
+        <canvas id="world" width="760" height="560"></canvas>
+
+        <div class="info-panel">
+          <div class="info-card">
+            <div class="label">Partículas Ativas</div>
+            <div class="value" id="activeParticles">0</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Ângulo Médio</div>
+            <div class="value" id="averageAngle">0°</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Partículas Espalhadas</div>
+            <div class="value" id="scatteredParticles">0</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Partículas no Núcleo</div>
+            <div class="value" id="nucleusParticles">0</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; display:flex; gap:10px;">
+          <button id="runBtn">Rodar Simulação (5 Partículas)</button>
+          <button id="clearBtn" class="secondary">Limpar</button>
+        </div>
+      </div>
+
+      <aside class="controls">
+        <div class="group">
+          <label><strong>Configurações da Partícula</strong></label>
+          <label>Tipo de Partícula</label>
+          <select id="particleType">
+            <option value="alpha">α (alpha) — carga +2e, massa alta</option>
+            <option value="electron">elétron — carga -e, massa baixa</option>
+          </select>
+          
+          <label>Carga do núcleo Z (número atômico)</label>
+          <input id="Z" type="number" value="79" min="1" max="100">
+          
+          <label>Energia cinética (unidades arbitrárias)</label>
+          <input id="energy" type="number" value="1200" min="10" max="20000">
+        </div>
+
+        <div class="group">
+          <label><strong>Parâmetros de Impacto</strong></label>
+          <label>Impacto mínimo (b_min)</label>
+          <input id="bmin" type="number" value="0.4" step="0.1">
+          
+          <label>Impacto máximo (b_max)</label>
+          <input id="bmax" type="number" value="6.0" step="0.1">
+          
+          <label>Número de partículas (fixo por rodada)</label>
+          <input id="npart" type="number" value="5" min="1" max="5" readonly>
+          <p class="muted">Apenas 5 partículas são simuladas por vez para melhor visualização</p>
+        </div>
+
+        <div class="group">
+          <label><strong>Configurações de Simulação</strong></label>
+          <label>Passo dt (integração)</label>
+          <input id="dt" type="number" value="0.002" step="0.001">
+          
+          <label>Constante k (normalização)</label>
+          <input id="kval" type="number" value="1.0" step="0.1">
+          
+          <label>Mostrar curva teórica de Rutherford</label>
+          <select id="showTheory">
+            <option value="1">Sim</option>
+            <option value="0">Não</option>
+          </select>
+        </div>
+
+        <div class="group">
+          <label><strong>Visual</strong></label>
+          <label class="small"><input id="trail" type="checkbox" checked> Mostrar trajetórias</label>
+          <label class="small"><input id="grid" type="checkbox" checked> Mostrar grade</label>
+          <label class="small"><input id="showImpact" type="checkbox" checked> Mostrar parâmetros de impacto</label>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div class="tab-content" id="charts-tab">
+    <div class="charts-container" style="padding:12px 18px;">
+      <div class="chart-panel">
+        <h3 style="margin:0 0 8px 0">Distribuição Angular</h3>
+        <div class="chart-container"><canvas id="hist" width="320" height="240"></canvas></div>
+        <p class="muted">Histograma de ângulos de espalhamento θ (graus). Curva teórica normalizada sobreposta se ativada.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="explanation-tab">
+    <div class="explanation-container">
+      <div class="explanation-content">
+        <h2>Espalhamento de Rutherford</h2>
+        <p>O experimento de espalhamento de Rutherford, realizado em 1911, foi fundamental para estabelecer o modelo nuclear do átomo. Nesta simulação, podemos visualizar como partículas carregadas são desviadas por um núcleo atômico carregado positivamente.</p>
+        
+        <div class="concept-card">
+          <h3>O Experimento Histórico</h3>
+          <p>Ernest Rutherford e seus colaboradores bombardearam uma fina folha de ouro com partículas alfa. A observação de que algumas partículas eram fortemente desviadas (e até mesmo refletidas) levou à conclusão de que o átomo possui um núcleo pequeno, denso e positivamente carregado.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Lei de Coulomb</h3>
+          <p>A força entre duas cargas é descrita pela Lei de Coulomb: F = k·q₁·q₂ / r², onde k é a constante eletrostática, q₁ e q₂ são as cargas, e r é a distância entre elas. Partículas com cargas de mesmo sinal se repelem, enquanto cargas opostas se atraem.</p>
+        </div>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Como Usar o Simulador</h2>
+        
+        <div class="concept-card">
+          <h3>Configuração da Simulação</h3>
+          <p>• Escolha o tipo de partícula (α ou elétron) — partículas α têm carga +2e e massa maior; elétrons têm carga -e e massa pequena.</p>
+          <p>• Ajuste a carga nuclear Z para simular diferentes elementos (Z=79 para ouro, Z=13 para alumínio, etc.)</p>
+          <p>• Modifique a energia das partículas para observar como o espalhamento é afetado.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Parâmetros de Impacto</h3>
+          <p>• O parâmetro de impacto (b) determina quão próxima a partícula passa do núcleo.</p>
+          <p>• Partículas com b pequeno passam mais perto do núcleo e sofrem maior deflexão.</p>
+          <p>• Partículas com b muito pequeno podem colidir com o núcleo.</p>
+        </div>
+        
+        <p>Experimente diferentes configurações e observe como o ângulo de espalhamento varia!</p>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Fórmula de Espalhamento de Rutherford</h2>
+        
+        <div class="formula">
+          dσ/dΩ ∝ 1 / sin⁴(θ/2)
+        </div>
+        
+        <p>Onde:</p>
+        <ul>
+          <li><span class="highlight">dσ/dΩ</span> é a seção de choque diferencial (probabilidade de espalhamento)</li>
+          <li><span class="highlight">θ</span> é o ângulo de espalhamento</li>
+        </ul>
+        
+        <p>Esta fórmula prevê que partículas são mais prováveis de serem espalhadas em ângulos pequenos, com uma probabilidade muito menor para espalhamento em ângulos grandes.</p>
+        
+        <div class="example">
+          <h3>Interpretação Física</h3>
+          <p>A dependência 1/sin⁴(θ/2) significa que:</p>
+          <p>• Espalhamento em ângulos pequenos é muito mais provável</p>
+          <p>• Espalhamento em ângulos grandes (próximos a 180°) é raro</p>
+          <p>• A detecção de partículas retroespalhadas foi crucial para a descoberta do núcleo atômico</p>
+        </div>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Comparação com o Modelo de Thomson</h2>
+        
+        <p>Antes do experimento de Rutherford, o modelo atômico predominante era o "pudim de passas" de J.J. Thomson, que postulava que a carga positiva estava distribuída uniformemente por todo o átomo.</p>
+        
+        <ul>
+          <li><span class="highlight">Modelo de Thomson:</span> Prediz apenas pequenos desvios nas trajetórias das partículas α</li>
+          <li><span class="highlight">Modelo de Rutherford:</span> Explica os grandes ângulos de espalhamento observados</li>
+        </ul>
+        
+        <p>Os resultados do experimento foram inconsistentes com o modelo de Thomson, mas perfeitamente explicados pelo modelo nuclear de Rutherford.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botão de ajuda flutuante -->
+  <button class="help-button" id="helpButton">?</button>
+
+  <!-- Painel de ajuda -->
+  <div class="help-panel" id="helpPanel">
+    <button class="close-btn" id="closeHelp">&times;</button>
+    <h2>💡 Como Usar o Simulador</h2>
+    
+    <h3>Configuração Básica</h3>
+    <p>Selecione o tipo de partícula e ajuste os parâmetros físicos:</p>
+    <ul>
+      <li><strong>Partícula α:</strong> Carga +2e, massa alta - mostra espalhamento típico</li>
+      <li><strong>Elétron:</strong> Carga -e, massa baixa - mostra trajetórias mais curvas</li>
+      <li><strong>Carga nuclear Z:</strong> Controla a intensidade da força de repulsão</li>
+      <li><strong>Energia:</strong> Partículas com mais energia são menos desviadas</li>
+    </ul>
+    
+    <h3>Parâmetros de Impacto</h3>
+    <p>O parâmetro de impacto (b) determina quão próxima a partícula passa do núcleo:</p>
+    <ul>
+      <li><strong>b pequeno:</strong> Grande deflexão, possível colisão com o núcleo</li>
+      <li><strong>b grande:</strong> Pequena deflexão, trajetória quase reta</li>
+    </ul>
+    
+    <h3>Visualização</h3>
+    <p>• Apenas 5 partículas são simuladas por vez para melhor visualização</p>
+    <p>• As trajetórias são coloridas para facilitar o acompanhamento</p>
+    <p>• O núcleo é representado pelo ponto vermelho no centro</p>
+    <p>• Partículas que colidem com o núcleo são destacadas em vermelho</p>
+    
+    <p style="margin-top: 15px; font-style: italic; text-align: center;">
+      Experimente diferentes configurações para entender o espalhamento coulombiano!
+    </p>
+  </div>
+
+  <footer>Simulação de Espalhamento de Rutherford — Visualização Clássica</footer>
+
+  <script>
+    // Canvas and context
+    const canvas = document.getElementById('world');
+    const ctx = canvas.getContext('2d');
+    const histC = document.getElementById('hist');
+    const hctx = histC.getContext('2d');
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const id = tab.getAttribute('data-tab');
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(id + '-tab').classList.add('active');
+      });
+    });
+
+    // Help panel functionality
+    const helpButton = document.getElementById('helpButton');
+    const helpPanel = document.getElementById('helpPanel');
+    const closeHelp = document.getElementById('closeHelp');
+
+    helpButton.addEventListener('click', () => {
+      helpPanel.classList.toggle('active');
+    });
+
+    closeHelp.addEventListener('click', () => {
+      helpPanel.classList.remove('active');
+    });
+
+    // Close help panel when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!helpPanel.contains(e.target) && e.target !== helpButton) {
+        helpPanel.classList.remove('active');
+      }
+    });
+
+    /* =========================
+       Código da simulação
+       ========================= */
+
+    /* utilitários */
+    function linspace(a,b,n){ const out=[]; for(let i=0;i<n;i++) out.push(a + (b-a)*i/(n-1)); return out; }
+    function randBetween(a,b){ return a + Math.random()*(b-a); }
+    function deg(rad){ return rad*180/Math.PI; }
+    function clamp(x,a,b){ return Math.max(a, Math.min(b, x)); }
+
+    /* parâmetros físicos (normalizados para estabilidade visual) */
+    const e = 1.0; // unidade de carga elementar (escalada)
+    const m_alpha = 4.0; // massa relativa (α >> elétron)
+    const m_e = 1.0;     // massa relativa do elétron (menor)
+
+    // Statistics
+    let activeParticles = 0;
+    let scatteredParticles = 0;
+    let nucleusParticles = 0;
+    let angleSum = 0;
+
+    function clearWorld(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      
+      // Draw grid if enabled
+      if (document.getElementById('grid').checked) {
+        ctx.save();
+        ctx.globalAlpha = 0.1;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        const gridSize = 60;
+        for (let x = 0; x < canvas.width; x += gridSize) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+        }
+        for (let y = 0; y < canvas.height; y += gridSize) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+        }
+        ctx.restore();
+      }
+      
+      // desenhar eixo central e núcleo
+      const cx = canvas.width/2, cy = canvas.height/2;
+      ctx.fillStyle = '#f33';
+      ctx.beginPath(); ctx.arc(cx,cy,8,0,Math.PI*2); ctx.fill();
+      
+      // Draw crosshairs for reference
+      ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cx, 0);
+      ctx.lineTo(cx, canvas.height);
+      ctx.moveTo(0, cy);
+      ctx.lineTo(canvas.width, cy);
+      ctx.stroke();
+    }
+
+    function drawTrajectory(points, color='rgba(0,150,200,0.9)', impactParam=null){
+      ctx.beginPath();
+      for(let i=0;i<points.length;i++){
+        const p = points[i];
+        if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y);
+      }
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.3;
+      ctx.stroke();
+      
+      // Draw impact parameter line if enabled
+      if (impactParam !== null && document.getElementById('showImpact').checked && points.length > 0) {
+        const startPoint = points[0];
+        const cx = canvas.width/2, cy = canvas.height/2;
+        
+        ctx.save();
+        ctx.globalAlpha = 0.5;
+        ctx.strokeStyle = '#888';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(startPoint.x, startPoint.y);
+        ctx.lineTo(cx, startPoint.y);
+        ctx.stroke();
+        ctx.restore();
+        
+        // Draw impact parameter value
+        ctx.fillStyle = '#888';
+        ctx.font = '10px Arial';
+        ctx.fillText(`b = ${impactParam.toFixed(2)}`, (startPoint.x + cx)/2, startPoint.y - 5);
+      }
+    }
+
+    /* Converter coordenadas físicas (x,y) para pixels:
+       origin (0,0) map to canvas center, scale factor s px per length unit */
+    function physToPixel(x,y,scale){
+      const cx = canvas.width/2, cy = canvas.height/2;
+      return { x: cx + x*scale, y: cy - y*scale };
+    }
+
+    /* Integração (RK4) para uma partícula sujeita a força Coulombiana de um núcleo em origem */
+    function integrateTrajectory(p0, v0, chargeParticle, mass, params){
+      // p0, v0: objects {x,y}, {vx,vy}
+      const dt = params.dt;
+      const k = params.k;
+      const qN = params.qN; // carga do núcleo (Z*e)
+      const steps = params.maxSteps;
+
+      let x = p0.x, y = p0.y, vx = v0.vx, vy = v0.vy;
+      const pts = [];
+      const scale = params.scale;
+      let captured = false;
+
+      for(let i=0;i<steps;i++){
+        pts.push(physToPixel(x,y,scale));
+        // compute acceleration due to Coulomb: a = k * q1*q2 / (m r^3) * r_vector
+        const rx = -x, ry = -y; // nucleus at origin
+        const r2 = rx*rx + ry*ry;
+        const r = Math.sqrt(r2);
+        
+        // Check if particle hits the nucleus
+        if (r < params.cutoff) {
+          captured = true;
+          break;
+        }
+        
+        // avoid singularity
+        const denom = Math.pow(r2 + params.softening*params.softening, 1.5);
+        const ax = k * (chargeParticle * qN) * rx / (mass * denom);
+        const ay = k * (chargeParticle * qN) * ry / (mass * denom);
+
+        // RK4
+        // k1
+        const k1vx = ax*dt, k1vy = ay*dt;
+        const k1x = vx*dt, k1y = vy*dt;
+
+        // estimate for k2
+        const rx2 = x + 0.5*k1x, ry2 = y + 0.5*k1y;
+        const vx2 = vx + 0.5*k1vx, vy2 = vy + 0.5*k1vy;
+        let r2_2 = rx2*rx2 + ry2*ry2; let denom2 = Math.pow(r2_2 + params.softening*params.softening, 1.5);
+        const ax2 = k * (chargeParticle * qN) * (-rx2) / (mass * denom2);
+        const ay2 = k * (chargeParticle * qN) * (-ry2) / (mass * denom2);
+        const k2vx = ax2*dt, k2vy = ay2*dt;
+        const k2x = vx2*dt, k2y = vy2*dt;
+
+        // k3
+        const rx3 = x + 0.5*k2x, ry3 = y + 0.5*k2y;
+        const vx3 = vx + 0.5*k2vx, vy3 = vy + 0.5*k2vy;
+        let r2_3 = rx3*rx3 + ry3*ry3; let denom3 = Math.pow(r2_3 + params.softening*params.softening, 1.5);
+        const ax3 = k * (chargeParticle * qN) * (-rx3) / (mass * denom3);
+        const ay3 = k * (chargeParticle * qN) * (-ry3) / (mass * denom3);
+        const k3vx = ax3*dt, k3vy = ay3*dt;
+        const k3x = vx3*dt, k3y = vy3*dt;
+
+        // k4
+        const rx4 = x + k3x, ry4 = y + k3y;
+        const vx4 = vx + k3vx, vy4 = vy + k3vy;
+        let r2_4 = rx4*rx4 + ry4*ry4; let denom4 = Math.pow(r2_4 + params.softening*params.softening, 1.5);
+        const ax4 = k * (chargeParticle * qN) * (-rx4) / (mass * denom4);
+        const ay4 = k * (chargeParticle * qN) * (-ry4) / (mass * denom4);
+        const k4vx = ax4*dt, k4vy = ay4*dt;
+        const k4x = vx4*dt, k4y = vy4*dt;
+
+        // update
+        x += (k1x + 2*k2x + 2*k3x + k4x)/6;
+        y += (k1y + 2*k2y + 2*k3y + k4y)/6;
+        vx += (k1vx + 2*k2vx + 2*k3vx + k4vx)/6;
+        vy += (k1vy + 2*k2vy + 2*k3vy + k4vy)/6;
+
+        // if particle far away on outgoing side, break
+        if (Math.abs(x) > params.bounds || Math.abs(y) > params.bounds) break;
+      }
+
+      // final outgoing angle
+      const theta = Math.atan2(vy, vx); // radians, relative to +x
+      return {pts, theta, captured};
+    }
+
+    /* Rutherford theoretical differential cross-section (up to normalization):
+       dσ/dΩ ∝ 1 / sin^4(θ/2)
+       We will compute a normalized curve for overlay on histogram.
+    */
+    function rutherfordPDF(thetaArray){
+      const out = thetaArray.map(t => {
+        const s2 = Math.sin(t/2);
+        if (Math.abs(s2) < 1e-6) return 0;
+        return 1.0 / Math.pow(s2, 4);
+      });
+      // normalize
+      const sum = out.reduce((a,b)=>a+b,0);
+      return out.map(v => v / sum);
+    }
+
+    /* Main routine que dispara 5 partículas com parâmetros de impacto aleatórios
+       na faixa [bmin, bmax], inicializadas muito à esquerda com velocidade +x.
+    */
+    function runOneShot(){
+      clearWorld();
+      // Reset statistics
+      activeParticles = 0;
+      scatteredParticles = 0;
+      nucleusParticles = 0;
+      angleSum = 0;
+      
+      // ler parâmetros da UI
+      const partType = document.getElementById('particleType').value;
+      const Z = parseFloat(document.getElementById('Z').value) || 79;
+      const energy = parseFloat(document.getElementById('energy').value) || 1200;
+      const bmin = parseFloat(document.getElementById('bmin').value) || 0.4;
+      const bmax = parseFloat(document.getElementById('bmax').value) || 6.0;
+      const npart = 5; // Fixo em 5 partículas
+      const dt = parseFloat(document.getElementById('dt').value) || 0.002;
+      const kval = parseFloat(document.getElementById('kval').value) || 1.0;
+      const showTheory = document.getElementById('showTheory').value === '1';
+      const showTrails = document.getElementById('trail').checked;
+
+      // physical parameters (normalized)
+      const qN = Z * e; // nucleus charge
+      const m = (partType === 'alpha') ? m_alpha : m_e;
+      const qPart = (partType === 'alpha') ? +2*e : -1*e;
+      // velocity magnitude from "energy" using 0.5 m v^2 = energy -> v = sqrt(2E/m)
+      const v0 = Math.sqrt(2*energy / m);
+
+      const params = {
+        dt: dt,
+        k: kval,
+        qN: qN,
+        softening: 0.01, // avoid singularity
+        cutoff: 0.045,
+        maxSteps: 60000,
+        bounds: 30,
+        scale: 32 // pixels per length unit
+      };
+
+      // prepare histogram
+      const thetas = [];
+      // colors
+      const palette = ['#4caf50','#2196f3','#ff9800','#9c27b0','#f44336'];
+
+      for(let i=0;i<npart;i++){
+        // sample impact parameter with uniform distribution in b
+        const b = randBetween(bmin, bmax);
+        const y0 = b; // launch offset in y
+        const x0 = -20; // start at left far away
+        const p0 = {x: x0, y: y0};
+        const v0vec = {vx: v0, vy: 0};
+        const result = integrateTrajectory(p0, v0vec, qPart, m, params);
+        
+        // draw trajectory if enabled
+        if (showTrails) {
+          let color;
+          if (result.captured) {
+            color = '#ff3333'; // Red for particles that hit the nucleus
+            nucleusParticles++;
+          } else {
+            color = palette[i % palette.length];
+          }
+          drawTrajectory(result.pts, color, b);
+        }
+        
+        // save scattering angle relative to +x direction: convert to 0..pi
+        if (!result.captured) {
+          let theta = result.theta;
+          // map theta to scattering angle measured from initial direction: if initial vx>0, outgoing angle = pi - theta? 
+          // We'll compute deflection angle as angle between initial direction (+x) and outgoing velocity:
+          // initial vector (1,0), outgoing (cos theta, sin theta) -> angle = acos( dot ) = acos(cos theta) = |theta|
+          theta = Math.abs(theta); // absolute angle wrt +x
+          // bring into [0,pi]
+          if (theta > Math.PI) theta = 2*Math.PI - theta;
+          thetas.push(theta);
+          
+          // Update statistics
+          angleSum += theta;
+          
+          // Count scattered particles (θ > 5°)
+          if (theta > 5 * Math.PI/180) {
+            scatteredParticles++;
+          }
+        }
+        
+        activeParticles++;
+      }
+
+      // draw nucleus on top
+      ctx.fillStyle = '#f33';
+      ctx.beginPath(); ctx.arc(canvas.width/2, canvas.height/2, 8, 0, Math.PI*2); ctx.fill();
+
+      // Update info panel
+      document.getElementById('activeParticles').textContent = activeParticles;
+      document.getElementById('scatteredParticles').textContent = scatteredParticles;
+      document.getElementById('nucleusParticles').textContent = nucleusParticles;
+      document.getElementById('averageAngle').textContent = thetas.length > 0 ? 
+        (angleSum / thetas.length * 180 / Math.PI).toFixed(1) + '°' : '0°';
+
+      // histogram
+      drawHistogram(thetas, showTheory);
+    }
+
+    /* Dessenha histograma em hist canvas (ângulos em graus) */
+    function drawHistogram(thetaArray, showTheory){
+      const Nbins = 36;
+      const bins = new Array(Nbins).fill(0);
+      // convert to positive [0,pi], degrees for x-axis
+      for(const t of thetaArray){
+        const degs = deg(t);
+        // bin from 0..180
+        const idx = Math.floor((degs/180) * Nbins);
+        if(idx>=0 && idx < Nbins) bins[idx]++;
+      }
+      // normalize for plotting
+      const maxCount = Math.max(...bins,1);
+      // clear
+      hctx.clearRect(0,0,histC.width,histC.height);
+      
+      // Draw background
+      hctx.fillStyle = 'rgba(15, 23, 36, 0.8)';
+      hctx.fillRect(0, 0, histC.width, histC.height);
+      
+      // draw bars
+      const W = histC.width, H = histC.height, margin = 30;
+      const plotW = W - 2*margin, plotH = H - 2*margin;
+      for(let i=0;i<Nbins;i++){
+        const x = margin + (i/Nbins)*plotW;
+        const w = plotW/Nbins - 2;
+        const h = (bins[i]/maxCount) * plotH;
+        hctx.fillStyle = '#4a90e2';
+        hctx.fillRect(x, margin + (plotH - h), w, h);
+      }
+      // axis labels
+      hctx.fillStyle = '#e6eef8'; hctx.font = '12px sans-serif';
+      hctx.fillText('0°', 6, H-6);
+      hctx.fillText('90°', W/2 - 10, H-6);
+      hctx.fillText('180°', W - 36, H-6);
+      
+      // Add title
+      hctx.fillStyle = '#e6eef8'; hctx.font = '14px sans-serif';
+      hctx.fillText('Distribuição Angular de Espalhamento', W/2 - 120, 16);
+
+      // overlay theoretical Rutherford shape if requested (normalized)
+      if (showTheory){
+        // create theta centers in radians
+        const centers = linspace(0 + 1e-3, Math.PI-1e-3, Nbins);
+        const pdf = rutherfordPDF(centers);
+        // normalize pdf to histogram scale (maxCount)
+        const pdfMax = Math.max(...pdf);
+        hctx.beginPath();
+        for(let i=0;i<centers.length;i++){
+          const px = margin + (i/Nbins)*plotW + (plotW/Nbins)/2;
+          const py = margin + plotH*(1 - (pdf[i]/pdfMax)*0.95); // scaled
+          if(i===0) hctx.moveTo(px,py); else hctx.lineTo(px,py);
+        }
+        hctx.strokeStyle = '#ff3333'; hctx.lineWidth = 2;
+        hctx.stroke();
+        hctx.fillStyle='#ff3333'; hctx.fillText('Rutherford ~ 1/sin^4(θ/2) (rel.)', 38, 30);
+      }
+    }
+
+    /* hook de botões */
+    document.getElementById('runBtn').addEventListener('click', runOneShot);
+    document.getElementById('clearBtn').addEventListener('click', () => { 
+      clearWorld(); 
+      hctx.clearRect(0,0,histC.width,histC.height);
+      // Reset statistics
+      activeParticles = 0;
+      scatteredParticles = 0;
+      nucleusParticles = 0;
+      angleSum = 0;
+      document.getElementById('activeParticles').textContent = '0';
+      document.getElementById('scatteredParticles').textContent = '0';
+      document.getElementById('nucleusParticles').textContent = '0';
+      document.getElementById('averageAngle').textContent = '0°';
+    });
+
+    // Initialize
+    clearWorld();
+    // Set canvas size properly
+    histC.width = histC.clientWidth;
+    histC.height = histC.clientHeight;
+  </script>
+</body>
+</html>

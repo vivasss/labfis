@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lei de Stevin — Simulação Interativa</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #071028;
+      --card: #0f1724;
+      --muted: #94a3b8;
+      --primary: #8a2be2;
+      --accent: #00bfff;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --fluid1: #00bfff;
+      --fluid2: #ff2070;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: all 0.3s ease;
+    }
+
+    body {
+      font-family: system-ui, 'Segoe UI', Roboto, Arial;
+      background: var(--bg);
+      color: #e6eef8;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    header {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .tab-container {
+      display: flex;
+      background: var(--card);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      font-size: 14px;
+      flex: 1;
+      min-width: 120px;
+      text-align: center;
+    }
+
+    .tab.active {
+      background: var(--primary);
+      font-weight: 700;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 18px;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 18px;
+      height: calc(100vh - 134px);
+      padding: 0 18px 18px;
+    }
+
+    .simulation-container {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      min-height: 400px;
+    }
+
+    #simCanvas {
+      width: 100%;
+      height: 560px;
+      border-radius: 8px;
+      background: #0a1424;
+      display: block;
+      touch-action: none; /* Prevenir zoom no toque */
+    }
+
+    .info-panel {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .info-card {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      border-left: 3px solid var(--primary);
+    }
+
+    .info-card .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .info-card .value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .controls {
+      background: var(--card);
+      padding: 16px;
+      border-radius: 12px;
+      height: 100%;
+      overflow-y: auto;
+    }
+
+    .group {
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    input[type='range'] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type='range']::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+    }
+
+    input[type='number'],
+    select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.02);
+      color: inherit;
+      margin-bottom: 8px;
+      font-size: 16px; /* Melhor legibilidade em mobile */
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background: var(--primary);
+      border: 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+      width: 100%;
+      font-size: 16px; /* Melhor legibilidade em mobile */
+      min-height: 44px; /* Tamanho mínimo para toque */
+    }
+
+    button.secondary {
+      background: #444;
+    }
+
+    .charts-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .chart-panel {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .chart-container {
+      height: 240px;
+      width: 100%;
+    }
+
+    .explanation-container {
+      padding: 18px;
+    }
+
+    .explanation-content {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+
+    .formula {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 12px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-family: monospace;
+      text-align: center;
+      border-left: 3px solid var(--accent);
+    }
+
+    footer {
+      padding: 12px 20px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    /* Melhorias para responsividade */
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+      
+      #simCanvas {
+        height: 420px;
+      }
+      
+      .info-panel {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .controls {
+        max-height: none;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .info-panel {
+        grid-template-columns: 1fr;
+      }
+      
+      header {
+        flex-direction: column;
+        padding: 12px;
+      }
+      
+      .tab {
+        min-width: 100px;
+        font-size: 13px;
+        padding: 8px 12px;
+      }
+      
+      main {
+        padding: 0 12px 12px;
+        gap: 12px;
+      }
+      
+      .simulation-container {
+        padding: 8px;
+      }
+      
+      #simCanvas {
+        height: 350px;
+      }
+      
+      .controls {
+        padding: 12px;
+      }
+      
+      .row {
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .explanation-container {
+        padding: 12px;
+      }
+      
+      .explanation-content {
+        padding: 16px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 16px;
+      }
+      
+      .tab-container {
+        width: 100%;
+      }
+      
+      .tab {
+        min-width: 0;
+        flex: 1;
+        padding: 10px 8px;
+        font-size: 12px;
+      }
+      
+      #simCanvas {
+        height: 280px;
+      }
+      
+      .info-card .value {
+        font-size: 0.95rem;
+      }
+      
+      .chart-container {
+        height: 200px;
+      }
+      
+      .formula {
+        font-size: 14px;
+        padding: 10px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      #simCanvas {
+        height: 220px;
+      }
+      
+      .info-panel {
+        gap: 6px;
+      }
+      
+      .info-card {
+        padding: 8px;
+      }
+      
+      .tab-content {
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Lei de Stevin</h1>
+    <div class="tab-container">
+      <div class="tab active" data-tab="simulation">Simulação</div>
+      <div class="tab" data-tab="charts">Gráficos</div>
+      <div class="tab" data-tab="explanation">Explicação</div>
+    </div>
+  </header>
+
+  <div class="tab-content active" id="simulation-tab">
+    <main>
+      <div class="simulation-container">
+        <canvas id="simCanvas"></canvas>
+
+        <div class="info-panel">
+          <div class="info-card">
+            <div class="label">Profundidade</div>
+            <div class="value" id="depthValue">0.0 m</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Pressão</div>
+            <div class="value" id="pressureValue">101325 Pa</div>
+          </div>
+          <div class="info-card" id="secondFluidInfo" style="display:none">
+            <div class="label">Pressão Fluido 2</div>
+            <div class="value" id="pressureValue2">101325 Pa</div>
+          </div>
+          <div class="info-card" id="diffInfo" style="display:none">
+            <div class="label">Diferença</div>
+            <div class="value" id="pressureDiff">0 Pa</div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="controls">
+        <div class="group">
+          <label><strong>Modo de Visualização</strong></label>
+          <div class="row">
+            <button id="toggleComparison" class="secondary">Adicionar Segundo Fluido</button>
+          </div>
+        </div>
+
+        <div class="group">
+          <label><strong>Fluido</strong></label>
+          <select id="fluidType1">
+            <option value="1000">Água (1000 kg/m³)</option>
+            <option value="13600">Mercúrio (13600 kg/m³)</option>
+            <option value="800">Óleo (800 kg/m³)</option>
+            <option value="1025">Água do Mar (1025 kg/m³)</option>
+            <option value="1260">Glicerina (1260 kg/m³)</option>
+            <option value="custom1">Personalizado</option>
+          </select>
+          
+          <div class="row">
+            <div style="flex:1">
+              <label class="small">Densidade (kg/m³)</label>
+              <input id="density1" type="number" min="100" max="20000" step="100" value="1000">
+            </div>
+          </div>
+        </div>
+
+        <div class="group" id="fluid2-group" style="display:none">
+          <label><strong>Segundo Fluido</strong></label>
+          <select id="fluidType2">
+            <option value="1000">Água (1000 kg/m³)</option>
+            <option value="13600" selected>Mercúrio (13600 kg/m³)</option>
+            <option value="800">Óleo (800 kg/m³)</option>
+            <option value="1025">Água do Mar (1025 kg/m³)</option>
+            <option value="1260">Glicerina (1260 kg/m³)</option>
+            <option value="custom2">Personalizado</option>
+          </select>
+          
+          <div class="row">
+            <div style="flex:1">
+              <label class="small">Densidade (kg/m³)</label>
+              <input id="density2" type="number" min="100" max="20000" step="100" value="13600">
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <label><strong>Parâmetros Físicos</strong></label>
+          <div class="row">
+            <div style="flex:1">
+              <label class="small">Gravidade (m/s²)</label>
+              <input id="gravity" type="number" step="0.1" value="9.8" min="1" max="30">
+            </div>
+            <div style="flex:1">
+              <label class="small">Profundidade Máx. (m)</label>
+              <input id="maxDepth" type="number" step="0.1" value="10" min="1" max="50">
+            </div>
+          </div>
+          <div class="row">
+            <div style="flex:1">
+              <label class="small">Pressão Atmosférica (Pa)</label>
+              <input id="atmosphericPressure" type="number" value="101325" min="0" max="200000">
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <label><strong>Profundidade do Ponto</strong></label>
+          <input id="depthSlider" type="range" min="0" max="10" step="0.1" value="0">
+          <div class="row">
+            <div style="flex:1">
+              <label class="small">Profundidade (m)</label>
+              <input id="depthInput" type="number" step="0.1" value="0" min="0" max="10">
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <label><strong>Ações</strong></label>
+          <div class="row">
+            <button id="resetBtn">Resetar</button>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div class="tab-content" id="charts-tab">
+    <div class="charts-container" style="padding:12px 18px;">
+      <div class="chart-panel">
+        <h3 style="margin:0 0 8px 0">Pressão vs Profundidade</h3>
+        <div class="chart-container"><canvas id="pressureChart"></canvas></div>
+      </div>
+
+      <div class="chart-panel" style="margin-top:10px" id="comparisonPanel">
+        <h3 style="margin:0 0 8px 0">Comparação de Pressão</h3>
+        <div class="chart-container"><canvas id="comparisonChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="explanation-tab">
+    <div class="explanation-container">
+      <div class="explanation-content">
+        <h2>Lei de Stevin</h2>
+        <p>A Lei de Stevin estabelece que a pressão em um líquido em repouso aumenta linearmente com a profundidade.</p>
+        
+        <div class="formula">P = P₀ + ρ · g · h</div>
+        <p>Onde:</p>
+        <ul>
+          <li>P = Pressão total no ponto (Pa)</li>
+          <li>P₀ = Pressão atmosférica (Pa)</li>
+          <li>ρ = Densidade do fluido (kg/m³)</li>
+          <li>g = Aceleração da gravidade (m/s²)</li>
+          <li>h = Profundidade (m)</li>
+        </ul>
+        
+        <h3>Como Usar o Simulador</h3>
+        <ul>
+          <li>Use o botão "Adicionar Segundo Fluido" para comparar dois fluidos</li>
+          <li>Arraste o marcador no tanque para alterar a profundidade</li>
+          <li>Altere os parâmetros nos controles laterais</li>
+          <li>Veja os gráficos na aba "Gráficos"</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <footer>Simulador da Lei de Stevin — Desenvolvido para ensino de Física</footer>
+
+  <script>
+    // Canvas and context
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Controls
+    const toggleComparisonBtn = document.getElementById('toggleComparison');
+    const fluidType1 = document.getElementById('fluidType1');
+    const fluidType2 = document.getElementById('fluidType2');
+    const density1Input = document.getElementById('density1');
+    const density2Input = document.getElementById('density2');
+    const gravityInput = document.getElementById('gravity');
+    const maxDepthInput = document.getElementById('maxDepth');
+    const atmosphericPressureInput = document.getElementById('atmosphericPressure');
+    const depthSlider = document.getElementById('depthSlider');
+    const depthInput = document.getElementById('depthInput');
+    const fluid2Group = document.getElementById('fluid2-group');
+    const secondFluidInfo = document.getElementById('secondFluidInfo');
+    const diffInfo = document.getElementById('diffInfo');
+    const comparisonPanel = document.getElementById('comparisonPanel');
+    const resetBtn = document.getElementById('resetBtn');
+
+    // Info displays
+    const depthValue = document.getElementById('depthValue');
+    const pressureValue = document.getElementById('pressureValue');
+    const pressureValue2 = document.getElementById('pressureValue2');
+    const pressureDiff = document.getElementById('pressureDiff');
+
+    // Simulation state
+    let dragging = false;
+    let comparisonMode = false;
+
+    // Simulation parameters
+    let params = {
+      density1: parseFloat(density1Input.value),
+      density2: parseFloat(density2Input.value),
+      gravity: parseFloat(gravityInput.value),
+      maxDepth: parseFloat(maxDepthInput.value),
+      depth: parseFloat(depthSlider.value),
+      atmosphericPressure: parseFloat(atmosphericPressureInput.value)
+    };
+
+    // Initialize charts
+    let pressureChart, comparisonChart;
+
+    // Resize canvas properly
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    }
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const id = tab.getAttribute('data-tab');
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(id + '-tab').classList.add('active');
+        
+        // Update charts when switching to charts tab
+        if (id === 'charts') {
+          setTimeout(() => {
+            updatePressureChart();
+            if (comparisonMode) updateComparisonChart();
+          }, 100);
+        }
+      });
+    });
+
+    // Toggle comparison mode
+    toggleComparisonBtn.addEventListener('click', () => {
+      comparisonMode = !comparisonMode;
+      toggleComparisonBtn.textContent = comparisonMode ? 
+        'Remover Segundo Fluido' : 'Adicionar Segundo Fluido';
+      fluid2Group.style.display = comparisonMode ? 'block' : 'none';
+      secondFluidInfo.style.display = comparisonMode ? 'block' : 'none';
+      diffInfo.style.display = comparisonMode ? 'block' : 'none';
+      comparisonPanel.style.display = comparisonMode ? 'block' : 'none';
+      updateParams();
+    });
+
+    // Fluid type change
+    fluidType1.addEventListener('change', () => {
+      if (fluidType1.value === 'custom1') {
+        density1Input.disabled = false;
+      } else {
+        density1Input.value = fluidType1.value;
+        density1Input.disabled = true;
+      }
+      updateParams();
+    });
+
+    fluidType2.addEventListener('change', () => {
+      if (fluidType2.value === 'custom2') {
+        density2Input.disabled = false;
+      } else {
+        density2Input.value = fluidType2.value;
+        density2Input.disabled = true;
+      }
+      updateParams();
+    });
+
+    // Update params from controls
+    function updateParams() {
+      params.density1 = parseFloat(density1Input.value);
+      params.density2 = parseFloat(density2Input.value);
+      params.gravity = parseFloat(gravityInput.value);
+      params.maxDepth = parseFloat(maxDepthInput.value);
+      params.depth = parseFloat(depthSlider.value);
+      params.atmosphericPressure = parseFloat(atmosphericPressureInput.value);
+      
+      // Update depth slider limits
+      depthSlider.max = params.maxDepth;
+      depthInput.max = params.maxDepth;
+      
+      // Update depth input to match slider
+      depthInput.value = params.depth.toFixed(1);
+      
+      // Update info displays
+      depthValue.textContent = params.depth.toFixed(1) + ' m';
+      
+      // Calculate and update pressure (including atmospheric pressure)
+      const pressure1 = params.atmosphericPressure + (params.density1 * params.gravity * params.depth);
+      pressureValue.textContent = pressure1.toFixed(0) + ' Pa';
+      
+      if (comparisonMode) {
+        const pressure2 = params.atmosphericPressure + (params.density2 * params.gravity * params.depth);
+        const diff = Math.abs(pressure1 - pressure2);
+        
+        pressureValue2.textContent = pressure2.toFixed(0) + ' Pa';
+        pressureDiff.textContent = diff.toFixed(0) + ' Pa';
+      }
+      
+      // Update charts if they exist
+      if (pressureChart) pressureChart.update();
+      if (comparisonChart) comparisonChart.update();
+      
+      render();
+    }
+
+    // Update pressure chart
+    function updatePressureChart() {
+      const pressureCtx = document.getElementById('pressureChart').getContext('2d');
+      
+      if (pressureChart) {
+        pressureChart.destroy();
+      }
+      
+      // Generate data for the chart
+      const depths = [];
+      const pressures1 = [];
+      const pressures2 = [];
+      
+      for (let h = 0; h <= params.maxDepth; h += params.maxDepth / 20) {
+        depths.push(h);
+        pressures1.push(params.atmosphericPressure + (params.density1 * params.gravity * h));
+        pressures2.push(params.atmosphericPressure + (params.density2 * params.gravity * h));
+      }
+      
+      const datasets = [
+        { 
+          label: 'Fluido 1', 
+          data: pressures1, 
+          borderColor: '#00bfff', 
+          backgroundColor: 'rgba(0, 191, 255, 0.1)',
+          fill: true,
+          tension: 0.4
+        }
+      ];
+      
+      if (comparisonMode) {
+        datasets.push({
+          label: 'Fluido 2',
+          data: pressures2,
+          borderColor: '#ff2070',
+          backgroundColor: 'rgba(255, 32, 112, 0.1)',
+          fill: true,
+          tension: 0.4
+        });
+      }
+      
+      pressureChart = new Chart(pressureCtx, {
+        type: 'line',
+        data: {
+          labels: depths.map(d => d.toFixed(1)),
+          datasets: datasets
+        },
+        options: {
+          responsive: true, 
+          maintainAspectRatio: false,
+          scales: {
+            x: { 
+              title: { display: true, text: 'Profundidade (m)' } 
+            },
+            y: { 
+              title: { display: true, text: 'Pressão (Pa)' } 
+            }
+          }
+        }
+      });
+    }
+
+    // Update comparison chart
+    function updateComparisonChart() {
+      if (!comparisonMode) return;
+      
+      const comparisonCtx = document.getElementById('comparisonChart').getContext('2d');
+      
+      if (comparisonChart) {
+        comparisonChart.destroy();
+      }
+      
+      // Prepare data for comparison
+      const currentDepth = params.depth;
+      const pressures = [
+        params.atmosphericPressure + (params.density1 * params.gravity * currentDepth),
+        params.atmosphericPressure + (params.density2 * params.gravity * currentDepth)
+      ];
+      
+      comparisonChart = new Chart(comparisonCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Fluido 1', 'Fluido 2'],
+          datasets: [{
+            label: `Pressão a ${currentDepth.toFixed(1)}m`,
+            data: pressures,
+            backgroundColor: ['#00bfff', '#ff2070'],
+            borderColor: ['#00bfff', '#ff2070'],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true, 
+          maintainAspectRatio: false,
+          scales: {
+            y: { 
+              title: { display: true, text: 'Pressão (Pa)' } 
+            }
+          }
+        }
+      });
+    }
+
+    // Attach input listeners
+    [
+      density1Input, density2Input, gravityInput, maxDepthInput,
+      depthSlider, depthInput, atmosphericPressureInput
+    ].forEach(el => el.addEventListener('input', updateParams));
+
+    // Reset button
+    resetBtn.onclick = () => {
+      density1Input.value = 1000;
+      density2Input.value = 13600;
+      gravityInput.value = 9.8;
+      maxDepthInput.value = 10;
+      depthSlider.value = 0;
+      depthInput.value = 0;
+      atmosphericPressureInput.value = 101325;
+      fluidType1.value = '1000';
+      fluidType2.value = '13600';
+      comparisonMode = false;
+      toggleComparisonBtn.textContent = 'Adicionar Segundo Fluido';
+      fluid2Group.style.display = 'none';
+      secondFluidInfo.style.display = 'none';
+      diffInfo.style.display = 'none';
+      comparisonPanel.style.display = 'none';
+      updateParams();
+    };
+
+    // Mouse and touch interaction
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseup', handleMouseUp);
+    
+    // Touch events for mobile
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd);
+
+    function handleMouseDown(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      startDrag(x, y);
+    }
+
+    function handleMouseMove(e) {
+      if (dragging) {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        updateDrag(x, y);
+      }
+    }
+
+    function handleMouseUp() {
+      dragging = false;
+    }
+
+    function handleTouchStart(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      startDrag(x, y);
+    }
+
+    function handleTouchMove(e) {
+      e.preventDefault();
+      if (dragging) {
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        updateDrag(x, y);
+      }
+    }
+
+    function handleTouchEnd() {
+      dragging = false;
+    }
+
+    function startDrag(x, y) {
+      const tanks = getTankDimensions();
+      
+      // Check if click is on the depth marker
+      const markerY = tanks.y + tanks.height - (params.depth / params.maxDepth) * tanks.height;
+      const markerSize = 15;
+      
+      if (Math.abs(x - (tanks.x + tanks.width + 10)) < markerSize && 
+          Math.abs(y - markerY) < markerSize) {
+        dragging = true;
+        return;
+      }
+    }
+
+    function updateDrag(x, y) {
+      const tanks = getTankDimensions();
+      const relativeY = (tanks.y + tanks.height - y) / tanks.height;
+      const newDepth = Math.max(0, Math.min(params.maxDepth, relativeY * params.maxDepth));
+      
+      params.depth = newDepth;
+      depthSlider.value = newDepth;
+      updateParams();
+    }
+
+    function getTankDimensions() {
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+      
+      let tankWidth, tankHeight, tankX, tankY;
+      
+      if (comparisonMode) {
+        tankWidth = Math.min(400, canvasWidth * 0.6);
+        tankHeight = Math.min(400, canvasHeight * 0.7);
+        tankX = (canvasWidth - tankWidth) / 2;
+        tankY = (canvasHeight - tankHeight) / 2;
+      } else {
+        tankWidth = Math.min(200, canvasWidth * 0.3);
+        tankHeight = Math.min(400, canvasHeight * 0.7);
+        tankX = (canvasWidth - tankWidth) / 2;
+        tankY = (canvasHeight - tankHeight) / 2;
+      }
+      
+      return {
+        x: tankX,
+        y: tankY,
+        width: tankWidth,
+        height: tankHeight
+      };
+    }
+
+    // Drawing functions
+    function render() {
+      // Ensure canvas size matches CSS
+      resizeCanvas();
+
+      // Clear
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+
+      // Get tank dimensions
+      const tanks = getTankDimensions();
+
+      // Draw tank(s)
+      if (comparisonMode) {
+        const tankWidth = tanks.width / 2;
+        drawTank(tanks.x, tanks.y, tankWidth, tanks.height, 1);
+        drawTank(tanks.x + tankWidth, tanks.y, tankWidth, tanks.height, 2);
+        
+        // Draw fluids
+        drawFluid(tanks.x, tanks.y, tankWidth, tanks.height, 1);
+        drawFluid(tanks.x + tankWidth, tanks.y, tankWidth, tanks.height, 2);
+      } else {
+        drawTank(tanks.x, tanks.y, tanks.width, tanks.height, 1);
+        drawFluid(tanks.x, tanks.y, tanks.width, tanks.height, 1);
+      }
+
+      // Draw depth marker
+      drawDepthMarker(tanks.x, tanks.y, tanks.width, tanks.height);
+
+      // Draw info text
+      drawInfoText(canvasWidth, canvasHeight);
+    }
+
+    function drawTank(x, y, width, height, fluidIndex) {
+      ctx.save();
+      
+      // Tank body
+      ctx.strokeStyle = fluidIndex === 1 ? '#00bfff' : '#ff2070';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x, y, width, height);
+      
+      ctx.restore();
+    }
+
+    function drawFluid(x, y, width, height, fluidIndex) {
+      ctx.save();
+      
+      // Determine fluid color based on density
+      const density = fluidIndex === 1 ? params.density1 : params.density2;
+      let fluidColor = fluidIndex === 1 ? 'rgba(0, 191, 255, 0.7)' : 'rgba(255, 32, 112, 0.7)';
+      
+      // Fluid gradient
+      const fluidHeight = height * (params.depth / params.maxDepth);
+      
+      ctx.fillStyle = fluidColor;
+      ctx.fillRect(x, y + height - fluidHeight, width, fluidHeight);
+      
+      // Fluid surface
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x, y + height - fluidHeight);
+      ctx.lineTo(x + width, y + height - fluidHeight);
+      ctx.stroke();
+      
+      ctx.restore();
+    }
+
+    function drawDepthMarker(x, y, width, height) {
+      ctx.save();
+      
+      const markerY = y + height - (params.depth / params.maxDepth) * height;
+      
+      // Marker line
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 3]);
+      ctx.beginPath();
+      ctx.moveTo(x, markerY);
+      ctx.lineTo(x + width, markerY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // Marker handle
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(x + width + 10, markerY, 8, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Marker value
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '12px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillText(params.depth.toFixed(1) + ' m', x + width + 20, markerY + 4);
+      
+      ctx.restore();
+    }
+
+    function drawInfoText(width, height) {
+      ctx.save();
+      
+      // Title
+      ctx.fillStyle = '#e6eef8';
+      ctx.font = 'bold 16px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('Lei de Stevin - Pressão Hidrostática', width / 2, 30);
+      
+      // Formula
+      ctx.font = '14px Arial';
+      ctx.fillText('P = P₀ + ρ · g · h', width / 2, 50);
+      
+      ctx.restore();
+    }
+
+    // Initial setup
+    function start() {
+      resizeCanvas();
+      updateParams();
+      render();
+      updatePressureChart();
+    }
+
+    // Start the simulation when page loads
+    window.addEventListener('load', start);
+    window.addEventListener('resize', start);
+
+  </script>
+</body>
+</html>

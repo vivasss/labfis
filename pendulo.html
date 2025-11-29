@@ -1,0 +1,1670 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Simulador de Pêndulo — Completo (Escuro)</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #071028;
+      --card: #0f1724;
+      --muted: #94a3b8;
+      --primary: #8a2be2;
+      --accent: #00bfff;
+      --success: #10b981;
+      --warning: #f59e0b;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: all 0.3s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, 'Segoe UI', Roboto, Arial;
+      background: linear-gradient(180deg, #071028 0%, #071021 60%);
+      color: #e6eef8;
+      min-height: 100vh;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+
+    header {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: textGlow 3s infinite alternate;
+    }
+
+    .tab-container {
+      display: flex;
+      background: var(--card);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .tab {
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tab:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .tab.active {
+      background: var(--primary);
+      font-weight: 700;
+      box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
+    }
+
+    .tab::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 3px;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    .tab.active::after {
+      width: 100%;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 18px;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 18px;
+      height: calc(100vh - 134px);
+      padding: 0 18px 18px;
+      animation: slideUp 0.6s ease-out;
+    }
+
+    .simulation-container {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .simulation-container::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(138, 43, 226, 0.05) 0%, transparent 70%);
+      animation: rotate 20s linear infinite;
+      pointer-events: none;
+    }
+
+    #simCanvas {
+      width: 100%;
+      height: 560px;
+      border-radius: 8px;
+      background: transparent;
+      display: block;
+      animation: canvasAppear 1s ease-out;
+      touch-action: none;
+    }
+
+    .info-panel {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .info-card {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      border-left: 3px solid var(--primary);
+      position: relative;
+      overflow: hidden;
+      animation: cardSlideIn 0.5s ease-out;
+    }
+
+    .info-card:nth-child(2) {
+      border-left-color: var(--accent);
+      animation-delay: 0.1s;
+    }
+
+    .info-card:nth-child(3) {
+      border-left-color: var(--success);
+      animation-delay: 0.2s;
+    }
+
+    .info-card:nth-child(4) {
+      border-left-color: var(--warning);
+      animation-delay: 0.3s;
+    }
+
+    .info-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .info-card:hover::before {
+      left: 100%;
+    }
+
+    .info-card .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .info-card .value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .controls {
+      background: var(--card);
+      padding: 16px;
+      border-radius: 12px;
+      height: 100%;
+      overflow-y: auto;
+      animation: slideInRight 0.6s ease-out;
+    }
+
+    .controls::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .controls::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    .controls::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 3px;
+    }
+
+    .group {
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .group:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .group:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+
+    .group:nth-child(4) {
+      animation-delay: 0.3s;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    input[type='range'] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type='range']::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+      transition: all 0.2s ease;
+    }
+
+    input[type='range']::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 10px rgba(138, 43, 226, 0.8);
+    }
+
+    input[type='number'],
+    select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.02);
+      color: inherit;
+      margin-bottom: 8px;
+      transition: all 0.3s ease;
+    }
+
+    input[type='number']:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background: linear-gradient(90deg, var(--primary), #6a0dad);
+      border: 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.secondary {
+      background: linear-gradient(90deg, #444, #666);
+    }
+
+    button.secondary:hover {
+      box-shadow: 0 5px 15px rgba(102, 102, 102, 0.4);
+    }
+
+    .muted {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .charts-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .chart-panel {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    .chart-panel:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .chart-container {
+      height: 240px;
+      width: 100%;
+    }
+
+    .explanation-container {
+      padding: 18px;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    .explanation-content {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      margin-bottom: 18px;
+    }
+
+    .explanation-content h2 {
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1.5rem;
+    }
+
+    .explanation-content h3 {
+      margin: 20px 0 10px;
+      color: var(--primary);
+      font-size: 1.2rem;
+    }
+
+    .explanation-content p {
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+
+    .explanation-content ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    .explanation-content li {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .highlight {
+      background: linear-gradient(90deg, transparent, rgba(138, 43, 226, 0.1), transparent);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .formula {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 12px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-family: monospace;
+      text-align: center;
+      border-left: 3px solid var(--accent);
+    }
+
+    .example {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 3px solid var(--success);
+    }
+
+    .concept-card {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 3px solid var(--primary);
+      transition: all 0.3s ease;
+    }
+
+    .concept-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .touch-hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      max-width: 80%;
+      z-index: 5;
+      animation: pulse 2s infinite;
+    }
+
+    /* Botão de ajuda flutuante */
+    .help-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      transition: all 0.3s ease;
+      border: none;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .help-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 25px rgba(138, 43, 226, 0.5);
+    }
+
+    .help-button:active {
+      transform: scale(0.95);
+    }
+
+    /* Painel de ajuda */
+    .help-panel {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 320px;
+      max-height: 70vh;
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      overflow-y: auto;
+      transform: translateY(20px);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    .help-panel.active {
+      transform: translateY(0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .help-panel h2 {
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .help-panel h3 {
+      margin: 15px 0 8px;
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+
+    .help-panel p {
+      margin-bottom: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .help-panel ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    .help-panel li {
+      margin-bottom: 6px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .help-panel .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .help-panel .close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    footer {
+      padding: 12px 20px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+      animation: fadeIn 1s ease-out;
+    }
+
+    /* Animações personalizadas */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes canvasAppear {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes cardSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes textGlow {
+      0% {
+        text-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+      }
+      100% {
+        text-shadow: 0 0 15px rgba(0, 191, 255, 0.8), 0 0 20px rgba(138, 43, 226, 0.6);
+      }
+    }
+
+    @keyframes rotate {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: 0.7;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0.7;
+      }
+    }
+
+    /* Responsividade */
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+        height: auto;
+        padding-bottom: 18px;
+      }
+      
+      #simCanvas {
+        height: 420px;
+      }
+      
+      .info-panel {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .help-panel {
+        width: 280px;
+        right: 10px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .info-panel {
+        grid-template-columns: 1fr;
+      }
+      
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .tab-container {
+        width: 100%;
+      }
+      
+      .tab {
+        flex: 1;
+        text-align: center;
+        padding: 12px 8px;
+      }
+      
+      .simulation-container {
+        padding: 8px;
+      }
+      
+      #simCanvas {
+        height: 60vh;
+        min-height: 400px;
+      }
+      
+      .controls {
+        padding: 12px;
+      }
+      
+      button {
+        padding: 12px 16px;
+        font-size: 16px;
+      }
+      
+      .help-button {
+        width: 50px;
+        height: 50px;
+        bottom: 15px;
+        right: 15px;
+        font-size: 20px;
+      }
+      
+      .help-panel {
+        width: calc(100% - 30px);
+        right: 15px;
+        bottom: 75px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #simCanvas {
+        height: 50vh;
+        min-height: 350px;
+      }
+      
+      .touch-hint {
+        font-size: 14px;
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Simulador de Pêndulo</h1>
+    <div class="tab-container">
+      <div class="tab active" data-tab="simulation">Simulação</div>
+      <div class="tab" data-tab="charts">Gráficos</div>
+      <div class="tab" data-tab="explanation">Explicação</div>
+    </div>
+  </header>
+
+  <div class="tab-content active" id="simulation-tab">
+    <main>
+      <div class="simulation-container">
+        <canvas id="simCanvas"></canvas>
+        
+        <div class="touch-hint" id="touchHint">
+          <p>💡 Arraste para alterar o ângulo</p>
+          <p>Use dois dedos para ajustar o comprimento</p>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-card simple-controls active">
+            <div class="label">Ângulo</div>
+            <div class="value" id="simpleAngleValue">0.0°</div>
+          </div>
+          <div class="info-card simple-controls active">
+            <div class="label">Velocidade Angular</div>
+            <div class="value" id="simpleAngularVelocityValue">0.00 rad/s</div>
+          </div>
+          <div class="info-card simple-controls active">
+            <div class="label">Período (teórico)</div>
+            <div class="value" id="simplePeriodValue">-- s</div>
+          </div>
+          <div class="info-card simple-controls active">
+            <div class="label">Oscilações</div>
+            <div class="value" id="simpleOscillationCount">0</div>
+          </div>
+
+          <div class="info-card double-controls" style="display:none">
+            <div class="label">Ângulo 1</div>
+            <div class="value" id="doubleAngle1Value">0.0°</div>
+          </div>
+          <div class="info-card double-controls" style="display:none">
+            <div class="label">Ângulo 2</div>
+            <div class="value" id="doubleAngle2Value">0.0°</div>
+          </div>
+          <div class="info-card double-controls" style="display:none">
+            <div class="label">Velocidade 1</div>
+            <div class="value" id="doubleAngularVelocity1Value">0.00 rad/s</div>
+          </div>
+          <div class="info-card double-controls" style="display:none">
+            <div class="label">Velocidade 2</div>
+            <div class="value" id="doubleAngularVelocity2Value">0.00 rad/s</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; display:flex; gap:10px;">
+          <button id="startBtn">Iniciar</button>
+          <button id="pauseBtn" class="secondary">Pausar</button>
+          <button id="resetBtn" class="secondary">Resetar</button>
+        </div>
+      </div>
+
+      <aside class="controls">
+        <div class="group">
+          <label><strong>Tipo de Pêndulo</strong></label>
+          <select id="pendulumType">
+            <option value="simple">Pêndulo Simples</option>
+            <option value="double">Pêndulo Duplo</option>
+          </select>
+        </div>
+
+        <div class="group">
+          <label><strong>Parâmetros Físicos</strong></label>
+          <div class="row">
+            <div style="flex:1">
+              <label class="small">Gravidade (m/s²)</label>
+              <input id="gravity" type="number" step="0.1" value="9.8">
+            </div>
+            <div style="flex:1">
+              <label class="small">Amortecimento</label>
+              <input id="damping" type="number" step="0.001" value="0.02" min="0" max="1">
+            </div>
+          </div>
+          <div class="row">
+            <div style="flex:1">
+              <label class="small">Velocidade (x)</label>
+              <input id="speed" type="number" step="0.1" value="1.0" min="0.1" max="3">
+            </div>
+          </div>
+        </div>
+
+        <div class="group simple-controls active">
+          <label><strong>Pêndulo Simples</strong></label>
+          <label class="small">Comprimento (m)</label>
+          <input id="simpleLength" type="range" min="0.5" max="4" step="0.1" value="2.0">
+          <label class="small">Massa (kg)</label>
+          <input id="simpleMass" type="number" step="0.1" value="1.0">
+          <label class="small">Ângulo inicial (°)</label>
+          <input id="simpleAngle" type="number" step="1" value="30">
+        </div>
+
+        <div class="group double-controls" style="display:none">
+          <label><strong>Pêndulo Duplo</strong></label>
+          <label class="small">Comprimento 1 (m)</label>
+          <input id="doubleLength1" type="range" min="0.5" max="4" step="0.1" value="2.0">
+          <label class="small">Comprimento 2 (m)</label>
+          <input id="doubleLength2" type="range" min="0.5" max="4" step="0.1" value="1.5">
+          <label class="small">Massa 1 (kg)</label>
+          <input id="doubleMass1" type="number" step="0.1" value="1.0">
+          <label class="small">Massa 2 (kg)</label>
+          <input id="doubleMass2" type="number" step="0.1" value="0.8">
+          <label class="small">Ângulo 1 inicial (°)</label>
+          <input id="doubleAngle1" type="number" step="1" value="30">
+          <label class="small">Ângulo 2 inicial (°)</label>
+          <input id="doubleAngle2" type="number" step="1" value="0">
+        </div>
+
+        <div class="group">
+          <label><strong>Visual</strong></label>
+          <label class="small"><input id="trail" type="checkbox" checked> Mostrar rastro</label>
+          <label class="small"><input id="grid" type="checkbox" checked> Mostrar grade</label>
+          <label class="small"><input id="touchHintToggle" type="checkbox"> Mostrar dicas</label>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div class="tab-content" id="charts-tab">
+    <div class="charts-container" style="padding:12px 18px;">
+      <div class="chart-panel">
+        <h3 style="margin:0 0 8px 0">Energias</h3>
+        <div class="chart-container"><canvas id="energyChart"></canvas></div>
+      </div>
+
+      <div class="chart-panel" style="margin-top:10px">
+        <h3 style="margin:0 0 8px 0">Movimento Angular</h3>
+        <div class="chart-container"><canvas id="angleChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="explanation-tab">
+    <div class="explanation-container">
+      <div class="explanation-content">
+        <h2>Como Usar o Simulador</h2>
+        <p>Este simulador permite explorar diferentes aspectos do movimento pendular de forma interativa:</p>
+        
+        <div class="concept-card">
+          <h3>Interação Direta</h3>
+          <p>Arraste o pêndulo para alterar seu ângulo de oscilação. Use dois dedos para ajustar o comprimento diretamente na tela.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Controles</h3>
+          <p>Use os botões Iniciar, Pausar e Resetar para controlar a simulação. Ajuste os parâmetros físicos nos controles laterais para ver como afetam o movimento.</p>
+        </div>
+        
+        <p>Experimente diferentes configurações e observe como o pêndulo se comporta!</p>
+      </div>
+
+      <div class="explanation-content">
+        <h2>O que é um Pêndulo?</h2>
+        <p>Um pêndulo é um sistema físico composto por uma massa suspensa por um ponto fixo, capaz de oscilar sob a influência da gravidade. O movimento pendular é um dos sistemas mais estudados na física devido à sua simplicidade e importância em diversos campos.</p>
+        
+        <div class="concept-card">
+          <h3>Pêndulo Simples</h3>
+          <p>Um pêndulo simples consiste em uma massa pontual (o "bob") suspensa por um fio inextensível e de massa desprezível. Quando deslocado de sua posição de equilíbrio e solto, ele oscila em um plano vertical sob a ação da gravidade.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Pêndulo Duplo</h3>
+          <p>Um pêndulo duplo é um sistema mais complexo, composto por dois pêndulos conectados em série. Este sistema exibe comportamento caótico, onde pequenas variações nas condições iniciais podem levar a trajetórias drasticamente diferentes ao longo do tempo.</p>
+        </div>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Princípios Físicos</h2>
+        
+        <div class="formula">
+          Período do Pêndulo Simples: T = 2π√(L/g)
+        </div>
+        
+        <p>Onde:</p>
+        <ul>
+          <li><span class="highlight">T</span> é o período de oscilação (tempo para completar um ciclo)</li>
+          <li><span class="highlight">L</span> é o comprimento do pêndulo</li>
+          <li><span class="highlight">g</span> é a aceleração da gravidade</li>
+        </ul>
+        
+        <p>Esta fórmula é válida apenas para pequenas amplitudes de oscilação (aproximação de pequenos ângulos). Para ângulos maiores, o período real é ligeiramente maior.</p>
+        
+        <div class="example">
+          <h3>Exemplo Prático</h3>
+          <p>Um pêndulo com comprimento de 1 metro na Terra (g ≈ 9.8 m/s²) terá um período de aproximadamente:</p>
+          <p>T = 2 × 3.14 × √(1/9.8) ≈ 2.0 segundos</p>
+        </div>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Energia no Movimento Pendular</h2>
+        
+        <p>Durante a oscilação de um pêndulo, ocorre uma conversão contínua entre energia potencial e energia cinética:</p>
+        
+        <ul>
+          <li><span class="highlight">Energia Potencial</span>: Máxima nos pontos mais altos da trajetória, onde a velocidade é zero</li>
+          <li><span class="highlight">Energia Cinética</span>: Máxima no ponto mais baixo da trajetória, onde a velocidade é máxima</li>
+          <li><span class="highlight">Energia Total</span>: Permanece constante em um sistema ideal sem atrito</li>
+        </ul>
+        
+        <p>Em sistemas reais, a energia total diminui gradualmente devido ao amortecimento (atrito com o ar, resistência no ponto de fixação, etc.).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botão de ajuda flutuante -->
+  <button class="help-button" id="helpButton">?</button>
+
+  <!-- Painel de ajuda -->
+  <div class="help-panel" id="helpPanel">
+    <button class="close-btn" id="closeHelp">&times;</button>
+    <h2>💡 Como Usar o Simulador</h2>
+    
+    <h3>Controles Interativos</h3>
+    <p>Você pode interagir diretamente com o pêndulo:</p>
+    <ul>
+      <li><strong>Arraste</strong> para alterar o ângulo</li>
+      <li><strong>Use dois dedos</strong> para ajustar o comprimento</li>
+      <li><strong>Toque no pêndulo</strong> para pausar/retomar</li>
+    </ul>
+    
+    <h3>Tipos de Pêndulo</h3>
+    <p><strong>Pêndulo Simples:</strong> Movimento regular e previsível</p>
+    <p><strong>Pêndulo Duplo:</strong> Movimento caótico e imprevisível</p>
+    
+    <h3>Parâmetros Ajustáveis</h3>
+    <ul>
+      <li><strong>Gravidade:</strong> Afeta a velocidade de oscilação</li>
+      <li><strong>Comprimento:</strong> Determina o período do pêndulo</li>
+      <li><strong>Massa:</strong> Não afeta o período em pêndulos simples</li>
+      <li><strong>Amortecimento:</strong> Simula a perda de energia por atrito</li>
+    </ul>
+    
+    <h3>Fórmula Importante</h3>
+    <div class="formula">T = 2π√(L/g)</div>
+    <p>Período do pêndulo simples, onde L é o comprimento e g é a gravidade.</p>
+    
+    <p style="margin-top: 15px; font-style: italic; text-align: center;">
+      Explore diferentes configurações e observe como o pêndulo se comporta!
+    </p>
+  </div>
+
+  <footer>Simulador de Pêndulo — HTML5 & Canvas & Chart.js</footer>
+
+  <script>
+    // Canvas and context
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Charts variables (will be initialized later)
+    let energyChart, angleChart;
+
+    // Chart data buffers
+    const chartData = { time: [], kinetic: [], potential: [], total: [], angle1: [], angle2: [] };
+    const maxDataPoints = 200;
+
+    // Controls
+    const pendulumType = document.getElementById('pendulumType');
+    const gravityInput = document.getElementById('gravity');
+    const dampingInput = document.getElementById('damping');
+    const speedInput = document.getElementById('speed');
+
+    // Simple controls
+    const simpleLength = document.getElementById('simpleLength');
+    const simpleMass = document.getElementById('simpleMass');
+    const simpleAngle = document.getElementById('simpleAngle');
+
+    // Double controls
+    const doubleLength1 = document.getElementById('doubleLength1');
+    const doubleLength2 = document.getElementById('doubleLength2');
+    const doubleMass1 = document.getElementById('doubleMass1');
+    const doubleMass2 = document.getElementById('doubleMass2');
+    const doubleAngle1 = document.getElementById('doubleAngle1');
+    const doubleAngle2 = document.getElementById('doubleAngle2');
+
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const trailChk = document.getElementById('trail');
+    const gridChk = document.getElementById('grid');
+    const touchHintToggle = document.getElementById('touchHintToggle');
+    const touchHint = document.getElementById('touchHint');
+
+    // Help elements
+    const helpButton = document.getElementById('helpButton');
+    const helpPanel = document.getElementById('helpPanel');
+    const closeHelp = document.getElementById('closeHelp');
+
+    // Info displays
+    const simpleAngleValue = document.getElementById('simpleAngleValue');
+    const simpleAngularVelocityValue = document.getElementById('simpleAngularVelocityValue');
+    const simplePeriodValue = document.getElementById('simplePeriodValue');
+    const simpleOscillationCount = document.getElementById('simpleOscillationCount');
+
+    const doubleAngle1Value = document.getElementById('doubleAngle1Value');
+    const doubleAngle2Value = document.getElementById('doubleAngle2Value');
+    const doubleAngularVelocity1Value = document.getElementById('doubleAngularVelocity1Value');
+    const doubleAngularVelocity2Value = document.getElementById('doubleAngularVelocity2Value');
+
+    // Simulation state
+    let running = false;
+    let lastTime = null;
+    let trailPoints = [];
+    let chartTime = 0;
+    let maxEnergy = 1;
+    let oscillationCountValue = 0;
+    let lastDirection = 0;
+
+    // Touch interaction state
+    let isDragging = false;
+    let isPinching = false;
+    let initialPinchDistance = 0;
+    let initialLength = 0;
+    let touchHintTimeout = null;
+
+    // Pendulum state (shared)
+    let state = {
+      type: 'simple',
+      angle1: (parseFloat(simpleAngle.value) * Math.PI) / 180,
+      angle2: (parseFloat(doubleAngle2.value) * Math.PI) / 180,
+      angularVelocity1: 0,
+      angularVelocity2: 0,
+      length1: parseFloat(simpleLength.value),
+      length2: parseFloat(doubleLength2.value),
+      mass1: parseFloat(simpleMass.value),
+      mass2: parseFloat(doubleMass2.value),
+      gravity: parseFloat(gravityInput.value),
+      damping: parseFloat(dampingInput.value),
+      speed: parseFloat(speedInput.value)
+    };
+
+    // Resize canvas properly for high-dpi
+    function resizeCanvas(){
+      const ratio = devicePixelRatio || 1;
+      canvas.width = canvas.clientWidth * ratio;
+      canvas.height = canvas.clientHeight * ratio;
+      ctx.setTransform(ratio,0,0,ratio,0,0);
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const id = tab.getAttribute('data-tab');
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(id + '-tab').classList.add('active');
+        
+        // Animate content when switching to explanation tab
+        if (id === 'explanation') {
+          document.querySelectorAll('.explanation-content').forEach((content, index) => {
+            content.style.animation = `slideUp 0.6s ease-out ${index * 0.1}s both`;
+          });
+        }
+      });
+    });
+
+    // Help panel functionality
+    helpButton.addEventListener('click', () => {
+      helpPanel.classList.toggle('active');
+    });
+
+    closeHelp.addEventListener('click', () => {
+      helpPanel.classList.remove('active');
+    });
+
+    // Close help panel when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!helpPanel.contains(e.target) && e.target !== helpButton) {
+        helpPanel.classList.remove('active');
+      }
+    });
+
+    // Touch hint toggle
+    touchHintToggle.addEventListener('change', () => {
+      if (touchHintToggle.checked) {
+        touchHint.style.display = 'block';
+        // Auto-hide after 5 seconds
+        clearTimeout(touchHintTimeout);
+        touchHintTimeout = setTimeout(() => {
+          touchHint.style.display = 'none';
+          touchHintToggle.checked = false;
+        }, 5000);
+      } else {
+        touchHint.style.display = 'none';
+      }
+    });
+
+    // Touch interaction handlers
+    function handleTouchStart(e) {
+      e.preventDefault();
+      
+      if (e.touches.length === 1) {
+        // Single touch - check if we're touching the pendulum
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
+        const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+        
+        const origin = { x: canvas.width / (2 * (devicePixelRatio || 1)), y: 120 };
+        const scale = Math.min(canvas.clientWidth / 8, 140);
+        
+        if (state.type === 'simple') {
+          const Lpx = state.length1 * scale;
+          const bobX = origin.x + Lpx * Math.sin(state.angle1);
+          const bobY = origin.y + Lpx * Math.cos(state.angle1);
+          const bobSize = 12 + (state.mass1 - 1) * 4;
+          
+          const distance = Math.sqrt((x - bobX) ** 2 + (y - bobY) ** 2);
+          
+          if (distance < bobSize * 2) {
+            isDragging = true;
+            running = false;
+          }
+        }
+      } else if (e.touches.length === 2) {
+        // Two touches - pinch to adjust length
+        isPinching = true;
+        isDragging = false;
+        
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const rect = canvas.getBoundingClientRect();
+        
+        const x1 = (touch1.clientX - rect.left) * (canvas.width / rect.width);
+        const y1 = (touch1.clientY - rect.top) * (canvas.height / rect.height);
+        const x2 = (touch2.clientX - rect.left) * (canvas.width / rect.width);
+        const y2 = (touch2.clientY - rect.top) * (canvas.height / rect.height);
+        
+        initialPinchDistance = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+        initialLength = state.type === 'simple' ? state.length1 : state.length1;
+      }
+    }
+
+    function handleTouchMove(e) {
+      e.preventDefault();
+      
+      if (isDragging && e.touches.length === 1) {
+        // Drag the pendulum
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
+        const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+        
+        const origin = { x: canvas.width / (2 * (devicePixelRatio || 1)), y: 120 };
+        const dx = x - origin.x;
+        const dy = y - origin.y;
+        
+        state.angle1 = Math.atan2(dx, dy);
+        state.angularVelocity1 = 0;
+        
+        if (state.type === 'double') {
+          state.angularVelocity2 = 0;
+        }
+        
+        renderOnce();
+      } else if (isPinching && e.touches.length === 2) {
+        // Adjust length with pinch
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const rect = canvas.getBoundingClientRect();
+        
+        const x1 = (touch1.clientX - rect.left) * (canvas.width / rect.width);
+        const y1 = (touch1.clientY - rect.top) * (canvas.height / rect.height);
+        const x2 = (touch2.clientX - rect.left) * (canvas.width / rect.width);
+        const y2 = (touch2.clientY - rect.top) * (canvas.height / rect.height);
+        
+        const currentDistance = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+        const scaleFactor = currentDistance / initialPinchDistance;
+        
+        if (state.type === 'simple') {
+          state.length1 = Math.max(0.5, Math.min(4, initialLength * scaleFactor));
+          simpleLength.value = state.length1;
+        } else {
+          state.length1 = Math.max(0.5, Math.min(4, initialLength * scaleFactor));
+          state.length2 = Math.max(0.5, Math.min(4, initialLength * scaleFactor));
+          doubleLength1.value = state.length1;
+          doubleLength2.value = state.length2;
+        }
+        
+        renderOnce();
+      }
+    }
+
+    function handleTouchEnd(e) {
+      if (e.touches.length === 0) {
+        // All touches ended
+        isDragging = false;
+        isPinching = false;
+        
+        // If we were dragging, start the simulation
+        if (!isPinching) {
+          running = true;
+        }
+      } else if (e.touches.length === 1 && isPinching) {
+        // One touch ended during pinch - switch to dragging with the remaining touch
+        isPinching = false;
+        isDragging = true;
+      }
+    }
+
+    // Add touch event listeners
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd);
+    canvas.addEventListener('touchcancel', handleTouchEnd);
+
+    // Mouse interaction for desktop
+    let isMouseDown = false;
+
+    canvas.addEventListener('mousedown', (e) => {
+      isMouseDown = true;
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+      
+      const origin = { x: canvas.width / (2 * (devicePixelRatio || 1)), y: 120 };
+      const scale = Math.min(canvas.clientWidth / 8, 140);
+      
+      if (state.type === 'simple') {
+        const Lpx = state.length1 * scale;
+        const bobX = origin.x + Lpx * Math.sin(state.angle1);
+        const bobY = origin.y + Lpx * Math.cos(state.angle1);
+        const bobSize = 12 + (state.mass1 - 1) * 4;
+        
+        const distance = Math.sqrt((x - bobX) ** 2 + (y - bobY) ** 2);
+        
+        if (distance < bobSize * 2) {
+          isDragging = true;
+          running = false;
+        }
+      }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (isDragging && isMouseDown) {
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+        
+        const origin = { x: canvas.width / (2 * (devicePixelRatio || 1)), y: 120 };
+        const dx = x - origin.x;
+        const dy = y - origin.y;
+        
+        state.angle1 = Math.atan2(dx, dy);
+        state.angularVelocity1 = 0;
+        
+        if (state.type === 'double') {
+          state.angularVelocity2 = 0;
+        }
+        
+        renderOnce();
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      isMouseDown = false;
+      if (isDragging) {
+        isDragging = false;
+        running = true;
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      isMouseDown = false;
+      if (isDragging) {
+        isDragging = false;
+        running = true;
+      }
+    });
+
+    // Charts initialization
+    function initCharts() {
+      const energyCtx = document.getElementById('energyChart').getContext('2d');
+      energyChart = new Chart(energyCtx, {
+        type: 'line',
+        data: {
+          labels: chartData.time,
+          datasets: [
+            { label: 'Energia Cinética', data: chartData.kinetic, borderColor: '#00bfff', backgroundColor: 'transparent', tension: .3 },
+            { label: 'Energia Potencial', data: chartData.potential, borderColor: '#ff2070', backgroundColor: 'transparent', tension: .3 },
+            { label: 'Energia Total', data: chartData.total, borderColor: '#8a2be2', backgroundColor: 'transparent', tension: .3, borderDash: [5,5] }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: {
+            x: { ticks: { color: '#cbd5e1' }, title: { display: true, text: 'Tempo (s)', color: '#9ca3af' } },
+            y: { ticks: { color: '#cbd5e1' }, title: { display: true, text: 'Energia (J)', color: '#9ca3af' } }
+          },
+          plugins: { legend: { labels: { color: '#e6eef8' } } }
+        }
+      });
+
+      const angleCtx = document.getElementById('angleChart').getContext('2d');
+      angleChart = new Chart(angleCtx, {
+        type: 'line',
+        data: {
+          labels: chartData.time,
+          datasets: [
+            { label: 'Ângulo 1 (rad)', data: chartData.angle1, borderColor: '#8a2be2', backgroundColor: 'transparent', tension: .3 },
+            { label: 'Ângulo 2 (rad)', data: chartData.angle2, borderColor: '#ff2070', backgroundColor: 'transparent', tension: .3, borderDash: [4,4] }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: {
+            x: { ticks: { color: '#cbd5e1' }, title: { display: true, text: 'Tempo (s)', color: '#9ca3af' } },
+            y: { ticks: { color: '#cbd5e1' }, title: { display: true, text: 'Ângulo (rad)', color: '#9ca3af' } }
+          },
+          plugins: { legend: { labels: { color: '#e6eef8' } } }
+        }
+      });
+    }
+
+    // Update params from controls
+    function updateParams() {
+      state.gravity = parseFloat(gravityInput.value);
+      state.damping = parseFloat(dampingInput.value);
+      state.speed = parseFloat(speedInput.value);
+
+      if (state.type === 'simple') {
+        state.length1 = parseFloat(simpleLength.value);
+        state.mass1 = parseFloat(simpleMass.value);
+        state.angle1 = (parseFloat(simpleAngle.value) * Math.PI) / 180;
+      } else {
+        state.length1 = parseFloat(doubleLength1.value);
+        state.length2 = parseFloat(doubleLength2.value);
+        state.mass1 = parseFloat(doubleMass1.value);
+        state.mass2 = parseFloat(doubleMass2.value);
+        state.angle1 = (parseFloat(doubleAngle1.value) * Math.PI) / 180;
+        state.angle2 = (parseFloat(doubleAngle2.value) * Math.PI) / 180;
+      }
+
+      state.angularVelocity1 = 0;
+      state.angularVelocity2 = 0;
+      trailPoints = [];
+    }
+
+    // Attach input listeners
+    [
+      gravityInput, dampingInput, speedInput,
+      simpleLength, simpleMass, simpleAngle,
+      doubleLength1, doubleLength2, doubleMass1, doubleMass2, doubleAngle1, doubleAngle2
+    ].forEach(el => el.addEventListener('input', () => { updateParams(); if (!running) renderOnce(); }));
+
+    // Pendulum type change
+    pendulumType.addEventListener('change', () => {
+      state.type = pendulumType.value;
+      document.querySelectorAll('.simple-controls').forEach(c => c.style.display = state.type === 'simple' ? '' : 'none');
+      document.querySelectorAll('.double-controls').forEach(c => c.style.display = state.type === 'double' ? '' : 'none');
+      updateParams();
+      resetSimulation();
+    });
+
+    // Buttons
+    startBtn.onclick = () => { running = true; lastTime = null; chartTime = 0; oscillationCountValue = 0; lastDirection = 0; clearChartBuffers(); };
+    pauseBtn.onclick = () => { running = false; };
+    resetBtn.onclick = () => { resetSimulation(); };
+
+    function clearChartBuffers(){
+      chartData.time.length = 0; chartData.kinetic.length = 0; chartData.potential.length = 0; chartData.total.length = 0; chartData.angle1.length = 0; chartData.angle2.length = 0;
+      if (energyChart) energyChart.update();
+      if (angleChart) angleChart.update();
+    }
+
+    function resetSimulation(){
+      running = false;
+      updateParams();
+      chartTime = 0;
+      oscillationCountValue = 0;
+      lastDirection = 0;
+      trailPoints = [];
+      clearChartBuffers();
+      renderOnce();
+    }
+
+    // Physics update
+    function updatePhysics(dt) {
+      if (state.type === 'simple') {
+        // small-step Euler with damping
+        const a = - (state.gravity / state.length1) * Math.sin(state.angle1);
+        state.angularVelocity1 += (a - state.damping * state.angularVelocity1) * dt * state.speed;
+        state.angle1 += state.angularVelocity1 * dt * state.speed;
+
+        // oscillation counting
+        if (lastDirection !== 0) {
+          if (lastDirection > 0 && state.angularVelocity1 < 0) oscillationCountValue += 0.5;
+          else if (lastDirection < 0 && state.angularVelocity1 > 0) oscillationCountValue += 0.5;
+        }
+        lastDirection = state.angularVelocity1 > 0 ? 1 : (state.angularVelocity1 < 0 ? -1 : 0);
+
+      } else {
+        // double pendulum (Lagrange simplified)
+        const m1 = state.mass1, m2 = state.mass2;
+        const l1 = state.length1, l2 = state.length2;
+        const g = state.gravity;
+        const a1 = state.angle1, a2 = state.angle2;
+        const v1 = state.angularVelocity1, v2 = state.angularVelocity2;
+        const delta = a1 - a2;
+
+        const den = 2*m1 + m2 - m2 * Math.cos(2*delta);
+        // guard against division by zero
+        const denom = Math.max(1e-6, den);
+
+        const num1 = -g*(2*m1 + m2) * Math.sin(a1);
+        const num2 = -m2 * g * Math.sin(a1 - 2*a2);
+        const num3 = -2 * Math.sin(delta) * m2 * (v2*v2*l2 + v1*v1*l1*Math.cos(delta));
+        const accel1 = (num1 + num2 + num3) / (l1 * denom);
+
+        const num4 = 2 * Math.sin(delta);
+        const num5 = v1*v1*l1*(m1+m2);
+        const num6 = g*(m1 + m2) * Math.cos(a1);
+        const num7 = v2*v2*l2*m2*Math.cos(delta);
+        const accel2 = (num4 * (num5 + num6 + num7)) / (l2 * denom);
+
+        state.angularVelocity1 += (accel1 - state.damping * v1) * dt * state.speed;
+        state.angularVelocity2 += (accel2 - state.damping * v2) * dt * state.speed;
+        state.angle1 += state.angularVelocity1 * dt * state.speed;
+        state.angle2 += state.angularVelocity2 * dt * state.speed;
+      }
+    }
+
+    // Energies
+    function calculateEnergies(){
+      if (state.type === 'simple') {
+        const h = state.length1 * (1 - Math.cos(state.angle1));
+        const potential = state.mass1 * state.gravity * h;
+        const kinetic = 0.5 * state.mass1 * Math.pow(state.angularVelocity1 * state.length1, 2);
+        return { kinetic, potential, total: kinetic + potential };
+      } else {
+        // positions (relative)
+        const x1 = state.length1 * Math.sin(state.angle1);
+        const y1 = -state.length1 * Math.cos(state.angle1);
+        const x2 = x1 + state.length2 * Math.sin(state.angle2);
+        const y2 = y1 - state.length2 * Math.cos(state.angle2);
+
+        // velocities (approx.)
+        const vx1 = state.angularVelocity1 * state.length1 * Math.cos(state.angle1);
+        const vy1 = state.angularVelocity1 * state.length1 * Math.sin(state.angle1);
+        const vx2 = vx1 + state.angularVelocity2 * state.length2 * Math.cos(state.angle2);
+        const vy2 = vy1 + state.angularVelocity2 * state.length2 * Math.sin(state.angle2);
+
+        const kinetic = 0.5 * state.mass1 * (vx1*vx1 + vy1*vy1) + 0.5 * state.mass2 * (vx2*vx2 + vy2*vy2);
+        const potential = state.mass1 * state.gravity * (state.length1 + y1) + state.mass2 * state.gravity * (state.length1 + state.length2 + y2);
+        return { kinetic, potential, total: kinetic + potential };
+      }
+    }
+
+    // Update info display
+    function updateInfo(){
+      if (state.type === 'simple') {
+        simpleAngleValue.textContent = (state.angle1 * 180 / Math.PI).toFixed(1) + '°';
+        simpleAngularVelocityValue.textContent = state.angularVelocity1.toFixed(2) + ' rad/s';
+        const period = 2 * Math.PI * Math.sqrt(Math.max(1e-6, state.length1) / state.gravity);
+        simplePeriodValue.textContent = period.toFixed(2) + 's';
+        simpleOscillationCount.textContent = Math.floor(oscillationCountValue);
+      } else {
+        doubleAngle1Value.textContent = (state.angle1 * 180 / Math.PI).toFixed(1) + '°';
+        doubleAngle2Value.textContent = (state.angle2 * 180 / Math.PI).toFixed(1) + '°';
+        doubleAngularVelocity1Value.textContent = state.angularVelocity1.toFixed(2) + ' rad/s';
+        doubleAngularVelocity2Value.textContent = state.angularVelocity2.toFixed(2) + ' rad/s';
+      }
+    }
+
+    // Update chart buffers and refresh charts
+    function pushChartData(energies){
+      if (chartData.time.length >= maxDataPoints) {
+        chartData.time.shift(); chartData.kinetic.shift(); chartData.potential.shift(); chartData.total.shift(); chartData.angle1.shift(); chartData.angle2.shift();
+      }
+      chartData.time.push(chartTime.toFixed(2));
+      chartData.kinetic.push(energies.kinetic);
+      chartData.potential.push(energies.potential);
+      chartData.total.push(energies.total);
+      chartData.angle1.push(state.angle1);
+      chartData.angle2.push(state.type === 'double' ? state.angle2 : null);
+
+      if (energyChart) energyChart.update();
+      if (angleChart) angleChart.update();
+    }
+
+    // Drawing the simulation
+    function renderOnce(){
+      // ensure canvas size matches CSS
+      resizeCanvas();
+
+      // Clear
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      // Visual grid
+      if (gridChk.checked) {
+        ctx.save();
+        ctx.globalAlpha = 0.06;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        const gridSize = 60;
+        for (let x = 0; x < canvas.width; x += gridSize) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+        }
+        for (let y = 0; y < canvas.height; y += gridSize) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      const ratio = devicePixelRatio || 1;
+      const origin = { x: canvas.width / (2 * ratio), y: 120 }; // pivot position (CSS pixels)
+      const scale = Math.min(canvas.clientWidth / 8, 140); // pixels per meter approx.
+
+      if (state.type === 'simple') {
+        const Lpx = state.length1 * scale;
+        const x = origin.x + Lpx * Math.sin(state.angle1);
+        const y = origin.y + Lpx * Math.cos(state.angle1);
+
+        // string
+        ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(origin.x, origin.y); ctx.lineTo(x, y); ctx.strokeStyle = 'rgba(125,211,252,0.95)'; ctx.stroke();
+        // bob
+        const bobSize = 12 + (state.mass1 - 1) * 4;
+        ctx.beginPath(); ctx.arc(x, y, bobSize, 0, Math.PI*2); ctx.fillStyle = 'rgba(125,211,252,0.95)'; ctx.fill();
+        // pivot
+        ctx.beginPath(); ctx.arc(origin.x, origin.y, 8, 0, Math.PI*2); ctx.fillStyle = '#444'; ctx.fill();
+
+        if (trailChk.checked && running) {
+          trailPoints.push({x, y});
+          if (trailPoints.length > 400) trailPoints.shift();
+        }
+
+      } else {
+        const L1px = state.length1 * scale;
+        const L2px = state.length2 * scale;
+        const x1 = origin.x + L1px * Math.sin(state.angle1);
+        const y1 = origin.y + L1px * Math.cos(state.angle1);
+        const x2 = x1 + L2px * Math.sin(state.angle2);
+        const y2 = y1 + L2px * Math.cos(state.angle2);
+
+        if (trailChk.checked && running) {
+          trailPoints.push({x: x2, y: y2});
+          if (trailPoints.length > 800) trailPoints.shift();
+        }
+
+        if (trailPoints.length > 1) {
+          ctx.beginPath(); ctx.moveTo(trailPoints[0].x, trailPoints[0].y);
+          for (let i = 1; i < trailPoints.length; i++) ctx.lineTo(trailPoints[i].x, trailPoints[i].y);
+          ctx.strokeStyle = 'rgba(255,200,80,0.6)'; ctx.lineWidth = 1.2; ctx.stroke();
+        }
+
+        // strings
+        ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(origin.x, origin.y); ctx.lineTo(x1, y1); ctx.lineTo(x2, y2); ctx.strokeStyle = 'rgba(255,180,90,0.95)'; ctx.stroke();
+        // bobs
+        const bob1Size = 12 + (state.mass1 - 1)*4; const bob2Size = 14 + (state.mass2 - 1)*4;
+        ctx.beginPath(); ctx.arc(x1, y1, bob1Size, 0, Math.PI*2); ctx.fillStyle = 'rgba(255,160,60,0.95)'; ctx.fill();
+        ctx.beginPath(); ctx.arc(x2, y2, bob2Size, 0, Math.PI*2); ctx.fillStyle = 'rgba(255,110,60,0.95)'; ctx.fill();
+        // pivot & joint
+        ctx.beginPath(); ctx.arc(origin.x, origin.y, 8, 0, Math.PI*2); ctx.fillStyle = '#444'; ctx.fill();
+        ctx.beginPath(); ctx.arc(x1, y1, 6, 0, Math.PI*2); ctx.fillStyle = '#666'; ctx.fill();
+      }
+    }
+
+    // Main draw loop
+    function loop(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      const dt = Math.min(0.03, (timestamp - lastTime) / 1000);
+      lastTime = timestamp;
+
+      if (running && !isDragging) {
+        updatePhysics(dt);
+        chartTime += dt * state.speed;
+        const energies = calculateEnergies();
+        // Track max energy for normalization if desired
+        if (energies.total > maxEnergy) maxEnergy = energies.total;
+        pushChartData(energies);
+      }
+
+      renderOnce();
+      updateInfo();
+      requestAnimationFrame(loop);
+    }
+
+    // initial setup
+    function start() {
+      resizeCanvas();
+      initCharts();
+      updateParams();
+      renderOnce();
+      requestAnimationFrame(loop);
+      
+      // Auto-hide touch hint after 5 seconds
+      touchHintTimeout = setTimeout(() => {
+        touchHint.style.display = 'none';
+      }, 5000);
+    }
+
+    start();
+
+  </script>
+</body>
+</html>

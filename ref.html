@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Simulador de Índice de Refração — Completo (Escuro)</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #071028;
+      --card: #0f1724;
+      --muted: #94a3b8;
+      --primary: #8a2be2;
+      --accent: #00bfff;
+      --success: #10b981;
+      --warning: #f59e0b;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: all 0.3s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, 'Segoe UI', Roboto, Arial;
+      background: linear-gradient(180deg, #071028 0%, #071021 60%);
+      color: #e6eef8;
+      min-height: 100vh;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+
+    header {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: textGlow 3s infinite alternate;
+    }
+
+    .tab-container {
+      display: flex;
+      background: var(--card);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .tab {
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tab:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .tab.active {
+      background: var(--primary);
+      font-weight: 700;
+      box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
+    }
+
+    .tab::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 3px;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    .tab.active::after {
+      width: 100%;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 18px;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 18px;
+      height: calc(100vh - 134px);
+      padding: 0 18px 18px;
+      animation: slideUp 0.6s ease-out;
+    }
+
+    .simulation-container {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .simulation-container::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(138, 43, 226, 0.05) 0%, transparent 70%);
+      animation: rotate 20s linear infinite;
+      pointer-events: none;
+    }
+
+    #simCanvas {
+      width: 100%;
+      height: 560px;
+      border-radius: 8px;
+      background: transparent;
+      display: block;
+      animation: canvasAppear 1s ease-out;
+      touch-action: none;
+    }
+
+    .info-panel {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .info-card {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      border-left: 3px solid var(--primary);
+      position: relative;
+      overflow: hidden;
+      animation: cardSlideIn 0.5s ease-out;
+    }
+
+    .info-card:nth-child(2) {
+      border-left-color: var(--accent);
+      animation-delay: 0.1s;
+    }
+
+    .info-card:nth-child(3) {
+      border-left-color: var(--success);
+      animation-delay: 0.2s;
+    }
+
+    .info-card:nth-child(4) {
+      border-left-color: var(--warning);
+      animation-delay: 0.3s;
+    }
+
+    .info-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .info-card:hover::before {
+      left: 100%;
+    }
+
+    .info-card .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .info-card .value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .controls {
+      background: var(--card);
+      padding: 16px;
+      border-radius: 12px;
+      height: 100%;
+      overflow-y: auto;
+      animation: slideInRight 0.6s ease-out;
+    }
+
+    .controls::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .controls::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    .controls::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 3px;
+    }
+
+    .group {
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .group:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .group:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+
+    .group:nth-child(4) {
+      animation-delay: 0.3s;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    input[type='range'] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type='range']::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+      transition: all 0.2s ease;
+    }
+
+    input[type='range']::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 10px rgba(138, 43, 226, 0.8);
+    }
+
+    input[type='number'],
+    select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.02);
+      color: inherit;
+      margin-bottom: 8px;
+      transition: all 0.3s ease;
+    }
+
+    input[type='number']:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background: linear-gradient(90deg, var(--primary), #6a0dad);
+      border: 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.secondary {
+      background: linear-gradient(90deg, #444, #666);
+    }
+
+    button.secondary:hover {
+      box-shadow: 0 5px 15px rgba(102, 102, 102, 0.4);
+    }
+
+    .muted {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .charts-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .chart-panel {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    .chart-panel:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .chart-container {
+      height: 240px;
+      width: 100%;
+    }
+
+    .explanation-container {
+      padding: 18px;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    .explanation-content {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      margin-bottom: 18px;
+    }
+
+    .explanation-content h2 {
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1.5rem;
+    }
+
+    .explanation-content h3 {
+      margin: 20px 0 10px;
+      color: var(--primary);
+      font-size: 1.2rem;
+    }
+
+    .explanation-content p {
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+
+    .explanation-content ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    .explanation-content li {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .highlight {
+      background: linear-gradient(90deg, transparent, rgba(138, 43, 226, 0.1), transparent);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .formula {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 12px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-family: monospace;
+      text-align: center;
+      border-left: 3px solid var(--accent);
+    }
+
+    .example {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 3px solid var(--success);
+    }
+
+    .concept-card {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 3px solid var(--primary);
+      transition: all 0.3s ease;
+    }
+
+    .concept-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .touch-hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      max-width: 80%;
+      z-index: 5;
+      animation: pulse 2s infinite;
+    }
+
+    /* Botão de ajuda flutuante */
+    .help-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      transition: all 0.3s ease;
+      border: none;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .help-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 25px rgba(138, 43, 226, 0.5);
+    }
+
+    .help-button:active {
+      transform: scale(0.95);
+    }
+
+    /* Painel de ajuda */
+    .help-panel {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 320px;
+      max-height: 70vh;
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      overflow-y: auto;
+      transform: translateY(20px);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    .help-panel.active {
+      transform: translateY(0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .help-panel h2 {
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .help-panel h3 {
+      margin: 15px 0 8px;
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+
+    .help-panel p {
+      margin-bottom: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .help-panel ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    .help-panel li {
+      margin-bottom: 6px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .help-panel .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .help-panel .close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    footer {
+      padding: 12px 20px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+      animation: fadeIn 1s ease-out;
+    }
+
+    /* Animações personalizadas */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes canvasAppear {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes cardSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes textGlow {
+      0% {
+        text-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+      }
+      100% {
+        text-shadow: 0 0 15px rgba(0, 191, 255, 0.8), 0 0 20px rgba(138, 43, 226, 0.6);
+      }
+    }
+
+    @keyframes rotate {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: 0.7;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0.7;
+      }
+    }
+
+    /* Responsividade */
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+        height: auto;
+        padding-bottom: 18px;
+      }
+      
+      #simCanvas {
+        height: 420px;
+      }
+      
+      .info-panel {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .help-panel {
+        width: 280px;
+        right: 10px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .info-panel {
+        grid-template-columns: 1fr;
+      }
+      
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .tab-container {
+        width: 100%;
+      }
+      
+      .tab {
+        flex: 1;
+        text-align: center;
+        padding: 12px 8px;
+      }
+      
+      .simulation-container {
+        padding: 8px;
+      }
+      
+      #simCanvas {
+        height: 60vh;
+        min-height: 400px;
+      }
+      
+      .controls {
+        padding: 12px;
+      }
+      
+      button {
+        padding: 12px 16px;
+        font-size: 16px;
+      }
+      
+      .help-button {
+        width: 50px;
+        height: 50px;
+        bottom: 15px;
+        right: 15px;
+        font-size: 20px;
+      }
+      
+      .help-panel {
+        width: calc(100% - 30px);
+        right: 15px;
+        bottom: 75px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #simCanvas {
+        height: 50vh;
+        min-height: 350px;
+      }
+      
+      .touch-hint {
+        font-size: 14px;
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Simulador de Índice de Refração</h1>
+    <div class="tab-container">
+      <div class="tab active" data-tab="simulation">Simulação</div>
+      <div class="tab" data-tab="charts">Gráficos</div>
+      <div class="tab" data-tab="explanation">Explicação</div>
+    </div>
+  </header>
+
+  <div class="tab-content active" id="simulation-tab">
+    <main>
+      <div class="simulation-container">
+        <canvas id="simCanvas"></canvas>
+        
+        <div class="touch-hint" id="touchHint">
+          <p>💡 Arraste para alterar o ângulo de incidência</p>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-card">
+            <div class="label">Ângulo de Incidência</div>
+            <div class="value" id="angle-value">45.0°</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Ângulo de Refração</div>
+            <div class="value" id="refraction-angle-value">32.1°</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Ângulo Crítico</div>
+            <div class="value" id="critical-angle-value">48.8°</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Reflexão Interna Total</div>
+            <div class="value" id="total-reflection-value">Não</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; display:flex; gap:10px;">
+          <button id="critical-angle-btn">Ângulo Crítico</button>
+          <button id="total-reflection-btn" class="secondary">Reflexão Total</button>
+          <button id="reset-btn" class="secondary">Resetar</button>
+        </div>
+      </div>
+
+      <aside class="controls">
+        <div class="group">
+          <label><strong>Tipo de Material</strong></label>
+          <select id="material-preset">
+            <option value="custom">Personalizado</option>
+            <option value="air-water" selected>Ar → Água</option>
+            <option value="air-glass">Ar → Vidro</option>
+            <option value="water-air">Água → Ar</option>
+            <option value="glass-air">Vidro → Ar</option>
+            <option value="water-glass">Água → Vidro</option>
+            <option value="glass-water">Vidro → Água</option>
+            <option value="diamond-air">Diamante → Ar</option>
+          </select>
+        </div>
+
+        <div class="group">
+          <label><strong>Parâmetros Físicos</strong></label>
+          <div class="row">
+            <div style="flex:1">
+              <label class="small">Índice 1 (n₁)</label>
+              <input id="n1" type="number" step="0.01" value="1.00" min="1.0" max="3.0">
+            </div>
+            <div style="flex:1">
+              <label class="small">Índice 2 (n₂)</label>
+              <input id="n2" type="number" step="0.01" value="1.33" min="1.0" max="3.0">
+            </div>
+          </div>
+          <label class="small">Ângulo de Incidência</label>
+          <input id="angle" type="range" min="0" max="90" step="1" value="45">
+          <div class="muted" style="text-align: center;" id="angle-display">45°</div>
+        </div>
+
+        <div class="group">
+          <label><strong>Materiais Rápidos</strong></label>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px;">
+            <button class="material-btn active" data-n="1.00">Ar (n=1.00)</button>
+            <button class="material-btn" data-n="1.33">Água (n=1.33)</button>
+            <button class="material-btn" data-n="1.50">Vidro (n=1.50)</button>
+            <button class="material-btn" data-n="2.42">Diamante (n=2.42)</button>
+          </div>
+          <div class="muted" style="margin-top: 8px; text-align: center;">
+            Clique para definir como meio 1
+          </div>
+        </div>
+
+        <div class="group">
+          <label><strong>Visual</strong></label>
+          <label class="small"><input id="show-rays" type="checkbox" checked> Mostrar raios</label>
+          <label class="small"><input id="show-angles" type="checkbox" checked> Mostrar ângulos</label>
+          <label class="small"><input id="show-grid" type="checkbox"> Mostrar grade</label>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div class="tab-content" id="charts-tab">
+    <div class="charts-container" style="padding:12px 18px;">
+      <div class="chart-panel">
+        <h3 style="margin:0 0 8px 0">Relação Ângulo de Incidência vs Refração</h3>
+        <div class="chart-container"><canvas id="angleChart"></canvas></div>
+      </div>
+
+      <div class="chart-panel" style="margin-top:10px">
+        <h3 style="margin:0 0 8px 0">Coeficientes de Fresnel</h3>
+        <div class="chart-container"><canvas id="fresnelChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="explanation-tab">
+    <div class="explanation-container">
+      <div class="explanation-content">
+        <h2>Como Usar o Simulador</h2>
+        <p>Este simulador permite explorar diferentes aspectos da refração da luz de forma interativa:</p>
+        
+        <div class="concept-card">
+          <h3>Interação Direta</h3>
+          <p>Arraste o raio incidente para alterar seu ângulo. Ajuste os índices de refração usando os controles ou selecione materiais pré-definidos.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Controles</h3>
+          <p>Use os controles deslizantes e botões para ajustar parâmetros. Ative as demonstrações para ver exemplos específicos como o ângulo crítico e reflexão interna total.</p>
+        </div>
+        
+        <p>Experimente diferentes configurações e observe como a luz se comporta ao passar entre materiais!</p>
+      </div>
+
+      <div class="explanation-content">
+        <h2>O que é Índice de Refração?</h2>
+        <p>O índice de refração (n) é uma medida de quanto a velocidade da luz é reduzida quando passa através de um meio. É definido como a razão entre a velocidade da luz no vácuo (c) e a velocidade da luz no meio (v):</p>
+        
+        <div class="formula">n = c / v</div>
+        
+        <div class="concept-card">
+          <h3>Lei de Snell</h3>
+          <p>Quando a luz passa de um meio para outro com diferentes índices de refração, ela muda de direção - um fenômeno conhecido como refração. A relação entre os ângulos de incidência e refração é dada pela Lei de Snell:</p>
+          <div class="formula">n₁ × sen(θ₁) = n₂ × sen(θ₂)</div>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Reflexão Interna Total</h3>
+          <p>Quando a luz tenta passar de um meio mais refringente (maior n) para um menos refringente (menor n) com um ângulo maior que o ângulo crítico, ocorre a reflexão interna total, onde toda a luz é refletida de volta para o meio original.</p>
+        </div>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Princípios Físicos</h2>
+        
+        <div class="formula">
+          Ângulo Crítico: θc = arcsen(n₂/n₁) para n₁ > n₂
+        </div>
+        
+        <p>Onde:</p>
+        <ul>
+          <li><span class="highlight">θc</span> é o ângulo crítico</li>
+          <li><span class="highlight">n₁</span> é o índice de refração do meio incidente</li>
+          <li><span class="highlight">n₂</span> é o índice de refração do meio refratado</li>
+        </ul>
+        
+        <div class="example">
+          <h3>Exemplo Prático</h3>
+          <p>Para a transição de vidro (n=1.5) para ar (n=1.0):</p>
+          <p>θc = arcsen(1.0/1.5) ≈ 41.8°</p>
+          <p>Para ângulos de incidência maiores que 41.8°, ocorre reflexão interna total.</p>
+        </div>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Coeficientes de Fresnel</h2>
+        
+        <p>Quando a luz encontra uma interface entre dois meios, parte é refratada e parte é refletida. Os coeficientes de Fresnel descrevem a fração de luz refletida e transmitida:</p>
+        
+        <ul>
+          <li><span class="highlight">Reflexão (R)</span>: Fração da intensidade da luz refletida</li>
+          <li><span class="highlight">Transmissão (T)</span>: Fração da intensidade da luz transmitida</li>
+        </ul>
+        
+        <p>Para incidência normal (ângulo = 0°):</p>
+        <div class="formula">R = [(n₁ - n₂)/(n₁ + n₂)]²</div>
+        
+        <p>Para outros ângulos, os cálculos são mais complexos e dependem da polarização da luz.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botão de ajuda flutuante -->
+  <button class="help-button" id="helpButton">?</button>
+
+  <!-- Painel de ajuda -->
+  <div class="help-panel" id="helpPanel">
+    <button class="close-btn" id="closeHelp">&times;</button>
+    <h2>💡 Como Usar o Simulador</h2>
+    
+    <h3>Controles Interativos</h3>
+    <p>Você pode interagir diretamente com a simulação:</p>
+    <ul>
+      <li><strong>Arraste o raio incidente</strong> para alterar o ângulo</li>
+      <li><strong>Ajuste os índices de refração</strong> usando os controles numéricos</li>
+      <li><strong>Selecione materiais pré-definidos</strong> para configurações comuns</li>
+      <li><strong>Use os botões de materiais rápidos</strong> para definir o meio 1</li>
+    </ul>
+    
+    <h3>Conceitos Físicos</h3>
+    <p><strong>Lei de Snell:</strong> n₁ × sen(θ₁) = n₂ × sen(θ₂)</p>
+    <p><strong>Reflexão Interna Total:</strong> Ocorre quando θ₁ > θc</p>
+    <p><strong>Ângulo Crítico:</strong> θc = arcsen(n₂/n₁) para n₁ > n₂</p>
+    
+    <h3>Demonstrações</h3>
+    <ul>
+      <li><strong>Ângulo Crítico:</strong> Mostra o ângulo onde a refração atinge 90°</li>
+      <li><strong>Reflexão Total:</strong> Demonstra a reflexão interna total</li>
+    </ul>
+    
+    <p style="margin-top: 15px; font-style: italic; text-align: center;">
+      Explore diferentes configurações e observe como a luz se comporta!
+    </p>
+  </div>
+
+  <footer>Simulador de Índice de Refração — HTML5 & Canvas & Chart.js</footer>
+
+  <script>
+    // Canvas and context
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Charts variables
+    let angleChart, fresnelChart;
+
+    // Simulation state
+    let n1 = 1.00;
+    let n2 = 1.33;
+    let incidenceAngle = 45; // degrees
+    let refractionAngle = null;
+    let criticalAngle = null;
+    let isTotalReflection = false;
+
+    // Materials data
+    const materials = {
+      air: { name: "Ar", n: 1.00, color: "rgba(173, 216, 230, 0.3)" },
+      water: { name: "Água", n: 1.33, color: "rgba(64, 164, 223, 0.4)" },
+      glass: { name: "Vidro", n: 1.50, color: "rgba(200, 200, 255, 0.4)" },
+      diamond: { name: "Diamante", n: 2.42, color: "rgba(185, 242, 255, 0.4)" }
+    };
+
+    // Current materials
+    let currentMaterial1 = materials.air;
+    let currentMaterial2 = materials.water;
+
+    // Resize canvas properly for high-dpi
+    function resizeCanvas(){
+      const ratio = devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * ratio;
+      canvas.height = rect.height * ratio;
+      ctx.scale(ratio, ratio);
+    }
+
+    // Initialize everything
+    function init() {
+      setupEventListeners();
+      resizeCanvas();
+      initCharts();
+      calculatePhysics();
+      render();
+      updateCharts();
+      
+      // Auto-hide touch hint
+      setTimeout(() => {
+        document.getElementById('touchHint').style.display = 'none';
+      }, 5000);
+    }
+
+    // Setup event listeners
+    function setupEventListeners() {
+      // Tab switching
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const tabId = tab.getAttribute('data-tab');
+          
+          // Update active tab
+          document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+          
+          tab.classList.add('active');
+          document.getElementById(tabId).classList.add('active');
+          
+          // Update charts if on charts tab
+          if (tabId === 'charts') {
+            updateCharts();
+          }
+        });
+      });
+
+      // Help panel functionality
+      const helpButton = document.getElementById('helpButton');
+      const helpPanel = document.getElementById('helpPanel');
+      const closeHelp = document.getElementById('closeHelp');
+
+      helpButton.addEventListener('click', () => {
+        helpPanel.classList.toggle('active');
+      });
+
+      closeHelp.addEventListener('click', () => {
+        helpPanel.classList.remove('active');
+      });
+
+      // Close help panel when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!helpPanel.contains(e.target) && e.target !== helpButton) {
+          helpPanel.classList.remove('active');
+        }
+      });
+
+      // Material preset selection
+      const materialPreset = document.getElementById('material-preset');
+      materialPreset.addEventListener('change', function() {
+        const preset = this.value;
+        
+        switch(preset) {
+          case 'air-water':
+            n1 = 1.00;
+            n2 = 1.33;
+            currentMaterial1 = materials.air;
+            currentMaterial2 = materials.water;
+            break;
+          case 'air-glass':
+            n1 = 1.00;
+            n2 = 1.50;
+            currentMaterial1 = materials.air;
+            currentMaterial2 = materials.glass;
+            break;
+          case 'water-air':
+            n1 = 1.33;
+            n2 = 1.00;
+            currentMaterial1 = materials.water;
+            currentMaterial2 = materials.air;
+            break;
+          case 'glass-air':
+            n1 = 1.50;
+            n2 = 1.00;
+            currentMaterial1 = materials.glass;
+            currentMaterial2 = materials.air;
+            break;
+          case 'water-glass':
+            n1 = 1.33;
+            n2 = 1.50;
+            currentMaterial1 = materials.water;
+            currentMaterial2 = materials.glass;
+            break;
+          case 'glass-water':
+            n1 = 1.50;
+            n2 = 1.33;
+            currentMaterial1 = materials.glass;
+            currentMaterial2 = materials.water;
+            break;
+          case 'diamond-air':
+            n1 = 2.42;
+            n2 = 1.00;
+            currentMaterial1 = materials.diamond;
+            currentMaterial2 = materials.air;
+            break;
+          case 'custom':
+          default:
+            // Keep current values
+            return;
+        }
+        
+        updateInputs();
+        calculatePhysics();
+        render();
+      });
+
+      // Material buttons - CORRIGIDO
+      const materialButtons = document.querySelectorAll('.material-btn');
+      materialButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          const nValue = parseFloat(this.getAttribute('data-n'));
+          
+          // Update active button
+          materialButtons.forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          
+          // Set as medium 1
+          n1 = nValue;
+          materialPreset.value = 'custom';
+          updateInputs();
+          calculatePhysics();
+          render();
+        });
+      });
+
+      // Input controls
+      const n1Input = document.getElementById('n1');
+      const n2Input = document.getElementById('n2');
+      const angleInput = document.getElementById('angle');
+      const angleDisplay = document.getElementById('angle-display');
+
+      n1Input.addEventListener('input', function() {
+        n1 = parseFloat(this.value);
+        materialPreset.value = 'custom';
+        calculatePhysics();
+        render();
+      });
+
+      n2Input.addEventListener('input', function() {
+        n2 = parseFloat(this.value);
+        materialPreset.value = 'custom';
+        calculatePhysics();
+        render();
+      });
+
+      angleInput.addEventListener('input', function() {
+        incidenceAngle = parseInt(this.value);
+        angleDisplay.textContent = `${incidenceAngle}°`;
+        calculatePhysics();
+        render();
+      });
+
+      // Demo buttons
+      const criticalAngleBtn = document.getElementById('critical-angle-btn');
+      const totalReflectionBtn = document.getElementById('total-reflection-btn');
+      const resetBtn = document.getElementById('reset-btn');
+
+      criticalAngleBtn.addEventListener('click', () => {
+        calculateCriticalAngle();
+        if (criticalAngle !== null) {
+          incidenceAngle = Math.round(criticalAngle);
+          angleInput.value = incidenceAngle;
+          angleDisplay.textContent = `${incidenceAngle}°`;
+          calculatePhysics();
+          render();
+        }
+      });
+
+      totalReflectionBtn.addEventListener('click', () => {
+        calculateCriticalAngle();
+        if (criticalAngle !== null) {
+          incidenceAngle = Math.min(90, Math.round(criticalAngle) + 10);
+          angleInput.value = incidenceAngle;
+          angleDisplay.textContent = `${incidenceAngle}°`;
+          calculatePhysics();
+          render();
+        }
+      });
+
+      resetBtn.addEventListener('click', () => {
+        incidenceAngle = 45;
+        angleInput.value = incidenceAngle;
+        angleDisplay.textContent = `${incidenceAngle}°`;
+        calculatePhysics();
+        render();
+      });
+
+      // Visual toggles
+      document.getElementById('show-rays').addEventListener('change', render);
+      document.getElementById('show-angles').addEventListener('change', render);
+      document.getElementById('show-grid').addEventListener('change', render);
+
+      // Mouse interaction
+      let isDragging = false;
+
+      canvas.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        updateAngleFromMouse(e);
+      });
+
+      canvas.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+          updateAngleFromMouse(e);
+        }
+      });
+
+      canvas.addEventListener('mouseup', () => {
+        isDragging = false;
+      });
+
+      canvas.addEventListener('mouseleave', () => {
+        isDragging = false;
+      });
+
+      // Touch interaction
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (e.touches.length === 1) {
+          isDragging = true;
+          updateAngleFromTouch(e.touches[0]);
+        }
+      }, { passive: false });
+
+      canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (isDragging && e.touches.length === 1) {
+          updateAngleFromTouch(e.touches[0]);
+        }
+      }, { passive: false });
+
+      canvas.addEventListener('touchend', () => {
+        isDragging = false;
+      });
+
+      // Window resize
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+        render();
+      });
+    }
+
+    // Update input values
+    function updateInputs() {
+      document.getElementById('n1').value = n1.toFixed(2);
+      document.getElementById('n2').value = n2.toFixed(2);
+    }
+
+    // Calculate physics - CORRIGIDO
+    function calculatePhysics() {
+      // Calculate critical angle
+      if (n1 > n2) {
+        criticalAngle = Math.asin(n2 / n1) * (180 / Math.PI);
+      } else {
+        criticalAngle = null;
+      }
+      
+      // Calculate refraction angle using Snell's Law
+      const incidenceRad = incidenceAngle * (Math.PI / 180);
+      const sinRefraction = (n1 * Math.sin(incidenceRad)) / n2;
+      
+      if (sinRefraction <= 1) {
+        refractionAngle = Math.asin(sinRefraction) * (180 / Math.PI);
+        isTotalReflection = false;
+      } else {
+        refractionAngle = 90; // Limite máximo para o ângulo de refração
+        isTotalReflection = true;
+      }
+      
+      // Update info displays
+      document.getElementById('angle-value').textContent = `${incidenceAngle.toFixed(1)}°`;
+      document.getElementById('refraction-angle-value').textContent = refractionAngle ? `${refractionAngle.toFixed(1)}°` : '--';
+      document.getElementById('critical-angle-value').textContent = criticalAngle ? `${criticalAngle.toFixed(1)}°` : '--';
+      document.getElementById('total-reflection-value').textContent = isTotalReflection ? 'Sim' : 'Não';
+    }
+
+    // Render simulation - CORRIGIDO
+    function render() {
+      // Ensure canvas size matches CSS
+      resizeCanvas();
+
+      const width = canvas.width / (window.devicePixelRatio || 1);
+      const height = canvas.height / (window.devicePixelRatio || 1);
+      const centerX = width / 2;
+      const centerY = height / 2;
+
+      // Clear canvas
+      ctx.clearRect(0, 0, width, height);
+
+      // Draw grid if enabled
+      const showGrid = document.getElementById('show-grid').checked;
+      if (showGrid) {
+        ctx.save();
+        ctx.globalAlpha = 0.06;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        const gridSize = 60;
+        for (let x = 0; x < width; x += gridSize) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+        }
+        for (let y = 0; y < height; y += gridSize) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      // Draw interface line
+      ctx.strokeStyle = '#ff9800';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, centerY);
+      ctx.lineTo(width, centerY);
+      ctx.stroke();
+
+      // Draw medium labels
+      ctx.font = '16px Arial';
+      ctx.fillStyle = '#e6eef8';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${currentMaterial1.name} (n=${n1.toFixed(2)})`, centerX, centerY - 20);
+      ctx.fillText(`${currentMaterial2.name} (n=${n2.toFixed(2)})`, centerX, centerY + 35);
+
+      // Draw mediums with colors
+      ctx.fillStyle = currentMaterial1.color;
+      ctx.fillRect(0, 0, width, centerY);
+      
+      ctx.fillStyle = currentMaterial2.color;
+      ctx.fillRect(0, centerY, width, height);
+
+      const showRays = document.getElementById('show-rays').checked;
+      if (showRays) {
+        // Draw rays
+        const incidenceRad = incidenceAngle * (Math.PI / 180);
+        const rayLength = Math.min(width, height) * 0.4;
+        
+        // Incident ray
+        ctx.strokeStyle = '#ffeb3b';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(
+          centerX - rayLength * Math.sin(incidenceRad),
+          centerY - rayLength * Math.cos(incidenceRad)
+        );
+        ctx.stroke();
+        
+        if (!isTotalReflection) {
+          // Refracted ray
+          const refractionRad = refractionAngle * (Math.PI / 180);
+          
+          ctx.strokeStyle = '#00bfff';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(centerX, centerY);
+          ctx.lineTo(
+            centerX + rayLength * Math.sin(refractionRad),
+            centerY + rayLength * Math.cos(refractionRad)
+          );
+          ctx.stroke();
+        }
+        
+        // Reflected ray
+        const reflectionIntensity = isTotalReflection ? 1 : 0.3;
+        ctx.strokeStyle = `rgba(255, 100, 100, ${reflectionIntensity})`;
+        ctx.lineWidth = 3 * reflectionIntensity;
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(
+          centerX - rayLength * Math.sin(incidenceRad),
+          centerY + rayLength * Math.cos(incidenceRad)
+        );
+        ctx.stroke();
+      }
+
+      const showAngles = document.getElementById('show-angles').checked;
+      if (showAngles) {
+        // Draw angle indicators
+        const indicatorRadius = 60;
+        const incidenceRad = incidenceAngle * (Math.PI / 180);
+        
+        // Incident angle
+        ctx.strokeStyle = '#ffeb3b';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, indicatorRadius, -Math.PI/2, -Math.PI/2 + incidenceRad, false);
+        ctx.stroke();
+        
+        ctx.fillStyle = '#ffeb3b';
+        ctx.font = '14px Arial';
+        ctx.fillText(
+          `θi = ${incidenceAngle}°`, 
+          centerX - indicatorRadius * 0.7 * Math.sin(incidenceRad/2),
+          centerY - indicatorRadius * 0.7 * Math.cos(incidenceRad/2)
+        );
+
+        if (!isTotalReflection) {
+          // Refracted angle
+          const refractionRad = refractionAngle * (Math.PI / 180);
+          
+          ctx.strokeStyle = '#00bfff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, indicatorRadius, Math.PI/2, Math.PI/2 + refractionRad, false);
+          ctx.stroke();
+          
+          ctx.fillStyle = '#00bfff';
+          ctx.font = '14px Arial';
+          ctx.fillText(
+            `θr = ${refractionAngle.toFixed(1)}°`, 
+            centerX + indicatorRadius * 0.7 * Math.sin(refractionRad/2),
+            centerY + indicatorRadius * 0.7 * Math.cos(refractionRad/2)
+          );
+        }
+      }
+    }
+
+    // Mouse interaction functions
+    function updateAngleFromMouse(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      const centerX = canvas.width / (2 * (window.devicePixelRatio || 1));
+      const centerY = canvas.height / (2 * (window.devicePixelRatio || 1));
+      
+      const dx = x - centerX;
+      const dy = centerY - y; // Invert Y axis
+      
+      // Calculate angle from vertical (0° is straight down)
+      let angle = Math.atan2(dx, dy) * (180 / Math.PI);
+      
+      // Limit angle to 0-90 degrees
+      angle = Math.max(0, Math.min(90, Math.abs(angle)));
+      
+      incidenceAngle = Math.round(angle);
+      document.getElementById('angle').value = incidenceAngle;
+      document.getElementById('angle-display').textContent = `${incidenceAngle}°`;
+      calculatePhysics();
+      render();
+    }
+
+    function updateAngleFromTouch(touch) {
+      const rect = canvas.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      
+      const centerX = canvas.width / (2 * (window.devicePixelRatio || 1));
+      const centerY = canvas.height / (2 * (window.devicePixelRatio || 1));
+      
+      const dx = x - centerX;
+      const dy = centerY - y;
+      
+      let angle = Math.atan2(dx, dy) * (180 / Math.PI);
+      angle = Math.max(0, Math.min(90, Math.abs(angle)));
+      
+      incidenceAngle = Math.round(angle);
+      document.getElementById('angle').value = incidenceAngle;
+      document.getElementById('angle-display').textContent = `${incidenceAngle}°`;
+      calculatePhysics();
+      render();
+    }
+
+    // Initialize charts
+    function initCharts() {
+      // Angle chart
+      const angleCtx = document.getElementById('angleChart').getContext('2d');
+      angleChart = new Chart(angleCtx, {
+        type: 'line',
+        data: {
+          labels: Array.from({length: 19}, (_, i) => i * 5),
+          datasets: [
+            { 
+              label: 'Ângulo de Refração', 
+              data: [],
+              borderColor: '#00bfff',
+              backgroundColor: 'transparent',
+              tension: 0.3,
+              pointRadius: 3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Ângulo de Incidência (°)'
+              },
+              ticks: { color: '#cbd5e1' }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Ângulo de Refração (°)'
+              },
+              min: 0,
+              max: 90,
+              ticks: { color: '#cbd5e1' }
+            }
+          },
+          plugins: { 
+            legend: { 
+              labels: { color: '#e6eef8' }
+            }
+          }
+        }
+      });
+      
+      // Fresnel chart
+      const fresnelCtx = document.getElementById('fresnelChart').getContext('2d');
+      fresnelChart = new Chart(fresnelCtx, {
+        type: 'line',
+        data: {
+          labels: Array.from({length: 19}, (_, i) => i * 5),
+          datasets: [
+            { 
+              label: 'Reflexão (%)', 
+              data: [],
+              borderColor: '#ff2070',
+              backgroundColor: 'transparent',
+              tension: 0.3,
+              pointRadius: 3
+            },
+            { 
+              label: 'Transmissão (%)', 
+              data: [],
+              borderColor: '#10b981',
+              backgroundColor: 'transparent',
+              tension: 0.3,
+              pointRadius: 3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Ângulo de Incidência (°)'
+              },
+              ticks: { color: '#cbd5e1' }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Intensidade (%)'
+              },
+              min: 0,
+              max: 100,
+              ticks: { color: '#cbd5e1' }
+            }
+          },
+          plugins: { 
+            legend: { 
+              labels: { color: '#e6eef8' }
+            }
+          }
+        }
+      });
+    }
+
+    // Update charts
+    function updateCharts() {
+      // Generate data for angle chart
+      const angleData = [];
+      for (let i = 0; i <= 90; i += 5) {
+        const incidenceRad = i * (Math.PI / 180);
+        const sinRefraction = (n1 * Math.sin(incidenceRad)) / n2;
+        
+        if (sinRefraction <= 1) {
+          angleData.push(Math.asin(sinRefraction) * (180 / Math.PI));
+        } else {
+          angleData.push(90);
+        }
+      }
+      
+      angleChart.data.datasets[0].data = angleData;
+      angleChart.update();
+      
+      // Generate data for Fresnel chart
+      const reflectionData = [];
+      const transmissionData = [];
+      
+      for (let i = 0; i <= 90; i += 5) {
+        const incidenceRad = i * (Math.PI / 180);
+        const sinRefraction = (n1 * Math.sin(incidenceRad)) / n2;
+        
+        if (sinRefraction <= 1) {
+          const refractionRad = Math.asin(sinRefraction);
+          
+          // Simplified Fresnel equations for unpolarized light
+          const rParallel = Math.pow(Math.tan(incidenceRad - refractionRad) / Math.tan(incidenceRad + refractionRad), 2);
+          const rPerpendicular = Math.pow(Math.sin(incidenceRad - refractionRad) / Math.sin(incidenceRad + refractionRad), 2);
+          const reflection = (rParallel + rPerpendicular) / 2;
+          
+          reflectionData.push(reflection * 100);
+          transmissionData.push((1 - reflection) * 100);
+        } else {
+          reflectionData.push(100);
+          transmissionData.push(0);
+        }
+      }
+      
+      fresnelChart.data.datasets[0].data = reflectionData;
+      fresnelChart.data.datasets[1].data = transmissionData;
+      fresnelChart.update();
+    }
+
+    // Start the application
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>

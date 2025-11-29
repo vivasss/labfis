@@ -1,0 +1,2194 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Deflexão de Partículas</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #071028;
+            --card: #0f1724;
+            --muted: #94a3b8;
+            --primary: #8a2be2;
+            --accent: #00bfff;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            color-scheme: dark;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: all 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: system-ui, 'Segoe UI', Roboto, Arial;
+            background: linear-gradient(180deg, #071028 0%, #071021 60%);
+            color: #e6eef8;
+            min-height: 100vh;
+            overflow-x: hidden;
+            touch-action: manipulation;
+            padding: 0;
+        }
+
+        header {
+            padding: 16px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            animation: fadeIn 0.8s ease-out;
+            position: sticky;
+            top: 0;
+            background: var(--bg);
+            z-index: 100;
+        }
+
+        h1 {
+            font-size: 18px;
+            margin: 0;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGlow 3s infinite alternate;
+        }
+
+        .tab-container {
+            display: flex;
+            background: var(--card);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .tab {
+            padding: 10px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            flex: 1;
+            text-align: center;
+            min-width: 0;
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            font-weight: 700;
+            box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
+        }
+
+        .tab::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        .tab.active::after {
+            width: 100%;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 18px;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 18px;
+            height: calc(100vh - 134px);
+            padding: 0 18px 18px;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        .simulation-container {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .simulation-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(138, 43, 226, 0.05) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+            pointer-events: none;
+        }
+
+        #simCanvas {
+            width: 100%;
+            height: 560px;
+            border-radius: 8px;
+            background: transparent;
+            display: block;
+            animation: canvasAppear 1s ease-out;
+            touch-action: none;
+            cursor: pointer;
+        }
+
+        .info-panel {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .info-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            border-left: 3px solid var(--primary);
+            position: relative;
+            overflow: hidden;
+            animation: cardSlideIn 0.5s ease-out;
+        }
+
+        .info-card:nth-child(2) {
+            border-left-color: var(--accent);
+            animation-delay: 0.1s;
+        }
+
+        .info-card:nth-child(3) {
+            border-left-color: var(--success);
+            animation-delay: 0.2s;
+        }
+
+        .info-card:nth-child(4) {
+            border-left-color: var(--warning);
+            animation-delay: 0.3s;
+        }
+
+        .info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .info-card:hover::before {
+            left: 100%;
+        }
+
+        .info-card .label {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .info-card .value {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .controls {
+            background: var(--card);
+            padding: 16px;
+            border-radius: 12px;
+            height: 100%;
+            overflow-y: auto;
+            animation: slideInRight 0.6s ease-out;
+        }
+
+        .controls::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .controls::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        .controls::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 3px;
+        }
+
+        .group {
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .group:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .group:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+
+        .group:nth-child(4) {
+            animation-delay: 0.3s;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        input[type='range'] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type='range']::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+            transition: all 0.2s ease;
+        }
+
+        input[type='range']::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(138, 43, 226, 0.8);
+        }
+
+        input[type='number'],
+        select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.02);
+            color: inherit;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+            font-size: 16px; /* Melhor para mobile */
+        }
+
+        input[type='number']:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2);
+        }
+
+        .row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background: linear-gradient(90deg, var(--primary), #6a0dad);
+            border: 0;
+            padding: 10px 12px;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            font-size: 16px; /* Melhor para mobile */
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: linear-gradient(90deg, #444, #666);
+        }
+
+        button.secondary:hover {
+            box-shadow: 0 5px 15px rgba(102, 102, 102, 0.4);
+        }
+
+        .muted {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .chart-panel {
+            background: var(--card);
+            border-radius: 10px;
+            padding: 12px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .chart-panel:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .chart-container {
+            height: 240px;
+            width: 100%;
+        }
+
+        .explanation-container {
+            padding: 18px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .explanation-content {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            margin-bottom: 18px;
+        }
+
+        .explanation-content h2 {
+            margin-bottom: 15px;
+            color: var(--accent);
+            font-size: 1.5rem;
+        }
+
+        .explanation-content h3 {
+            margin: 20px 0 10px;
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        .explanation-content p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .explanation-content ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .explanation-content li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .highlight {
+            background: linear-gradient(90deg, transparent, rgba(138, 43, 226, 0.1), transparent);
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .formula {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+            text-align: center;
+            border-left: 3px solid var(--accent);
+        }
+
+        .example {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 3px solid var(--success);
+        }
+
+        .concept-card {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 3px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .concept-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .touch-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 80%;
+            z-index: 5;
+            animation: pulse 2s infinite;
+        }
+
+        /* Botão de ajuda flutuante */
+        .help-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            transition: all 0.3s ease;
+            border: none;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .help-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(138, 43, 226, 0.5);
+        }
+
+        .help-button:active {
+            transform: scale(0.95);
+        }
+
+        /* Painel de ajuda */
+        .help-panel {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 320px;
+            max-height: 70vh;
+            background: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            overflow-y: auto;
+            transform: translateY(20px);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .help-panel.active {
+            transform: translateY(0);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .help-panel h2 {
+            margin-bottom: 15px;
+            color: var(--accent);
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .help-panel h3 {
+            margin: 15px 0 8px;
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .help-panel p {
+            margin-bottom: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .help-panel ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .help-panel li {
+            margin-bottom: 6px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .help-panel .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--muted);
+            font-size: 20px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .help-panel .close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        footer {
+            padding: 12px 20px;
+            font-size: 13px;
+            color: var(--muted);
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            animation: fadeIn 1s ease-out;
+        }
+
+        /* Animações personalizadas */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes canvasAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes cardSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes textGlow {
+            0% {
+                text-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+            }
+            100% {
+                text-shadow: 0 0 15px rgba(0, 191, 255, 0.8), 0 0 20px rgba(138, 43, 226, 0.6);
+            }
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.7;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0.7;
+            }
+        }
+
+        /* Novos estilos para melhorar usabilidade */
+        .control-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .control-buttons button {
+            flex: 1;
+            padding: 12px 8px;
+            font-size: 14px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .slider-container input[type="range"] {
+            flex: 1;
+        }
+
+        .slider-value {
+            min-width: 40px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .quick-action-btn {
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .quick-action-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--accent);
+        }
+
+        .quick-action-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Indicador de toque */
+        .touch-indicator {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid var(--accent);
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0;
+            transform: scale(0);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+
+        .touch-indicator.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Responsividade - Melhorias para mobile */
+        @media (max-width: 1024px) {
+            main {
+                grid-template-columns: 1fr;
+                height: auto;
+                padding-bottom: 18px;
+            }
+            
+            #simCanvas {
+                height: 420px;
+            }
+            
+            .info-panel {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .help-panel {
+                width: 280px;
+                right: 10px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .info-panel {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 12px 15px;
+            }
+            
+            .tab-container {
+                width: 100%;
+                margin-top: 8px;
+            }
+            
+            .tab {
+                flex: 1;
+                text-align: center;
+                padding: 10px 8px;
+                font-size: 13px;
+            }
+            
+            .simulation-container {
+                padding: 8px;
+            }
+            
+            #simCanvas {
+                height: 60vh;
+                min-height: 350px;
+            }
+            
+            .controls {
+                padding: 12px;
+            }
+            
+            button {
+                padding: 12px 16px;
+                font-size: 16px;
+            }
+            
+            .help-button {
+                width: 50px;
+                height: 50px;
+                bottom: 15px;
+                right: 15px;
+                font-size: 20px;
+            }
+            
+            .help-panel {
+                width: calc(100% - 30px);
+                right: 15px;
+                bottom: 75px;
+                max-height: 60vh;
+            }
+
+            .control-buttons {
+                flex-direction: column;
+            }
+
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .explanation-content {
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #simCanvas {
+                height: 50vh;
+                min-height: 300px;
+            }
+            
+            .touch-hint {
+                font-size: 14px;
+                padding: 12px;
+            }
+
+            .group {
+                margin-bottom: 15px;
+                padding-bottom: 10px;
+            }
+
+            .tab-content {
+                padding: 12px;
+            }
+
+            .info-panel {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .info-card {
+                padding: 8px;
+            }
+
+            .info-card .value {
+                font-size: 0.9rem;
+            }
+
+            .slider-container {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+
+            .slider-value {
+                align-self: flex-end;
+            }
+
+            .control-buttons button {
+                padding: 14px 12px;
+                font-size: 15px;
+            }
+
+            .charts-container {
+                gap: 10px;
+            }
+
+            .chart-container {
+                height: 200px;
+            }
+        }
+
+        @media (max-height: 700px) {
+            #simCanvas {
+                height: 45vh;
+            }
+        }
+
+        @media (max-width: 360px) {
+            header {
+                padding: 10px 12px;
+            }
+
+            .tab {
+                padding: 8px 6px;
+                font-size: 12px;
+            }
+
+            .tab-content {
+                padding: 10px;
+            }
+
+            #simCanvas {
+                height: 45vh;
+                min-height: 250px;
+            }
+
+            .control-buttons button {
+                padding: 12px 10px;
+                font-size: 14px;
+            }
+
+            .help-panel {
+                width: calc(100% - 20px);
+                right: 10px;
+                padding: 15px;
+            }
+        }
+
+        /* Melhorias de acessibilidade e usabilidade */
+        .mobile-controls-overlay {
+            display: none;
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(15, 23, 36, 0.8);
+            border-radius: 10px;
+            padding: 10px;
+            z-index: 5;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .mobile-controls-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .mobile-controls-buttons button {
+            flex: 1;
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-controls-overlay {
+                display: block;
+            }
+        }
+
+        /* Melhorias de toque para controles deslizantes */
+        input[type="range"] {
+            touch-action: pan-y;
+        }
+
+        /* Melhorias para evitar zoom em inputs */
+        input, select, textarea {
+            font-size: 16px; /* Previne zoom no iOS */
+        }
+
+        /* Melhorias de foco para acessibilidade */
+        button:focus, input:focus, select:focus {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Simulador de Deflexão de Partículas</h1>
+        <div class="tab-container">
+            <div class="tab active" data-tab="simulation">Simulação</div>
+            <div class="tab" data-tab="charts">Gráficos</div>
+            <div class="tab" data-tab="explanation">Explicação</div>
+        </div>
+    </header>
+
+    <div class="tab-content active" id="simulation-tab">
+        <main>
+            <div class="simulation-container">
+                <canvas id="simCanvas"></canvas>
+                
+                <div class="touch-hint" id="touchHint">
+                    <p>💡 Arraste para alterar a posição inicial</p>
+                    <p>Use dois dedos para ajustar a velocidade</p>
+                </div>
+
+                <!-- Controles móveis adicionais -->
+                <div class="mobile-controls-overlay">
+                    <div class="mobile-controls-buttons">
+                        <button id="mobileStartBtn">Iniciar</button>
+                        <button id="mobilePauseBtn" class="secondary">Pausar</button>
+                        <button id="mobileResetBtn" class="secondary">Resetar</button>
+                    </div>
+                </div>
+
+                <div class="info-panel">
+                    <div class="info-card">
+                        <div class="label">Posição X</div>
+                        <div class="value" id="positionXValue">0.0</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="label">Posição Y</div>
+                        <div class="value" id="positionYValue">0.0</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="label">Velocidade</div>
+                        <div class="value" id="velocityValue">0.0</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="label">Força de Lorentz</div>
+                        <div class="value" id="lorentzForceValue">0.0</div>
+                    </div>
+                </div>
+
+                <div class="control-buttons">
+                    <button id="startBtn">Iniciar</button>
+                    <button id="pauseBtn" class="secondary">Pausar</button>
+                    <button id="resetBtn" class="secondary">Resetar</button>
+                </div>
+            </div>
+
+            <aside class="controls">
+                <div class="group">
+                    <label><strong>Tipo de Partícula</strong></label>
+                    <select id="particleType">
+                        <option value="electron">Elétron</option>
+                        <option value="proton">Próton</option>
+                        <option value="alpha">Partícula Alfa</option>
+                    </select>
+                </div>
+
+                <div class="group">
+                    <label><strong>Parâmetros Físicos</strong></label>
+                    
+                    <div class="slider-container">
+                        <label class="small">Velocidade X</label>
+                        <input id="velocity" type="range" min="0.1" max="10" step="0.1" value="2.0">
+                        <div class="slider-value" id="velocityValueDisplay">2.0</div>
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label class="small">Velocidade Y</label>
+                        <input id="velocityY" type="range" min="-5" max="5" step="0.1" value="0.0">
+                        <div class="slider-value" id="velocityYValueDisplay">0.0</div>
+                    </div>
+                    
+                    <div class="slider-container">
+                        <label class="small">Amortecimento</label>
+                        <input id="damping" type="range" min="0" max="0.1" step="0.001" value="0.0">
+                        <div class="slider-value" id="dampingValueDisplay">0.0</div>
+                    </div>
+                </div>
+
+                <div class="group">
+                    <label><strong>Campo Elétrico</strong></label>
+                    
+                    <div class="slider-container">
+                        <label class="small">Intensidade (kV/m)</label>
+                        <input id="eField" type="range" min="0" max="100" step="1" value="0">
+                        <div class="slider-value" id="eFieldValueDisplay">0</div>
+                    </div>
+                    
+                    <label class="small"><input id="showEField" type="checkbox" checked> Mostrar campo</label>
+                    
+                    <label class="small">Direção</label>
+                    <select id="eFieldDirection">
+                        <option value="vertical">Vertical</option>
+                        <option value="horizontal">Horizontal</option>
+                    </select>
+                </div>
+
+                <div class="group">
+                    <label><strong>Campo Magnético</strong></label>
+                    
+                    <div class="slider-container">
+                        <label class="small">Intensidade (mT)</label>
+                        <input id="bField" type="range" min="0" max="100" step="1" value="0">
+                        <div class="slider-value" id="bFieldValueDisplay">0</div>
+                    </div>
+                    
+                    <label class="small"><input id="showBField" type="checkbox" checked> Mostrar campo</label>
+                    
+                    <label class="small">Direção</label>
+                    <select id="bFieldDirection">
+                        <option value="into">Para dentro da tela</option>
+                        <option value="out">Para fora da tela</option>
+                    </select>
+                </div>
+
+                <div class="group">
+                    <label><strong>Visual</strong></label>
+                    <label class="small"><input id="trail" type="checkbox" checked> Mostrar rastro</label>
+                    <label class="small"><input id="vectors" type="checkbox"> Mostrar vetores</label>
+                    <label class="small"><input id="touchHintToggle" type="checkbox"> Mostrar dicas</label>
+                </div>
+
+                <div class="quick-actions">
+                    <div class="quick-action-btn" id="preset1">Campo Elétrico</div>
+                    <div class="quick-action-btn" id="preset2">Campo Magnético</div>
+                    <div class="quick-action-btn" id="preset3">Ambos Campos</div>
+                    <div class="quick-action-btn" id="preset4">Sem Campos</div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <div class="tab-content" id="charts-tab">
+        <div class="charts-container" style="padding:12px 18px;">
+            <div class="chart-panel">
+                <h3 style="margin:0 0 8px 0">Trajetória</h3>
+                <div class="chart-container"><canvas id="trajectoryChart"></canvas></div>
+            </div>
+
+            <div class="chart-panel" style="margin-top:10px">
+                <h3 style="margin:0 0 8px 0">Velocidade</h3>
+                <div class="chart-container"><canvas id="velocityChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="explanation-tab">
+        <div class="explanation-container">
+            <div class="explanation-content">
+                <h2>Como Usar o Simulador</h2>
+                <p>Este simulador permite explorar como partículas carregadas são desviadas por campos elétricos e magnéticos:</p>
+                
+                <div class="concept-card">
+                    <h3>Interação Direta</h3>
+                    <p>Arraste a partícula para alterar sua posição inicial. Use dois dedos para ajustar sua velocidade diretamente na tela.</p>
+                </div>
+                
+                <div class="concept-card">
+                    <h3>Controles</h3>
+                    <p>Use os botões Iniciar, Pausar e Resetar para controlar a simulação. Ajuste os parâmetros físicos nos controles laterais para ver como afetam o movimento.</p>
+                </div>
+                
+                <p>Experimente diferentes configurações e observe como as partículas se comportam em campos elétricos e magnéticos!</p>
+            </div>
+
+            <div class="explanation-content">
+                <h2>O que é a Força de Lorentz?</h2>
+                <p>A força de Lorentz é a força exercida sobre uma partícula carregada que se move através de campos elétricos e magnéticos. É descrita pela fórmula:</p>
+                
+                <div class="formula">
+                    F = q(E + v × B)
+                </div>
+                
+                <p>Onde:</p>
+                <ul>
+                    <li><span class="highlight">F</span> é a força resultante na partícula</li>
+                    <li><span class="highlight">q</span> é a carga da partícula</li>
+                    <li><span class="highlight">E</span> é o vetor campo elétrico</li>
+                    <li><span class="highlight">v</span> é o vetor velocidade da partícula</li>
+                    <li><span class="highlight">B</span> é o vetor campo magnético</li>
+                </ul>
+                
+                <div class="concept-card">
+                    <h3>Campo Elétrico</h3>
+                    <p>Um campo elétrico exerce uma força na direção do campo para partículas positivas e na direção oposta para partículas negativas. A força é sempre paralela ao campo elétrico.</p>
+                </div>
+                
+                <div class="concept-card">
+                    <h3>Campo Magnético</h3>
+                    <p>Um campo magnético exerce uma força perpendicular tanto à velocidade da partícula quanto ao campo magnético (regra da mão direita). Partículas com carga oposta são defletidas em direções opostas.</p>
+                </div>
+            </div>
+
+            <div class="explanation-content">
+                <h2>Tipos de Partículas</h2>
+                
+                <div class="concept-card">
+                    <h3>Elétron</h3>
+                    <p>O elétron tem carga negativa (-1.6×10⁻¹⁹ C) e massa muito pequena (9.1×10⁻³¹ kg). Em campos elétricos, é acelerado na direção oposta ao campo. Em campos magnéticos, segue uma trajetória curva de acordo com a regra da mão direita invertida.</p>
+                </div>
+                
+                <div class="concept-card">
+                    <h3>Próton</h3>
+                    <p>O próton tem carga positiva (+1.6×10⁻¹⁹ C) e massa muito maior que o elétron (1.67×10⁻²⁷ kg). Em campos elétricos, é acelerado na direção do campo. Em campos magnéticos, segue uma trajetória curva de acordo com a regra da mão direita padrão.</p>
+                </div>
+                
+                <div class="concept-card">
+                    <h3>Partícula Alfa</h3>
+                    <p>A partícula alfa consiste em dois prótons e dois nêutrons, tendo carga positiva (+3.2×10⁻¹⁹ C) e massa ainda maior (6.64×10⁻²⁷ kg). Por ter o dobro da carga do próton, sofre maior deflexão em campos elétricos e magnéticos.</p>
+                </div>
+            </div>
+
+            <div class="explanation-content">
+                <h2>Aplicações Práticas</h2>
+                
+                <div class="concept-card">
+                    <h3>Tubo de Raios Catódicos</h3>
+                    <p>Usado em televisores e monitores antigos para deflectir elétrons e formar imagens na tela. Campos elétricos controlam a posição do feixe de elétrons.</p>
+                </div>
+                
+                <div class="concept-card">
+                    <h3>Espectrômetros de Massa</h3>
+                    <p>Separam partículas com base na relação carga/massa. Partículas com diferentes massas são defletidas de forma diferente por campos magnéticos.</p>
+                </div>
+                
+                <div class="concept-card">
+                    <h3>Aceleradores de Partículas</h3>
+                    <p>Usam campos elétricos e magnéticos para acelerar e focalizar feixes de partículas carregadas em experiências de física de alta energia.</p>
+                </div>
+                
+                <div class="concept-card">
+                    <h3>Fusão Nuclear</h3>
+                    <p>Campos magnéticos são usados para confinar plasma em reatores de fusão, impedindo que as partículas carregadas toquem as paredes do reator.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botão de ajuda flutuante -->
+    <button class="help-button" id="helpButton">?</button>
+
+    <!-- Painel de ajuda -->
+    <div class="help-panel" id="helpPanel">
+        <button class="close-btn" id="closeHelp">&times;</button>
+        <h2>💡 Como Usar o Simulador</h2>
+        
+        <h3>Controles Interativos</h3>
+        <p>Você pode interagir diretamente com a partícula:</p>
+        <ul>
+            <li><strong>Arraste</strong> para alterar a posição inicial</li>
+            <li><strong>Use dois dedos</strong> para ajustar a velocidade</li>
+            <li><strong>Toque na partícula</strong> para pausar/retomar</li>
+        </ul>
+        
+        <h3>Tipos de Partículas</h3>
+        <p><strong>Elétron:</strong> Carga negativa, massa pequena</p>
+        <p><strong>Próton:</strong> Carga positiva, massa maior</p>
+        <p><strong>Partícula Alfa:</strong> Carga positiva dupla, massa maior ainda</p>
+        
+        <h3>Parâmetros Ajustáveis</h3>
+        <ul>
+            <li><strong>Velocidade:</strong> Controla a velocidade inicial da partícula</li>
+            <li><strong>Campo Elétrico:</strong> Afeta partículas de acordo com sua carga</li>
+            <li><strong>Campo Magnético:</strong> Desvia partículas em movimento</li>
+            <li><strong>Amortecimento:</strong> Simula a perda de energia por atrito</li>
+        </ul>
+        
+        <h3>Fórmula Importante</h3>
+        <div class="formula">F = q(E + v × B)</div>
+        <p>Força de Lorentz, onde q é a carga, E é o campo elétrico, v é a velocidade e B é o campo magnético.</p>
+        
+        <p style="margin-top: 15px; font-style: italic; text-align: center;">
+            Explore diferentes configurações e observe como as partículas se comportam!
+        </p>
+    </div>
+
+    <footer>Simulador de Deflexão de Partículas — HTML5 & Canvas & Chart.js</footer>
+
+    <script>
+        // Canvas and context
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Charts variables (will be initialized later)
+        let trajectoryChart, velocityChart;
+
+        // Chart data buffers
+        const chartData = { 
+            time: [], 
+            x: [], 
+            y: [], 
+            vx: [], 
+            vy: [], 
+            speed: [] 
+        };
+        const maxDataPoints = 200;
+
+        // Controls
+        const particleType = document.getElementById('particleType');
+        const velocityInput = document.getElementById('velocity');
+        const velocityYInput = document.getElementById('velocityY');
+        const dampingInput = document.getElementById('damping');
+        const eFieldInput = document.getElementById('eField');
+        const bFieldInput = document.getElementById('bField');
+        const eFieldDirection = document.getElementById('eFieldDirection');
+        const bFieldDirection = document.getElementById('bFieldDirection');
+        const showEField = document.getElementById('showEField');
+        const showBField = document.getElementById('showBField');
+
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const trailChk = document.getElementById('trail');
+        const vectorsChk = document.getElementById('vectors');
+        const touchHintToggle = document.getElementById('touchHintToggle');
+        const touchHint = document.getElementById('touchHint');
+
+        // Mobile controls
+        const mobileStartBtn = document.getElementById('mobileStartBtn');
+        const mobilePauseBtn = document.getElementById('mobilePauseBtn');
+        const mobileResetBtn = document.getElementById('mobileResetBtn');
+
+        // Slider value displays
+        const velocityValueDisplay = document.getElementById('velocityValueDisplay');
+        const velocityYValueDisplay = document.getElementById('velocityYValueDisplay');
+        const dampingValueDisplay = document.getElementById('dampingValueDisplay');
+        const eFieldValueDisplay = document.getElementById('eFieldValueDisplay');
+        const bFieldValueDisplay = document.getElementById('bFieldValueDisplay');
+
+        // Info displays
+        const positionXValue = document.getElementById('positionXValue');
+        const positionYValue = document.getElementById('positionYValue');
+        const velocityValue = document.getElementById('velocityValue');
+        const lorentzForceValue = document.getElementById('lorentzForceValue');
+
+        // Help elements
+        const helpButton = document.getElementById('helpButton');
+        const helpPanel = document.getElementById('helpPanel');
+        const closeHelp = document.getElementById('closeHelp');
+
+        // Quick action buttons
+        const preset1 = document.getElementById('preset1');
+        const preset2 = document.getElementById('preset2');
+        const preset3 = document.getElementById('preset3');
+        const preset4 = document.getElementById('preset4');
+
+        // Simulation state
+        let running = true;
+        let lastTime = null;
+        let trailPoints = [];
+        let chartTime = 0;
+
+        // Touch interaction state
+        let isDragging = false;
+        let isPinching = false;
+        let initialPinchDistance = 0;
+        let initialVelocity = 0;
+        let touchHintTimeout = null;
+
+        // Touch indicator
+        const touchIndicator = document.createElement('div');
+        touchIndicator.className = 'touch-indicator';
+        document.body.appendChild(touchIndicator);
+
+        // Physical constants
+        const ELEMENTARY_CHARGE = 1.6e-19; // C
+        const ELECTRON_MASS = 9.1e-31; // kg
+        const PROTON_MASS = 1.67e-27; // kg
+        const ALPHA_MASS = 6.64e-27; // kg
+
+        // Scaling factors for simulation (to make it visible on screen)
+        const SCALE_FACTOR = 1e-12;
+        const FORCE_SCALE = 1e-15;
+
+        // Particle properties
+        const particleProperties = {
+            electron: {
+                charge: -ELEMENTARY_CHARGE,
+                mass: ELECTRON_MASS,
+                color: '#4fc3f7',
+                size: 8
+            },
+            proton: {
+                charge: ELEMENTARY_CHARGE,
+                mass: PROTON_MASS,
+                color: '#f44336',
+                size: 12
+            },
+            alpha: {
+                charge: 2 * ELEMENTARY_CHARGE,
+                mass: ALPHA_MASS,
+                color: '#ff9800',
+                size: 16
+            }
+        };
+
+        // Particle state
+        let particle = {
+            type: 'electron',
+            x: 100,
+            y: 300,
+            vx: 2.0,
+            vy: 0.0,
+            properties: particleProperties.electron
+        };
+
+        // Field properties
+        let eField = {
+            strength: 0.0, // kV/m
+            direction: 'vertical',
+            show: true
+        };
+
+        let bField = {
+            strength: 0.0, // mT
+            direction: 'into',
+            show: true
+        };
+
+        // Resize canvas properly for high-dpi
+        function resizeCanvas(){
+            const ratio = devicePixelRatio || 1;
+            canvas.width = canvas.clientWidth * ratio;
+            canvas.height = canvas.clientHeight * ratio;
+            ctx.setTransform(ratio,0,0,ratio,0,0);
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        // Tabs
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const id = tab.getAttribute('data-tab');
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(id + '-tab').classList.add('active');
+                
+                // Animate content when switching to explanation tab
+                if (id === 'explanation') {
+                    document.querySelectorAll('.explanation-content').forEach((content, index) => {
+                        content.style.animation = `slideUp 0.6s ease-out ${index * 0.1}s both`;
+                    });
+                }
+            });
+        });
+
+        // Help panel functionality
+        helpButton.addEventListener('click', () => {
+            helpPanel.classList.toggle('active');
+        });
+
+        closeHelp.addEventListener('click', () => {
+            helpPanel.classList.remove('active');
+        });
+
+        // Close help panel when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!helpPanel.contains(e.target) && e.target !== helpButton) {
+                helpPanel.classList.remove('active');
+            }
+        });
+
+        // Touch hint toggle
+        touchHintToggle.addEventListener('change', () => {
+            if (touchHintToggle.checked) {
+                touchHint.style.display = 'block';
+                // Auto-hide after 5 seconds
+                clearTimeout(touchHintTimeout);
+                touchHintTimeout = setTimeout(() => {
+                    touchHint.style.display = 'none';
+                    touchHintToggle.checked = false;
+                }, 5000);
+            } else {
+                touchHint.style.display = 'none';
+            }
+        });
+
+        // Update slider displays
+        function updateSliderDisplays() {
+            velocityValueDisplay.textContent = velocityInput.value;
+            velocityYValueDisplay.textContent = velocityYInput.value;
+            dampingValueDisplay.textContent = parseFloat(dampingInput.value).toFixed(3);
+            eFieldValueDisplay.textContent = eFieldInput.value;
+            bFieldValueDisplay.textContent = bFieldInput.value;
+        }
+
+        // Quick action presets
+        preset1.addEventListener('click', () => {
+            eFieldInput.value = 50;
+            bFieldInput.value = 0;
+            updateParams();
+            updateSliderDisplays();
+            highlightActivePreset(preset1);
+        });
+
+        preset2.addEventListener('click', () => {
+            eFieldInput.value = 0;
+            bFieldInput.value = 50;
+            updateParams();
+            updateSliderDisplays();
+            highlightActivePreset(preset2);
+        });
+
+        preset3.addEventListener('click', () => {
+            eFieldInput.value = 50;
+            bFieldInput.value = 50;
+            updateParams();
+            updateSliderDisplays();
+            highlightActivePreset(preset3);
+        });
+
+        preset4.addEventListener('click', () => {
+            eFieldInput.value = 0;
+            bFieldInput.value = 0;
+            updateParams();
+            updateSliderDisplays();
+            highlightActivePreset(preset4);
+        });
+
+        function highlightActivePreset(activePreset) {
+            [preset1, preset2, preset3, preset4].forEach(preset => {
+                preset.classList.remove('active');
+            });
+            activePreset.classList.add('active');
+        }
+
+        // Mobile controls
+        mobileStartBtn.addEventListener('click', () => {
+            running = true; 
+            lastTime = null; 
+            chartTime = 0; 
+            clearChartBuffers();
+        });
+
+        mobilePauseBtn.addEventListener('click', () => {
+            running = false;
+        });
+
+        mobileResetBtn.addEventListener('click', () => {
+            resetSimulation();
+        });
+
+        // Touch interaction handlers
+        function handleTouchStart(e) {
+            e.preventDefault();
+            
+            // Show touch indicator
+            const touch = e.touches[0];
+            touchIndicator.style.left = (touch.clientX - 20) + 'px';
+            touchIndicator.style.top = (touch.clientY - 20) + 'px';
+            touchIndicator.classList.add('active');
+            
+            if (e.touches.length === 1) {
+                // Single touch - check if we're touching the particle
+                const rect = canvas.getBoundingClientRect();
+                const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
+                const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+                
+                const distance = Math.sqrt((x - particle.x) ** 2 + (y - particle.y) ** 2);
+                
+                if (distance < particle.properties.size * 3) { // Larger touch area
+                    isDragging = true;
+                    // Pause simulation while dragging
+                    running = false;
+                }
+            } else if (e.touches.length === 2) {
+                // Two touches - pinch to adjust velocity
+                isPinching = true;
+                isDragging = false;
+                
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                const rect = canvas.getBoundingClientRect();
+                
+                const x1 = (touch1.clientX - rect.left) * (canvas.width / rect.width);
+                const y1 = (touch1.clientY - rect.top) * (canvas.height / rect.height);
+                const x2 = (touch2.clientX - rect.left) * (canvas.width / rect.width);
+                const y2 = (touch2.clientY - rect.top) * (canvas.height / rect.height);
+                
+                initialPinchDistance = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+                initialVelocity = Math.sqrt(particle.vx * particle.vx + particle.vy * particle.vy);
+                
+                // Show second touch indicator
+                const touchIndicator2 = document.createElement('div');
+                touchIndicator2.className = 'touch-indicator';
+                touchIndicator2.style.left = (touch2.clientX - 20) + 'px';
+                touchIndicator2.style.top = (touch2.clientY - 20) + 'px';
+                touchIndicator2.classList.add('active');
+                document.body.appendChild(touchIndicator2);
+                touchIndicator2.dataset.id = 'touch2';
+            }
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            
+            // Update touch indicator position
+            const touch = e.touches[0];
+            touchIndicator.style.left = (touch.clientX - 20) + 'px';
+            touchIndicator.style.top = (touch.clientY - 20) + 'px';
+            
+            if (isDragging && e.touches.length === 1) {
+                // Drag the particle
+                const rect = canvas.getBoundingClientRect();
+                const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
+                const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+                
+                particle.x = x;
+                particle.y = y;
+                particle.vx = 0;
+                particle.vy = 0;
+                
+                renderOnce();
+            } else if (isPinching && e.touches.length === 2) {
+                // Adjust velocity with pinch
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                const rect = canvas.getBoundingClientRect();
+                
+                const x1 = (touch1.clientX - rect.left) * (canvas.width / rect.width);
+                const y1 = (touch1.clientY - rect.top) * (canvas.height / rect.height);
+                const x2 = (touch2.clientX - rect.left) * (canvas.width / rect.width);
+                const y2 = (touch2.clientY - rect.top) * (canvas.height / rect.height);
+                
+                const currentDistance = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+                const scaleFactor = currentDistance / initialPinchDistance;
+                
+                const newVelocity = Math.max(0.1, Math.min(10, initialVelocity * scaleFactor));
+                const angle = Math.atan2(particle.vy, particle.vx);
+                
+                particle.vx = newVelocity * Math.cos(angle);
+                particle.vy = newVelocity * Math.sin(angle);
+                
+                velocityInput.value = particle.vx.toFixed(1);
+                velocityYInput.value = particle.vy.toFixed(1);
+                updateSliderDisplays();
+                
+                renderOnce();
+                
+                // Update second touch indicator
+                const touchIndicator2 = document.querySelector('.touch-indicator[data-id="touch2"]');
+                if (touchIndicator2) {
+                    touchIndicator2.style.left = (touch2.clientX - 20) + 'px';
+                    touchIndicator2.style.top = (touch2.clientY - 20) + 'px';
+                }
+            }
+        }
+
+        function handleTouchEnd(e) {
+            // Hide touch indicators
+            touchIndicator.classList.remove('active');
+            const touchIndicator2 = document.querySelector('.touch-indicator[data-id="touch2"]');
+            if (touchIndicator2) {
+                touchIndicator2.remove();
+            }
+            
+            if (e.touches.length === 0) {
+                // All touches ended
+                isDragging = false;
+                isPinching = false;
+                running = true; // Resume simulation when touch ends
+            } else if (e.touches.length === 1 && isPinching) {
+                // One touch ended during pinch - switch to dragging with the remaining touch
+                isPinching = false;
+                isDragging = true;
+            }
+        }
+
+        // Add touch event listeners
+        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+        canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+        canvas.addEventListener('touchend', handleTouchEnd);
+        canvas.addEventListener('touchcancel', handleTouchEnd);
+
+        // Mouse interaction for desktop
+        let isMouseDown = false;
+
+        canvas.addEventListener('mousedown', (e) => {
+            isMouseDown = true;
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+            
+            const distance = Math.sqrt((x - particle.x) ** 2 + (y - particle.y) ** 2);
+            
+            if (distance < particle.properties.size * 3) { // Larger click area
+                isDragging = true;
+                running = false; // Pause simulation while dragging
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging && isMouseDown) {
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+                const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+                
+                particle.x = x;
+                particle.y = y;
+                particle.vx = 0;
+                particle.vy = 0;
+                
+                renderOnce();
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isMouseDown = false;
+            if (isDragging) {
+                isDragging = false;
+                running = true; // Resume simulation when mouse is released
+            }
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isMouseDown = false;
+            if (isDragging) {
+                isDragging = false;
+                running = true; // Resume simulation when mouse leaves canvas
+            }
+        });
+
+        // Charts initialization
+        function initCharts() {
+            const trajectoryCtx = document.getElementById('trajectoryChart').getContext('2d');
+            trajectoryChart = new Chart(trajectoryCtx, {
+                type: 'line',
+                data: {
+                    labels: chartData.time,
+                    datasets: [
+                        { label: 'Posição X', data: chartData.x, borderColor: '#8a2be2', backgroundColor: 'transparent', tension: .3 },
+                        { label: 'Posição Y', data: chartData.y, borderColor: '#ff2070', backgroundColor: 'transparent', tension: .3 }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { color: '#cbd5e1' }, title: { display: true, text: 'Tempo (s)', color: '#9ca3af' } },
+                        y: { ticks: { color: '#cbd5e1' }, title: { display: true, text: 'Posição', color: '#9ca3af' } }
+                    },
+                    plugins: { legend: { labels: { color: '#e6eef8' } } }
+                }
+            });
+
+            const velocityCtx = document.getElementById('velocityChart').getContext('2d');
+            velocityChart = new Chart(velocityCtx, {
+                type: 'line',
+                data: {
+                    labels: chartData.time,
+                    datasets: [
+                        { label: 'Velocidade X', data: chartData.vx, borderColor: '#00bfff', backgroundColor: 'transparent', tension: .3 },
+                        { label: 'Velocidade Y', data: chartData.vy, borderColor: '#10b981', backgroundColor: 'transparent', tension: .3 },
+                        { label: 'Velocidade Total', data: chartData.speed, borderColor: '#8a2be2', backgroundColor: 'transparent', tension: .3, borderDash: [5,5] }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { ticks: { color: '#cbd5e1' }, title: { display: true, text: 'Tempo (s)', color: '#9ca3af' } },
+                        y: { ticks: { color: '#cbd5e1' }, title: { display: true, text: 'Velocidade', color: '#9ca3af' } }
+                    },
+                    plugins: { legend: { labels: { color: '#e6eef8' } } }
+                }
+            });
+        }
+
+        // Update params from controls
+        function updateParams() {
+            particle.type = particleType.value;
+            particle.properties = particleProperties[particle.type];
+            
+            particle.vx = parseFloat(velocityInput.value);
+            particle.vy = parseFloat(velocityYInput.value);
+            
+            eField.strength = parseFloat(eFieldInput.value);
+            eField.direction = eFieldDirection.value;
+            eField.show = showEField.checked;
+            
+            bField.strength = parseFloat(bFieldInput.value);
+            bField.direction = bFieldDirection.value;
+            bField.show = showBField.checked;
+            
+            trailPoints = [];
+        }
+
+        // Attach input listeners
+        [
+            particleType, velocityInput, velocityYInput, 
+            eFieldInput, bFieldInput, eFieldDirection, bFieldDirection,
+            showEField, showBField
+        ].forEach(el => el.addEventListener('input', () => { 
+            updateParams(); 
+            updateSliderDisplays();
+            if (!running) renderOnce(); 
+        }));
+
+        // Buttons
+        startBtn.onclick = () => { 
+            running = true; 
+            lastTime = null; 
+            chartTime = 0; 
+            clearChartBuffers(); 
+        };
+        
+        pauseBtn.onclick = () => { 
+            running = false; 
+        };
+        
+        resetBtn.onclick = () => { 
+            resetSimulation(); 
+        };
+
+        function clearChartBuffers(){
+            chartData.time.length = 0; 
+            chartData.x.length = 0; 
+            chartData.y.length = 0; 
+            chartData.vx.length = 0; 
+            chartData.vy.length = 0;
+            chartData.speed.length = 0;
+            if (trajectoryChart) trajectoryChart.update();
+            if (velocityChart) velocityChart.update();
+        }
+
+        function resetSimulation(){
+            running = true;
+            particle.x = 100;
+            particle.y = 300;
+            updateParams();
+            chartTime = 0;
+            trailPoints = [];
+            clearChartBuffers();
+            renderOnce();
+        }
+
+        // Physics update
+        function updatePhysics(dt) {
+            const properties = particle.properties;
+            const damping = parseFloat(dampingInput.value);
+            
+            // Calculate forces
+            let fx = 0, fy = 0;
+            
+            // Electric field force (F = qE)
+            if (eField.strength > 0) {
+                // Convert kV/m to V/m and apply scaling
+                const eFieldV = eField.strength * 1000 * SCALE_FACTOR;
+                
+                if (eField.direction === 'vertical') {
+                    // Vertical field - force in y direction
+                    fy += properties.charge * eFieldV;
+                } else {
+                    // Horizontal field - force in x direction
+                    fx += properties.charge * eFieldV;
+                }
+            }
+            
+            // Magnetic field force (F = q(v × B))
+            if (bField.strength > 0) {
+                // Convert mT to T and apply scaling
+                const bFieldT = bField.strength * 0.001 * SCALE_FACTOR;
+                
+                // For B into the screen (negative z), v × B = (vy, -vx)
+                // For B out of the screen (positive z), v × B = (-vy, vx)
+                if (bField.direction === 'into') {
+                    fx += properties.charge * particle.vy * bFieldT;
+                    fy -= properties.charge * particle.vx * bFieldT;
+                } else {
+                    fx -= properties.charge * particle.vy * bFieldT;
+                    fy += properties.charge * particle.vx * bFieldT;
+                }
+            }
+            
+            // Apply damping
+            fx -= damping * particle.vx;
+            fy -= damping * particle.vy;
+            
+            // Update velocity (F = ma => a = F/m)
+            particle.vx += (fx / properties.mass) * dt * FORCE_SCALE;
+            particle.vy += (fy / properties.mass) * dt * FORCE_SCALE;
+            
+            // Update position
+            particle.x += particle.vx * dt;
+            particle.y += particle.vy * dt;
+            
+            // Calculate Lorentz force magnitude for display
+            const lorentzForce = Math.sqrt(fx * fx + fy * fy);
+            
+            // Boundary conditions - bounce instead of wrap around
+            const canvasWidth = canvas.width / (devicePixelRatio || 1);
+            const canvasHeight = canvas.height / (devicePixelRatio || 1);
+            
+            if (particle.x < 0) {
+                particle.x = 0;
+                particle.vx = -particle.vx * 0.8; // Bounce with energy loss
+            }
+            if (particle.x > canvasWidth) {
+                particle.x = canvasWidth;
+                particle.vx = -particle.vx * 0.8;
+            }
+            if (particle.y < 0) {
+                particle.y = 0;
+                particle.vy = -particle.vy * 0.8;
+            }
+            if (particle.y > canvasHeight) {
+                particle.y = canvasHeight;
+                particle.vy = -particle.vy * 0.8;
+            }
+            
+            return lorentzForce;
+        }
+
+        // Update info display
+        function updateInfo(lorentzForce){
+            positionXValue.textContent = particle.x.toFixed(1);
+            positionYValue.textContent = particle.y.toFixed(1);
+            velocityValue.textContent = Math.sqrt(particle.vx * particle.vx + particle.vy * particle.vy).toFixed(2);
+            lorentzForceValue.textContent = lorentzForce.toExponential(2);
+        }
+
+        // Update chart buffers and refresh charts
+        function pushChartData(){
+            if (chartData.time.length >= maxDataPoints) {
+                chartData.time.shift(); 
+                chartData.x.shift(); 
+                chartData.y.shift(); 
+                chartData.vx.shift(); 
+                chartData.vy.shift(); 
+                chartData.speed.shift();
+            }
+            chartData.time.push(chartTime.toFixed(2));
+            chartData.x.push(particle.x);
+            chartData.y.push(particle.y);
+            chartData.vx.push(particle.vx);
+            chartData.vy.push(particle.vy);
+            chartData.speed.push(Math.sqrt(particle.vx * particle.vx + particle.vy * particle.vy));
+
+            if (trajectoryChart) trajectoryChart.update();
+            if (velocityChart) velocityChart.update();
+        }
+
+        // Drawing the simulation
+        function renderOnce(){
+            // ensure canvas size matches CSS
+            resizeCanvas();
+
+            // Clear
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+
+            // Draw field lines
+            if (eField.show && eField.strength > 0) {
+                ctx.save();
+                ctx.globalAlpha = 0.3 + (eField.strength / 100) * 0.5;
+                ctx.strokeStyle = '#f44336';
+                ctx.lineWidth = 1;
+                
+                if (eField.direction === 'vertical') {
+                    // Vertical field lines
+                    for (let i = 0; i < 20; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(0, i * 30);
+                        ctx.lineTo(canvas.width / (devicePixelRatio || 1), i * 30);
+                        ctx.stroke();
+                    }
+                } else {
+                    // Horizontal field lines
+                    for (let i = 0; i < 20; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(i * 40, 0);
+                        ctx.lineTo(i * 40, canvas.height / (devicePixelRatio || 1));
+                        ctx.stroke();
+                    }
+                }
+                ctx.restore();
+            }
+            
+            if (bField.show && bField.strength > 0) {
+                ctx.save();
+                ctx.globalAlpha = 0.2 + (bField.strength / 100) * 0.5;
+                ctx.strokeStyle = '#3f51b5';
+                ctx.lineWidth = 1;
+                
+                // Draw magnetic field as circles with dots or crosses
+                for (let i = 0; i < 5; i++) {
+                    for (let j = 0; j < 8; j++) {
+                        const x = 50 + j * 80;
+                        const y = 50 + i * 100;
+                        const radius = 15;
+                        
+                        ctx.beginPath();
+                        ctx.arc(x, y, radius, 0, Math.PI * 2);
+                        ctx.stroke();
+                        
+                        // Draw direction indicator
+                        if (bField.direction === 'into') {
+                            // Draw cross for into the screen
+                            ctx.beginPath();
+                            ctx.moveTo(x - 5, y - 5);
+                            ctx.lineTo(x + 5, y + 5);
+                            ctx.moveTo(x + 5, y - 5);
+                            ctx.lineTo(x - 5, y + 5);
+                            ctx.stroke();
+                        } else {
+                            // Draw dot for out of the screen
+                            ctx.beginPath();
+                            ctx.arc(x, y, 3, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                }
+                ctx.restore();
+            }
+
+            // Draw trail
+            if (trailChk.checked && running) {
+                trailPoints.push({x: particle.x, y: particle.y});
+                if (trailPoints.length > 200) trailPoints.shift();
+                
+                if (trailPoints.length > 1) {
+                    ctx.beginPath(); 
+                    ctx.moveTo(trailPoints[0].x, trailPoints[0].y);
+                    for (let i = 1; i < trailPoints.length; i++) {
+                        ctx.lineTo(trailPoints[i].x, trailPoints[i].y);
+                    }
+                    ctx.strokeStyle = 'rgba(255,200,80,0.6)'; 
+                    ctx.lineWidth = 1.2; 
+                    ctx.stroke();
+                }
+            }
+
+            // Draw particle with different appearance when being dragged
+            ctx.beginPath(); 
+            ctx.arc(particle.x, particle.y, particle.properties.size, 0, Math.PI*2); 
+            
+            if (isDragging) {
+                ctx.fillStyle = '#ffffff'; // White when being dragged
+            } else {
+                ctx.fillStyle = particle.properties.color;
+            }
+            
+            ctx.fill();
+            
+            // Draw glow effect
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, particle.properties.size + 5, 0, Math.PI*2);
+            const gradient = ctx.createRadialGradient(
+                particle.x, particle.y, particle.properties.size,
+                particle.x, particle.y, particle.properties.size + 5
+            );
+            
+            if (isDragging) {
+                gradient.addColorStop(0, '#ffffff');
+                gradient.addColorStop(1, 'transparent');
+            } else {
+                gradient.addColorStop(0, particle.properties.color);
+                gradient.addColorStop(1, 'transparent');
+            }
+            
+            ctx.fillStyle = gradient;
+            ctx.fill();
+
+            // Draw vectors if enabled
+            if (vectorsChk.checked) {
+                // Velocity vector
+                const speed = Math.sqrt(particle.vx * particle.vx + particle.vy * particle.vy);
+                if (speed > 0.1) {
+                    const scale = 10;
+                    ctx.beginPath();
+                    ctx.moveTo(particle.x, particle.y);
+                    ctx.lineTo(particle.x + particle.vx * scale, particle.y + particle.vy * scale);
+                    ctx.strokeStyle = '#4caf50';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    // Arrowhead
+                    const angle = Math.atan2(particle.vy, particle.vx);
+                    ctx.beginPath();
+                    ctx.moveTo(particle.x + particle.vx * scale, particle.y + particle.vy * scale);
+                    ctx.lineTo(
+                        particle.x + particle.vx * scale - 5 * Math.cos(angle - Math.PI/6),
+                        particle.y + particle.vy * scale - 5 * Math.sin(angle - Math.PI/6)
+                    );
+                    ctx.lineTo(
+                        particle.x + particle.vx * scale - 5 * Math.cos(angle + Math.PI/6),
+                        particle.y + particle.vy * scale - 5 * Math.sin(angle + Math.PI/6)
+                    );
+                    ctx.closePath();
+                    ctx.fillStyle = '#4caf50';
+                    ctx.fill();
+                }
+                
+                // Force vector (Lorentz force)
+                const properties = particle.properties;
+                let fx = 0, fy = 0;
+                
+                // Electric field force
+                if (eField.strength > 0) {
+                    const eFieldV = eField.strength * 1000 * SCALE_FACTOR;
+                    
+                    if (eField.direction === 'vertical') {
+                        fy += properties.charge * eFieldV;
+                    } else {
+                        fx += properties.charge * eFieldV;
+                    }
+                }
+                
+                // Magnetic field force
+                if (bField.strength > 0) {
+                    const bFieldT = bField.strength * 0.001 * SCALE_FACTOR;
+                    
+                    if (bField.direction === 'into') {
+                        fx += properties.charge * particle.vy * bFieldT;
+                        fy -= properties.charge * particle.vx * bFieldT;
+                    } else {
+                        fx -= properties.charge * particle.vy * bFieldT;
+                        fy += properties.charge * particle.vx * bFieldT;
+                    }
+                }
+                
+                const forceMagnitude = Math.sqrt(fx * fx + fy * fy);
+                if (forceMagnitude > 1e-20) {
+                    const scale = 1e18; // Scale factor for visualization
+                    ctx.beginPath();
+                    ctx.moveTo(particle.x, particle.y);
+                    ctx.lineTo(particle.x + fx * scale, particle.y + fy * scale);
+                    ctx.strokeStyle = '#ff5722';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    // Arrowhead
+                    const angle = Math.atan2(fy, fx);
+                    ctx.beginPath();
+                    ctx.moveTo(particle.x + fx * scale, particle.y + fy * scale);
+                    ctx.lineTo(
+                        particle.x + fx * scale - 5 * Math.cos(angle - Math.PI/6),
+                        particle.y + fy * scale - 5 * Math.sin(angle - Math.PI/6)
+                    );
+                    ctx.lineTo(
+                        particle.x + fx * scale - 5 * Math.cos(angle + Math.PI/6),
+                        particle.y + fy * scale - 5 * Math.sin(angle + Math.PI/6)
+                    );
+                    ctx.closePath();
+                    ctx.fillStyle = '#ff5722';
+                    ctx.fill();
+                }
+            }
+        }
+
+        // Main draw loop
+        function loop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const dt = Math.min(0.03, (timestamp - lastTime) / 1000);
+            lastTime = timestamp;
+
+            if (running && !isDragging) {
+                const lorentzForce = updatePhysics(dt);
+                chartTime += dt;
+                pushChartData();
+                updateInfo(lorentzForce);
+            }
+
+            renderOnce();
+            requestAnimationFrame(loop);
+        }
+
+        // initial setup
+        function start() {
+            resizeCanvas();
+            initCharts();
+            updateParams();
+            updateSliderDisplays();
+            renderOnce();
+            requestAnimationFrame(loop);
+            
+            // Auto-hide touch hint after 5 seconds
+            touchHintTimeout = setTimeout(() => {
+                touchHint.style.display = 'none';
+            }, 5000);
+        }
+
+        start();
+    </script>
+</body>
+</html>

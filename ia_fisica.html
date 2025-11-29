@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IA de Física - Resolução de Problemas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .input-section,
+        .output-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .upload-area {
+            border: 3px dashed rgba(102, 126, 234, 0.5);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: rgba(118, 75, 162, 0.2);
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-preview {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            display: none;
+        }
+
+        .file-preview.active {
+            display: block;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 1em;
+            font-family: inherit;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .api-key-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 193, 7, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
+        .api-key-section input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 1em;
+            margin-top: 10px;
+        }
+
+        .api-key-section input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .api-key-info {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 5px;
+        }
+
+        .api-key-info a {
+            color: #ffc107;
+            text-decoration: none;
+        }
+
+        .api-key-info a:hover {
+            text-decoration: underline;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: rgba(102, 126, 234, 0.3);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .solution {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            min-height: 200px;
+            display: none;
+        }
+
+        .solution.active {
+            display: block;
+        }
+
+        .solution h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .solution-content {
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+
+        .error {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid rgba(244, 67, 54, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            color: #ff6b6b;
+            display: none;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        .examples {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .example-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .example-card {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .example-card:hover {
+            transform: translateY(-5px);
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.2);
+        }
+
+        .example-card h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .example-card p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 968px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .upload-area {
+                padding: 30px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            header {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .input-section,
+            .output-section,
+            .examples {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>🔬 IA de Física</h1>
+            <p class="subtitle">Resolva problemas de física com inteligência artificial</p>
+        </header>
+
+        <div class="main-content">
+            <div class="input-section">
+                <h2 class="section-title">📤 Envie seu Problema</h2>
+
+                <div class="api-key-section">
+                    <label for="apiKey"><strong>🔑 Chave API do Google Gemini:</strong></label>
+                    <input type="password" id="apiKey" placeholder="Cole sua API key aqui...">
+                    <p class="api-key-info">
+                        Não tem uma chave? <a href="https://makersuite.google.com/app/apikey" target="_blank">Obtenha
+                            gratuitamente aqui</a>
+                    </p>
+                </div>
+
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📁</div>
+                    <h3>Arraste uma imagem aqui</h3>
+                    <p>ou clique para selecionar</p>
+                    <p style="font-size: 0.9em; margin-top: 10px; opacity: 0.7;">Formatos suportados: JPG, PNG, WEBP</p>
+                    <input type="file" id="fileInput" accept="image/*">
+                </div>
+
+                <div class="file-preview" id="filePreview">
+                    <p><strong>Arquivo selecionado:</strong> <span id="fileName"></span></p>
+                    <img class="preview-image" id="previewImage" alt="Preview">
+                </div>
+
+                <label for="problemDescription"><strong>📝 Descreva o problema:</strong></label>
+                <textarea id="problemDescription"
+                    placeholder="Ex: Resolva este problema de cinemática...&#10;&#10;Ou deixe em branco para a IA analisar apenas a imagem."></textarea>
+
+                <button id="solveButton" onclick="solveProblem()">
+                    🚀 Resolver Problema
+                </button>
+            </div>
+
+            <div class="output-section">
+                <h2 class="section-title">💡 Solução</h2>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Analisando e resolvendo o problema...</p>
+                </div>
+
+                <div class="error" id="error">
+                    <strong>❌ Erro:</strong> <span id="errorMessage"></span>
+                </div>
+
+                <div class="solution" id="solution">
+                    <h3>📊 Solução Detalhada:</h3>
+                    <div class="solution-content" id="solutionContent"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="examples">
+            <h2 class="section-title">💡 Exemplos de Problemas</h2>
+            <div class="example-cards">
+                <div class="example-card"
+                    onclick="setExample('Um corpo de massa 2kg é lançado verticalmente para cima com velocidade inicial de 20 m/s. Considerando g = 10 m/s², calcule: a) altura máxima atingida, b) tempo de subida.')">
+                    <h4>Cinemática Vertical</h4>
+                    <p>Lançamento vertical para cima com cálculo de altura e tempo</p>
+                </div>
+                <div class="example-card"
+                    onclick="setExample('Uma força de 50N é aplicada em um corpo de 10kg em repouso sobre uma superfície sem atrito. Calcule a aceleração do corpo e a velocidade após 5 segundos.')">
+                    <h4>Dinâmica</h4>
+                    <p>Aplicação da Segunda Lei de Newton</p>
+                </div>
+                <div class="example-card"
+                    onclick="setExample('Um pêndulo simples de comprimento 1m oscila com pequena amplitude. Calcule o período de oscilação considerando g = 10 m/s².')">
+                    <h4>Movimento Harmônico</h4>
+                    <p>Cálculo do período de um pêndulo simples</p>
+                </div>
+                <div class="example-card"
+                    onclick="setExample('Um circuito possui uma resistência de 20Ω ligada a uma fonte de 120V. Calcule a corrente elétrica e a potência dissipada.')">
+                    <h4>Eletricidade</h4>
+                    <p>Lei de Ohm e cálculo de potência</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const filePreview = document.getElementById('filePreview');
+        const fileName = document.getElementById('fileName');
+        const previewImage = document.getElementById('previewImage');
+        const problemDescription = document.getElementById('problemDescription');
+        const solveButton = document.getElementById('solveButton');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const errorMessage = document.getElementById('errorMessage');
+        const solution = document.getElementById('solution');
+        const solutionContent = document.getElementById('solutionContent');
+        const apiKeyInput = document.getElementById('apiKey');
+
+        let selectedFile = null;
+
+        // Carregar API key do localStorage
+        const savedApiKey = localStorage.getItem('geminiApiKey');
+        if (savedApiKey) {
+            apiKeyInput.value = savedApiKey;
+        }
+
+        // Salvar API key no localStorage
+        apiKeyInput.addEventListener('change', () => {
+            localStorage.setItem('geminiApiKey', apiKeyInput.value);
+        });
+
+        // Upload de arquivo por clique
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFile(e.target.files[0]);
+        });
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        function handleFile(file) {
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                showError('Por favor, selecione um arquivo de imagem válido.');
+                return;
+            }
+
+            selectedFile = file;
+            fileName.textContent = file.name;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImage.src = e.target.result;
+                filePreview.classList.add('active');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function setExample(text) {
+            problemDescription.value = text;
+            problemDescription.focus();
+        }
+
+        async function solveProblem() {
+            const apiKey = apiKeyInput.value.trim();
+            const description = problemDescription.value.trim();
+
+            // Validações
+            if (!apiKey) {
+                showError('Por favor, insira sua chave API do Google Gemini.');
+                return;
+            }
+
+            if (!selectedFile && !description) {
+                showError('Por favor, envie uma imagem ou descreva o problema.');
+                return;
+            }
+
+            // Resetar UI
+            error.classList.remove('active');
+            solution.classList.remove('active');
+            loading.classList.add('active');
+            solveButton.disabled = true;
+
+            try {
+                let result;
+
+                if (selectedFile) {
+                    // Resolver com imagem
+                    result = await solveWithImage(apiKey, selectedFile, description);
+                } else {
+                    // Resolver apenas com texto
+                    result = await solveWithText(apiKey, description);
+                }
+
+                displaySolution(result);
+            } catch (err) {
+                showError(err.message || 'Erro ao processar a solicitação. Verifique sua API key e tente novamente.');
+            } finally {
+                loading.classList.remove('active');
+                solveButton.disabled = false;
+            }
+        }
+
+        async function solveWithImage(apiKey, imageFile, description) {
+            const base64Image = await fileToBase64(imageFile);
+            const base64Data = base64Image.split(',')[1];
+
+            const prompt = description
+                ? `Você é um professor de física especializado. Analise a imagem fornecida e resolva o problema descrito. Descrição adicional: ${description}\n\nPor favor, forneça uma solução detalhada incluindo:\n1. Dados fornecidos\n2. Fórmulas utilizadas\n3. Passo a passo da resolução\n4. Resposta final com unidades\n5. Explicação conceitual do fenômeno físico envolvido`
+                : `Você é um professor de física especializado. Analise a imagem fornecida e identifique o problema de física. Em seguida, forneça uma solução detalhada incluindo:\n1. Dados fornecidos\n2. Fórmulas utilizadas\n3. Passo a passo da resolução\n4. Resposta final com unidades\n5. Explicação conceitual do fenômeno físico envolvido`;
+
+            const requestBody = {
+                contents: [{
+                    parts: [
+                        { text: prompt },
+                        {
+                            inline_data: {
+                                mime_type: imageFile.type,
+                                data: base64Data
+                            }
+                        }
+                    ]
+                }]
+            };
+
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || 'Erro na API do Gemini');
+            }
+
+            const data = await response.json();
+            return data.candidates[0].content.parts[0].text;
+        }
+
+        async function solveWithText(apiKey, description) {
+            const prompt = `Você é um professor de física especializado. Resolva o seguinte problema de física:\n\n${description}\n\nPor favor, forneça uma solução detalhada incluindo:\n1. Dados fornecidos\n2. Fórmulas utilizadas\n3. Passo a passo da resolução\n4. Resposta final com unidades\n5. Explicação conceitual do fenômeno físico envolvido`;
+
+            const requestBody = {
+                contents: [{
+                    parts: [{ text: prompt }]
+                }]
+            };
+
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || 'Erro na API do Gemini');
+            }
+
+            const data = await response.json();
+            return data.candidates[0].content.parts[0].text;
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function displaySolution(text) {
+            solutionContent.textContent = text;
+            solution.classList.add('active');
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            error.classList.add('active');
+        }
+    </script>
+</body>
+
+</html>

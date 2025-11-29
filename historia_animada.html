@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>História da Física Animada</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #050b14, #0a1525);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 999;
+        }
+
+        .back-button {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 12px 24px;
+            border-radius: 50px;
+            color: white;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(-5px);
+        }
+
+        /* Story Container */
+        .story-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .scroll-text {
+            padding: 100px 50px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .sticky-visual {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #animationCanvas {
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Story Sections */
+        .story-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.3;
+            transition: opacity 0.5s ease;
+            padding: 50px 0;
+        }
+
+        .story-section.active {
+            opacity: 1;
+        }
+
+        .story-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .era-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .story-card h1,
+        .story-card h2 {
+            margin: 0 0 20px 0;
+            background: linear-gradient(135deg, #ffffff, #a0aec0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .story-card h1 {
+            font-size: 2.5rem;
+        }
+
+        .story-card h2 {
+            font-size: 2rem;
+        }
+
+        .story-card p {
+            line-height: 1.8;
+            font-size: 1.1rem;
+            margin: 15px 0;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .story-card strong {
+            color: #fbbf24;
+        }
+
+        .story-card em {
+            color: #a0aec0;
+            font-style: italic;
+        }
+
+        /* Responsive */
+        @media (max-width: 968px) {
+            .story-container {
+                grid-template-columns: 1fr;
+            }
+
+            .sticky-visual {
+                position: relative;
+                height: 50vh;
+            }
+
+            .scroll-text {
+                padding: 50px 20px;
+            }
+
+            .story-card {
+                padding: 30px 20px;
+            }
+
+            .story-card h1 {
+                font-size: 2rem;
+            }
+
+            .story-card h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="progress-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <nav>
+        <a href="index.html" class="back-button">
+            <i class="fas fa-home"></i> Voltar
+        </a>
+    </nav>
+
+    <div class="story-container">
+        <div class="scroll-text">
+
+            <!-- Intro -->
+            <section class="story-section active" data-scene="intro">
+                <div class="story-card">
+                    <span class="era-badge">O Início</span>
+                    <h1>A Jornada do Conhecimento</h1>
+                    <p>Desde os primórdios, a humanidade olhou para o céu e para a natureza, buscando padrões e
+                        explicações. A Física é essa história de descoberta.</p>
+                    <p>Role para baixo para viajar através do tempo e ver como nossa compreensão do universo evoluiu.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Ancient Civilizations -->
+            <section class="story-section" data-scene="ancient">
+                <div class="story-card">
+                    <span class="era-badge">Antiguidade (3000 a.C.)</span>
+                    <h2>Civilizações Antigas: Os Primeiros Observadores</h2>
+                    <p>Os babilônios mapearam estrelas e planetas com precisão impressionante. Os egípcios usaram
+                        geometria para construir pirâmides perfeitamente alinhadas com as estrelas.</p>
+                    <p>Eles não tinham física moderna, mas observavam padrões: o movimento do Sol, as fases da Lua, as
+                        inundações do Nilo.</p>
+                    <p><strong>A ciência começou com a observação paciente do cosmos.</strong></p>
+                </div>
+            </section>
+
+            <!-- Archimedes -->
+            <section class="story-section" data-scene="archimedes">
+                <div class="story-card">
+                    <span class="era-badge">Antiguidade (287 a.C.)</span>
+                    <h2>Arquimedes e a Flutuabilidade</h2>
+                    <p>Na Grécia Antiga, Arquimedes descobriu que um corpo imerso em um fluido sofre uma força para cima
+                        igual ao peso do fluido deslocado.</p>
+                    <p><strong>"Eureka!"</strong></p>
+                    <p>Esta foi uma das primeiras leis físicas formuladas matematicamente.</p>
+                </div>
+            </section>
+
+            <!-- Aristotle -->
+            <section class="story-section" data-scene="aristotle">
+                <div class="story-card">
+                    <span class="era-badge">Grécia Antiga (350 a.C.)</span>
+                    <h2>Aristóteles e a Filosofia Natural</h2>
+                    <p>Aristóteles acreditava que tudo era feito de quatro elementos: terra, água, ar e fogo. Cada um
+                        tinha seu lugar natural no universo.</p>
+                    <p>Embora muitas de suas ideias estivessem erradas, ele estabeleceu o método de observar a natureza
+                        e buscar explicações racionais.</p>
+                    <p>Suas teorias dominaram o pensamento ocidental por quase 2000 anos!</p>
+                </div>
+            </section>
+
+            <!-- Galileo -->
+            <section class="story-section" data-scene="galileo">
+                <div class="story-card">
+                    <span class="era-badge">Renascimento (1600s)</span>
+                    <h2>Galileu e o Movimento</h2>
+                    <p>Galileu Galilei desafiou a visão aristotélica. Ao rolar esferas em planos inclinados, ele
+                        descobriu que a distância percorrida é proporcional ao quadrado do tempo.</p>
+                    <p>Ele lançou as bases para a mecânica clássica, mostrando que a aceleração da gravidade é
+                        constante.</p>
+                </div>
+            </section>
+
+            <!-- Kepler -->
+            <section class="story-section" data-scene="kepler">
+                <div class="story-card">
+                    <span class="era-badge">Renascimento (1619)</span>
+                    <h2>Kepler e as Órbitas Planetárias</h2>
+                    <p>Johannes Kepler descobriu que os planetas não se movem em círculos perfeitos, mas em elipses. E
+                        mais: eles aceleram quando estão perto do Sol!</p>
+                    <p>Suas três leis do movimento planetário foram fundamentais para que Newton desenvolvesse a lei da
+                        gravitação universal.</p>
+                    <p><em>"A geometria providenciou a Deus um modelo para a criação."</em> - Kepler</p>
+                </div>
+            </section>
+
+            <!-- Newton -->
+            <section class="story-section" data-scene="newton">
+                <div class="story-card">
+                    <span class="era-badge">Século XVII (1687)</span>
+                    <h2>A Gravitação Universal</h2>
+                    <p>Isaac Newton unificou a física terrestre e celeste. A mesma força que faz uma maçã cair mantém a
+                        Lua em órbita ao redor da Terra.</p>
+                    <p>Sua lei da gravitação universal e as três leis do movimento dominaram a física por mais de 200
+                        anos.</p>
+                </div>
+            </section>
+
+            <!-- Maxwell -->
+            <section class="story-section" data-scene="maxwell">
+                <div class="story-card">
+                    <span class="era-badge">Século XIX (1860s)</span>
+                    <h2>O Eletromagnetismo</h2>
+                    <p>James Clerk Maxwell unificou eletricidade e magnetismo em quatro equações elegantes. Ele previu
+                        que a luz é uma onda eletromagnética.</p>
+                    <p>Isso abriu caminho para o rádio, a televisão e toda a nossa tecnologia de comunicação moderna.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Thermodynamics -->
+            <section class="story-section" data-scene="thermodynamics">
+                <div class="story-card">
+                    <span class="era-badge">Século XIX (1850s)</span>
+                    <h2>Termodinâmica: A Ciência da Energia</h2>
+                    <p>Carnot, Joule, Kelvin e Boltzmann nos mostraram que calor é energia em movimento. A energia flui
+                        do quente para o frio, mas nunca o oposto espontaneamente.</p>
+                    <p>A segunda lei da termodinâmica introduziu o conceito de entropia: o universo tende ao caos.</p>
+                    <p>Esta ciência alimentou a Revolução Industrial e revelou os limites fundamentais da eficiência.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Einstein -->
+            <section class="story-section" data-scene="einstein">
+                <div class="story-card">
+                    <span class="era-badge">Século XX (1905/1915)</span>
+                    <h2>A Relatividade</h2>
+                    <p>Albert Einstein revolucionou tudo. O espaço e o tempo não são absolutos, mas formam um tecido
+                        flexível: o espaço-tempo.</p>
+                    <p>A gravidade não é uma força, mas a curvatura desse tecido causada pela massa e energia.</p>
+                    <p><strong>E = mc²</strong> - A equação mais famosa do mundo!</p>
+                </div>
+            </section>
+
+            <!-- Quantum -->
+            <section class="story-section" data-scene="quantum">
+                <div class="story-card">
+                    <span class="era-badge">Física Quântica (1920s)</span>
+                    <h2>O Mundo Quântico</h2>
+                    <p>Niels Bohr, Heisenberg e Schrödinger nos mostraram um mundo bizarro na escala atômica. Partículas
+                        são ondas, a certeza é impossível e elétrons saltam entre órbitas.</p>
+                    <p>Esta é a base de toda a eletrônica moderna, lasers e computadores.</p>
+                </div>
+            </section>
+
+            <!-- Atomic Model -->
+            <section class="story-section" data-scene="atomic">
+                <div class="story-card">
+                    <span class="era-badge">Início do Séc. XX (1911)</span>
+                    <h2>O Átomo Revelado</h2>
+                    <p>Ernest Rutherford bombardeou folhas de ouro com partículas alfa e descobriu algo surpreendente: a
+                        maior parte do átomo é vazio!</p>
+                    <p>No centro, um núcleo minúsculo contém quase toda a massa. Os elétrons orbitam esse núcleo como
+                        planetas ao redor do Sol.</p>
+                    <p>Niels Bohr refinaria este modelo, mostrando que elétrons só podem ocupar órbitas específicas.</p>
+                </div>
+            </section>
+
+            <!-- Nuclear Physics -->
+            <section class="story-section" data-scene="nuclear">
+                <div class="story-card">
+                    <span class="era-badge">Século XX (1942)</span>
+                    <h2>A Era Nuclear</h2>
+                    <p>Enrico Fermi e sua equipe alcançaram a primeira reação nuclear em cadeia controlada. Dividir o
+                        núcleo atômico libera uma quantidade colossal de energia.</p>
+                    <p>E = mc²: uma pequena quantidade de massa se converte em energia tremenda.</p>
+                    <p>Isso trouxe energia nuclear, mas também a arma mais destrutiva já criada pela humanidade.</p>
+                </div>
+            </section>
+
+            <!-- Particle Physics -->
+            <section class="story-section" data-scene="particles">
+                <div class="story-card">
+                    <span class="era-badge">Física de Partículas (1960s-2000s)</span>
+                    <h2>O Modelo Padrão</h2>
+                    <p>Nos aceleradores de partículas, físicos descobriram um zoológico de partículas subatômicas:
+                        quarks, léptons, bósons.</p>
+                    <p>O Modelo Padrão organiza todas essas partículas e descreve as forças fundamentais (exceto a
+                        gravidade).</p>
+                    <p>Prótons e nêutrons não são fundamentais - são feitos de quarks unidos pela força forte!</p>
+                </div>
+            </section>
+
+            <!-- Modern Discoveries -->
+            <section class="story-section" data-scene="modern">
+                <div class="story-card">
+                    <span class="era-badge">Descobertas Recentes (2012-2015)</span>
+                    <h2>Higgs e Ondas Gravitacionais</h2>
+                    <p>Em 2012, o CERN descobriu o bóson de Higgs, a partícula que dá massa a todas as outras. A última
+                        peça do Modelo Padrão.</p>
+                    <p>Em 2015, o LIGO detectou ondas gravitacionais pela primeira vez: ondulações no espaço-tempo
+                        causadas por dois buracos negros colidindo a bilhões de anos-luz de distância.</p>
+                    <p><strong>Einstein estava certo novamente, 100 anos depois!</strong></p>
+                </div>
+            </section>
+
+            <!-- Future -->
+            <section class="story-section" style="height: 50vh;">
+                <div class="story-card">
+                    <h2>O Futuro</h2>
+                    <p>A jornada continua. Matéria escura, energia escura e a teoria de tudo ainda nos aguardam.</p>
+                    <a href="index.html" class="btn btn-primary" style="margin-top: 1rem; width: 100%;">Explorar
+                        Simulações</a>
+                </div>
+            </section>
+
+        </div>
+
+        <div class="sticky-visual">
+            <canvas id="animationCanvas"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('animationCanvas');
+        const ctx = canvas.getContext('2d');
+        let currentScene = 'intro';
+        let frameCount = 0;
+        let particles = [];
+
+        // Resize handling
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            initScene(currentScene);
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        // Helper function to draw arrows
+        function drawArrow(ctx, fromX, fromY, toX, toY, color, label) {
+            const headlen = 10;
+            const dx = toX - fromX;
+            const dy = toY - fromY;
+            const angle = Math.atan2(dy, dx);
+
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 2;
+
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(toX, toY);
+            ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.fill();
+
+            if (label) {
+                ctx.fillStyle = 'white';
+                ctx.font = '14px Arial';
+                ctx.fillText(label, toX + 15, toY);
+            }
+        }
+
+        function drawDistortedLine(ctx, x1, y1, x2, y2, cx, cy) {
+            const distort = (x, y) => {
+                const dx = x - cx;
+                const dy = y - cy;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const factor = Math.max(0, 1 - 3000 / (dist * dist + 1000));
+                return { x: cx + dx * factor, y: cy + dy * factor };
+            };
+
+            const p1 = distort(x1, y1);
+            const p2 = distort(x2, y2);
+
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+        }
+
+        // Scene definitions with animations
+        const scenes = {
+            intro: {
+                init: () => {
+                    particles = [];
+                    for (let i = 0; i < 100; i++) {
+                        particles.push({
+                            x: Math.random() * canvas.width,
+                            y: Math.random() * canvas.height,
+                            vx: (Math.random() - 0.5) * 2,
+                            vy: (Math.random() - 0.5) * 2,
+                            size: Math.random() * 3,
+                            color: `rgba(100, 200, 255, ${Math.random()})`
+                        });
+                    }
+                },
+                draw: () => {
+                    ctx.fillStyle = 'rgba(5, 11, 20, 0.1)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    particles.forEach(p => {
+                        p.x += p.vx;
+                        p.y += p.vy;
+
+                        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                        ctx.fillStyle = p.color;
+                        ctx.fill();
+
+                        particles.forEach(p2 => {
+                            const dx = p.x - p2.x;
+                            const dy = p.y - p2.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist < 100) {
+                                ctx.beginPath();
+                                ctx.moveTo(p.x, p.y);
+                                ctx.lineTo(p2.x, p2.y);
+                                ctx.strokeStyle = `rgba(100, 200, 255, ${0.1 - dist / 1000})`;
+                                ctx.stroke();
+                            }
+                        });
+                    });
+                }
+            },
+
+            ancient: {
+                init: () => {
+                    particles = [];
+                    for (let i = 0; i < 150; i++) {
+                        particles.push({
+                            x: Math.random() * canvas.width,
+                            y: Math.random() * canvas.height,
+                            size: Math.random() * 2 + 0.5,
+                            brightness: Math.random()
+                        });
+                    }
+                },
+                draw: () => {
+                    ctx.fillStyle = 'rgba(5, 11, 20, 0.1)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    const time = Date.now() / 1000;
+
+                    particles.forEach((star, i) => {
+                        const twinkle = Math.sin(time * 2 + i * 0.5) * 0.3 + 0.7;
+                        ctx.beginPath();
+                        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                        ctx.fillStyle = `rgba(255, 255, 255, ${star.brightness * twinkle})`;
+                        ctx.fill();
+                    });
+
+                    const cx = canvas.width / 2;
+                    const cy = canvas.height / 2;
+                    const constellation = [
+                        { x: cx - 100, y: cy - 50 },
+                        { x: cx - 50, y: cy - 60 },
+                        { x: cx, y: cy - 50 },
+                        { x: cx + 50, y: cy - 40 },
+                        { x: cx + 50, y: cy + 20 },
+                        { x: cx, y: cy + 30 },
+                        { x: cx - 50, y: cy + 20 }
+                    ];
+
+                    ctx.strokeStyle = 'rgba(100, 200, 255, 0.6)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    constellation.forEach((point, i) => {
+                        const angle = time * 0.1;
+                        const rx = Math.cos(angle) * (point.x - cx) - Math.sin(angle) * (point.y - cy) + cx;
+                        const ry = Math.sin(angle) * (point.x - cx) + Math.cos(angle) * (point.y - cy) + cy;
+
+                        if (i === 0) ctx.moveTo(rx, ry);
+                        else ctx.lineTo(rx, ry);
+
+                        ctx.save();
+                        ctx.fillStyle = '#fbbf24';
+                        ctx.shadowBlur = 10;
+                        ctx.shadowColor = '#fbbf24';
+                        ctx.beginPath();
+                        ctx.arc(rx, ry, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                    });
+                    ctx.stroke();
+                }
+            },
+
+            archimedes: {
+                init: () => { },
+                draw: () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height / 2;
+
+                    ctx.fillStyle = 'rgba(59, 130, 246, 0.2)';
+                    ctx.fillRect(centerX - 100, centerY, 200, 150);
+
+                    const time = Date.now() / 1000;
+                    const waterLevel = centerY + 50 - Math.sin(time) * 10;
+
+                    ctx.fillStyle = 'rgba(59, 130, 246, 0.6)';
+                    ctx.beginPath();
+                    ctx.moveTo(centerX - 100, centerY + 150);
+                    ctx.lineTo(centerX - 100, waterLevel);
+                    for (let i = 0; i <= 200; i += 10) {
+                        ctx.lineTo(centerX - 100 + i, waterLevel + Math.sin(i / 20 + time * 2) * 5);
+                    }
+                    ctx.lineTo(centerX + 100, centerY + 150);
+                    ctx.fill();
+
+                    const objY = centerY + 50 + Math.sin(time) * 30;
+                    ctx.fillStyle = '#FFD700';
+                    ctx.beginPath();
+                    ctx.arc(centerX, objY, 30, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    drawArrow(ctx, centerX, objY - 40, centerX, objY - 90, '#10b981', 'Empuxo');
+                    drawArrow(ctx, centerX, objY + 40, centerX, objY + 90, '#ef4444', 'Peso');
+                }
+            },
+
+            aristotle: {
+                init: () => { },
+                draw: () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    const time = Date.now() / 1000;
+                    const cx = canvas.width / 2;
+                    const cy = canvas.height / 2;
+
+                    const elements = [
+                        { name: 'Terra', color: '#92400e', angle: time * 0.8 },
+                        { name: 'Água', color: '#1e40af', angle: time * 0.8 + Math.PI / 2 },
+                        { name: 'Ar', color: '#e0e7ff', angle: time * 0.8 + Math.PI },
+                        { name: 'Fogo', color: '#dc2626', angle: time * 0.8 + Math.PI * 1.5 }
+                    ];
+
+                    const radius = 120;
+
+                    elements.forEach((element, i) => {
+                        const x = cx + Math.cos(element.angle) * radius;
+                        const y = cy + Math.sin(element.angle) * radius;
+
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+                        ctx.stroke();
+
+                        ctx.beginPath();
+                        ctx.arc(x, y, 25, 0, Math.PI * 2);
+                        ctx.fillStyle = element.color;
+                        ctx.shadowBlur = 15;
+                        ctx.shadowColor = element.color;
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+
+                        ctx.fillStyle = 'white';
+                        ctx.font = '12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(element.name, x, y + 45);
+                    });
+
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 15, 0, Math.PI * 2);
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.fill();
+                }
+            },
+
+            galileo: {
+                init: () => { },
+                draw: () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const time = (Date.now() / 2000) % 1;
+
+                    const startX = canvas.width * 0.2;
+                    const startY = canvas.height * 0.3;
+                    const endX = canvas.width * 0.8;
+                    const endY = canvas.height * 0.7;
+
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(endX, endY);
+                    ctx.lineTo(endX, endY + 20);
+                    ctx.lineTo(startX, endY + 20);
+                    ctx.closePath();
+                    ctx.fillStyle = '#64748b';
+                    ctx.fill();
+
+                    const t = time * time;
+                    const ballX = startX + (endX - startX) * t;
+                    const ballY = startY + (endY - startY) * t - 15;
+
+                    ctx.beginPath();
+                    ctx.arc(ballX, ballY, 15, 0, Math.PI * 2);
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.fill();
+
+                    for (let i = 1; i <= 4; i++) {
+                        const mt = i / 4;
+                        const mx = startX + (endX - startX) * (mt * mt);
+                        const my = startY + (endY - startY) * (mt * mt);
+                        ctx.fillStyle = 'white';
+                        ctx.fillRect(mx, my, 2, 10);
+                    }
+                }
+            },
+
+            kepler: {
+                init: () => { },
+                draw: () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    const time = (Date.now() / 3000) % 1;
+                    const cx = canvas.width / 2;
+                    const cy = canvas.height / 2;
+
+                    const a = 180;
+                    const b = 120;
+                    const c = Math.sqrt(a * a - b * b);
+
+                    const sunX = cx - c;
+                    const sunY = cy;
+
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.ellipse(cx, cy, a, b, 0, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    const theta = time * Math.PI * 2;
+                    const planetX = cx + a * Math.cos(theta);
+                    const planetY = cy + b * Math.sin(theta);
+
+                    ctx.fillStyle = 'rgba(59, 130, 246, 0.2)';
+                    ctx.beginPath();
+                    ctx.moveTo(sunX, sunY);
+                    ctx.lineTo(planetX, planetY);
+                    ctx.arc(cx, cy, a, theta - 0.3, theta, false);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.arc(sunX, sunY, 20, 0, Math.PI * 2);
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#fbbf24';
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    ctx.beginPath();
+                    ctx.arc(planetX, planetY, 12, 0, Math.PI * 2);
+                    ctx.fillStyle = '#3b82f6';
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#3b82f6';
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    const dist = Math.sqrt((planetX - sunX) ** 2 + (planetY - sunY) ** 2);
+                    const speed = 50 / dist * 100;
+                    const vx = -Math.sin(theta) * speed;
+                    const vy = Math.cos(theta) * speed * (b / a);
+
+                    drawArrow(ctx, planetX, planetY, planetX + vx, planetY + vy, '#10b981', '');
+                }
+            },
+
+            newton: {
+                init: () => { },
+                draw: () => {
+                    ctx.fillStyle = 'rgba(5, 11, 20, 0.2)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height / 2;
+
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, 40, 0, Math.PI * 2);
+                    ctx.fillStyle = '#3b82f6';
+                    ctx.fill();
+
+                    const time = Date.now() / 1000;
+                    const radius = 150;
+                    const moonX = centerX + Math.cos(time) * radius;
+                    const moonY = centerY + Math.sin(time) * radius;
+
+                    ctx.beginPath();
+                    ctx.arc(moonX, moonY, 15, 0, Math.PI * 2);
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+                    ctx.stroke();
+
+                    drawArrow(ctx, moonX, moonY, centerX, centerY, 'rgba(255,255,255,0.5)', '');
+                }
+            },
+
+            maxwell: {
+                init: () => { },
+                draw: () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    const time = Date.now() / 500;
+                    const centerY = canvas.height / 2;
+
+                    ctx.lineWidth = 3;
+
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#ef4444';
+                    for (let x = 0; x < canvas.width; x += 5) {
+                        const y = centerY + Math.sin(x / 50 - time) * 50;
+                        if (x === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+
+                        if (x % 40 === 0) {
+                            ctx.moveTo(x, centerY);
+                            ctx.lineTo(x, y);
+                            ctx.moveTo(x, y);
+                        }
+                    }
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#3b82f6';
+                    for (let x = 0; x < canvas.width; x += 5) {
+                        const z = Math.sin(x / 50 - time) * 50;
+                        const y = centerY + z * 0.5;
+
+                        if (x === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.stroke();
+
+                    ctx.fillStyle = 'white';
+                    ctx.fillText("E (Elétrico)", 20, centerY - 60);
+                    ctx.fillStyle = '#3b82f6';
+                    ctx.fillText("B (Magnético)", 20, centerY + 60);
+                }
+            },
+
+            thermodynamics: {
+                init: () => {
+                    particles = [];
+                    for (let i = 0; i < 50; i++) {
+                        particles.push({
+                            x: Math.random() * canvas.width * 0.4,
+                            y: Math.random() * canvas.height,
+                            vx: (Math.random() - 0.5) * 6,
+                            vy: (Math.random() - 0.5) * 6,
+                            hot: true
+                        });
+                    }
+                    for (let i = 0; i < 50; i++) {
+                        particles.push({
+                            x: canvas.width * 0.6 + Math.random() * canvas.width * 0.4,
+                            y: Math.random() * canvas.height,
+                            vx: (Math.random() - 0.5) * 2,
+                            vy: (Math.random() - 0.5) * 2,
+                            hot: false
+                        });
+                    }
+                },
+                draw: () => {
+                    ctx.fillStyle = 'rgba(5, 11, 20, 0.3)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.setLineDash([5, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(canvas.width / 2, 0);
+                    ctx.lineTo(canvas.width / 2, canvas.height);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    ctx.fillStyle = '#ef4444';
+                    ctx.font = 'bold 20px Arial';
+                    ctx.fillText('QUENTE', canvas.width * 0.15, 30);
+                    ctx.fillStyle = '#3b82f6';
+                    ctx.fillText('FRIO', canvas.width * 0.7, 30);
+
+                    particles.forEach(p => {
+                        p.x += p.vx;
+                        p.y += p.vy;
+
+                        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+                        if (p.hot && p.x > canvas.width / 2) {
+                            p.vx *= 0.98;
+                            p.vy *= 0.98;
+                        } else if (!p.hot && p.x < canvas.width / 2) {
+                            p.vx *= 1.02;
+                            p.vy *= 1.02;
+                        }
+
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                        ctx.fillStyle = p.hot ? '#ef4444' : '#3b82f6';
+                        ctx.fill();
+                    });
+                }
+            },
+
+            einstein: {
+                init: () => { },
+                draw: () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height / 2;
+
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                    ctx.lineWidth = 1;
+
+                    const gridSize = 40;
+                    const rows = Math.ceil(canvas.height / gridSize);
+                    const cols = Math.ceil(canvas.width / gridSize);
+
+                    for (let r = 0; r <= rows; r++) {
+                        for (let c = 0; c <= cols; c++) {
+                            const x = c * gridSize;
+                            const y = r * gridSize;
+
+                            if (c < cols) {
+                                const nextX = (c + 1) * gridSize;
+                                const nextY = r * gridSize;
+                                drawDistortedLine(ctx, x, y, nextX, nextY, centerX, centerY);
+                            }
+                            if (r < rows) {
+                                const nextX = c * gridSize;
+                                const nextY = (r + 1) * gridSize;
+                                drawDistortedLine(ctx, x, y, nextX, nextY, centerX, centerY);
+                            }
+                        }
+                    }
+
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, 30, 0, Math.PI * 2);
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#f59e0b';
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            },
+
+            quantum: {
+                init: () => { },
+                draw: () => {
+                    ctx.fillStyle = 'rgba(5, 11, 20, 0.3)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height / 2;
+
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, 10, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ef4444';
+                    ctx.fill();
+
+                    [50, 100, 150].forEach(r => {
+                        ctx.beginPath();
+                        ctx.arc(centerX, centerY, r, 0, Math.PI * 2);
+                        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+                        ctx.stroke();
+                    });
+
+                    const time = Date.now() / 1000;
+                    const jumpState = Math.floor(time) % 3;
+                    const radii = [50, 100, 150];
+                    const currentR = radii[jumpState];
+
+                    const angle = time * 5;
+                    const ex = centerX + Math.cos(angle) * currentR;
+                    const ey = centerY + Math.sin(angle) * currentR;
+
+                    ctx.beginPath();
+                    ctx.arc(ex, ey, 8, 0, Math.PI * 2);
+                    ctx.fillStyle = '#06b6d4';
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#06b6d4';
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    for (let i = 0; i < 10; i++) {
+                        const r = Math.random() * 160;
+                        const a = Math.random() * Math.PI * 2;
+                        ctx.fillStyle = 'rgba(6, 182, 212, 0.5)';
+                        ctx.fillRect(centerX + Math.cos(a) * r, centerY + Math.sin(a) * r, 2, 2);
+                    }
+                }
+            },
+
+            atomic: {
+                init: () => {
+                    particles = [];
+                    for (let i = 0; i < 20; i++) {
+                        particles.push({
+                            x: 50,
+                            y: canvas.height / 2 + (Math.random() - 0.5) * 100,
+                            vx: 3 + Math.random(),
+                            vy: (Math.random() - 0.5) * 0.5,
+                            scattered: false
+                        });
+                    }
+                },
+                draw: () => {
+                    ctx.fillStyle = 'rgba(5, 11, 20, 0.1)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    const nucleusX = canvas.width * 0.7;
+                    const nucleusY = canvas.height / 2;
+
+                    ctx.beginPath();
+                    ctx.arc(nucleusX, nucleusY, 20, 0, Math.PI * 2);
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#fbbf24';
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    particles.forEach(p => {
+                        const dx = p.x - nucleusX;
+                        const dy = p.y - nucleusY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist < 60 && !p.scattered) {
+                            const angle = Math.atan2(dy, dx);
+                            p.vx = Math.cos(angle) * 4;
+                            p.vy = Math.sin(angle) * 4;
+                            p.scattered = true;
+                        }
+
+                        p.x += p.vx;
+                        p.y += p.vy;
+
+                        if (p.x > canvas.width + 50 || p.y < -50 || p.y > canvas.height + 50) {
+                            p.x = 50;
+                            p.y = canvas.height / 2 + (Math.random() - 0.5) * 100;
+                            p.vx = 3 + Math.random();
+                            p.vy = (Math.random() - 0.5) * 0.5;
+                            p.scattered = false;
+                        }
+
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+                        ctx.fillStyle = p.scattered ? '#ef4444' : '#3b82f6';
+                        ctx.fill();
+                    });
+
+                    ctx.fillStyle = 'white';
+                    ctx.font = '14px Arial';
+                    ctx.fillText('Núcleo de Ouro', nucleusX - 40, nucleusY + 40);
+                    ctx.fillText('Partículas α', 50, canvas.height / 2 - 60);
+                }
+            },
+
+            nuclear: {
+                init: () => {
+                    particles = [];
+                    particles.push({
+                        x: canvas.width / 2,
+                        y: canvas.height / 2,
+                        vx: 0,
+                        vy: 0,
+                        split: false,
+                        created: Date.now()
+                    });
+                },
+                draw: () => {
+                    ctx.fillStyle = 'rgba(5, 11, 20, 0.2)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    const time = Date.now();
+
+                    particles.forEach((p, i) => {
+                        if (!p.split && time - p.created > 1000 && particles.length < 50) {
+                            p.split = true;
+                            for (let j = 0; j < 3; j++) {
+                                const angle = Math.random() * Math.PI * 2;
+                                particles.push({
+                                    x: p.x,
+                                    y: p.y,
+                                    vx: Math.cos(angle) * 3,
+                                    vy: Math.sin(angle) * 3,
+                                    split: false,
+                                    created: time
+                                });
+                            }
+                        }
+
+                        p.x += p.vx;
+                        p.y += p.vy;
+
+                        if (p.x < 0 || p.x > canvas.width) p.vx *= -0.8;
+                        if (p.y < 0 || p.y > canvas.height) p.vy *= -0.8;
+
+                        p.vx *= 0.98;
+                        p.vy *= 0.98;
+
+                        const size = p.split ? 8 : 12;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+                        ctx.fillStyle = p.split ? '#fbbf24' : '#ef4444';
+                        ctx.shadowBlur = 15;
+                        ctx.shadowColor = p.split ? '#fbbf24' : '#ef4444';
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+
+                        if (time - p.created < 200) {
+                            for (let r = 0; r < 8; r++) {
+                                const angle = (r / 8) * Math.PI * 2;
+                                const len = 30 * (1 - (time - p.created) / 200);
+                                ctx.beginPath();
+                                ctx.moveTo(p.x, p.y);
+                                ctx.lineTo(p.x + Math.cos(angle) * len, p.y + Math.sin(angle) * len);
+                                ctx.strokeStyle = `rgba(251, 191, 36, ${1 - (time - p.created) / 200})`;
+                                ctx.lineWidth = 2;
+                                ctx.stroke();
+                            }
+                        }
+                    });
+                }
+            },
+
+            particles: {
+                init: () => {
+                    particles = [];
+                },
+                draw: () => {
+                    ctx.fillStyle = 'rgba(5, 11, 20, 0.2)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    const time = Date.now() / 1000;
+                    const collision = Math.sin(time * 2) > 0.9;
+
+                    const cy = canvas.height / 2;
+
+                    if (collision) {
+                        if (particles.length < 100) {
+                            for (let i = 0; i < 15; i++) {
+                                const angle = Math.random() * Math.PI * 2;
+                                const speed = Math.random() * 5 + 2;
+                                particles.push({
+                                    x: canvas.width / 2,
+                                    y: cy,
+                                    vx: Math.cos(angle) * speed,
+                                    vy: Math.sin(angle) * speed,
+                                    life: 1,
+                                    color: ['#ef4444', '#3b82f6', '#10b981', '#fbbf24'][Math.floor(Math.random() * 4)]
+                                });
+                            }
+                        }
+                    }
+
+                    const beam1X = canvas.width * 0.2 + Math.abs(Math.sin(time * 2)) * (canvas.width * 0.3);
+                    const beam2X = canvas.width * 0.8 - Math.abs(Math.sin(time * 2)) * (canvas.width * 0.3);
+
+                    ctx.beginPath();
+                    ctx.arc(beam1X, cy, 10, 0, Math.PI * 2);
+                    ctx.fillStyle = '#3b82f6';
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#3b82f6';
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.arc(beam2X, cy, 10, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ef4444';
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = '#ef4444';
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    particles = particles.filter(p => {
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.life -= 0.02;
+
+                        if (p.life > 0) {
+                            ctx.beginPath();
+                            ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                            ctx.fillStyle = p.color.replace(')', `, ${p.life})`).replace('rgb', 'rgba');
+                            ctx.fill();
+                            return true;
+                        }
+                        return false;
+                    });
+
+                    ctx.fillStyle = 'white';
+                    ctx.font = '16px Arial';
+                    ctx.fillText('Acelerador de Partículas', canvas.width / 2 - 80, 30);
+                }
+            },
+
+            modern: {
+                init: () => {
+                    particles = [];
+                },
+                draw: () => {
+                    ctx.fillStyle = 'rgba(5, 11, 20, 0.15)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    const time = Date.now() / 1000;
+                    const cx = canvas.width / 2;
+                    const cy = canvas.height / 2;
+
+                    const separation = Math.max(10, 100 - time * 20) % 100;
+                    const angle = time * 2;
+
+                    const bh1x = cx + Math.cos(angle) * separation;
+                    const bh1y = cy + Math.sin(angle) * separation;
+                    const bh2x = cx - Math.cos(angle) * separation;
+                    const bh2y = cy - Math.sin(angle) * separation;
+
+                    for (let i = 0; i < 5; i++) {
+                        const radius = (time * 100 + i * 50) % 300;
+                        const opacity = 1 - radius / 300;
+
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+                        ctx.strokeStyle = `rgba(100, 200, 255, ${opacity * 0.5})`;
+                        ctx.lineWidth = 3;
+                        ctx.stroke();
+                    }
+
+                    ctx.beginPath();
+                    ctx.arc(bh1x, bh1y, 20, 0, Math.PI * 2);
+                    ctx.fillStyle = '#1e1b4b';
+                    ctx.fill();
+                    ctx.strokeStyle = '#fbbf24';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.arc(bh2x, bh2y, 20, 0, Math.PI * 2);
+                    ctx.fillStyle = '#1e1b4b';
+                    ctx.fill();
+                    ctx.strokeStyle = '#fbbf24';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+
+                    if (frameCount % 3 === 0) {
+                        particles.push({
+                            angle: Math.random() * Math.PI * 2,
+                            radius: 40 + Math.random() * 40,
+                            speed: 0.05,
+                            bh: Math.random() > 0.5 ? 1 : 2
+                        });
+                    }
+
+                    particles = particles.filter(p => {
+                        p.angle += p.speed;
+                        p.radius -= 0.5;
+
+                        if (p.radius > 0) {
+                            const x = (p.bh === 1 ? bh1x : bh2x) + Math.cos(p.angle) * p.radius;
+                            const y = (p.bh === 1 ? bh1y : bh2y) + Math.sin(p.angle) * p.radius;
+
+                            ctx.beginPath();
+                            ctx.arc(x, y, 2, 0, Math.PI * 2);
+                            ctx.fillStyle = '#fbbf24';
+                            ctx.fill();
+                            return true;
+                        }
+                        return false;
+                    });
+
+                    ctx.fillStyle = 'white';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Ondas Gravitacionais', cx, canvas.height - 20);
+                }
+            }
+        };
+
+        function initScene(sceneName) {
+            if (scenes[sceneName] && scenes[sceneName].init) {
+                scenes[sceneName].init();
+            }
+        }
+
+        function animate() {
+            if (scenes[currentScene] && scenes[currentScene].draw) {
+                scenes[currentScene].draw();
+            }
+            frameCount++;
+            requestAnimationFrame(animate);
+        }
+
+        // Scroll Observer
+        const observerOptions = {
+            root: null,
+            rootMargin: '-50% 0px -50% 0px',
+            threshold: 0
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    document.querySelectorAll('.story-section').forEach(s => s.classList.remove('active'));
+                    entry.target.classList.add('active');
+
+                    const newScene = entry.target.dataset.scene;
+                    if (newScene && newScene !== currentScene) {
+                        currentScene = newScene;
+                        initScene(currentScene);
+                    }
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.story-section').forEach(section => {
+            observer.observe(section);
+        });
+
+        // Progress Bar
+        window.addEventListener('scroll', () => {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById("progressBar").style.width = scrolled + "%";
+        });
+
+        // Start
+        resizeCanvas();
+        animate();
+
+    </script>
+</body>
+
+</html>

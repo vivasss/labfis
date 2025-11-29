@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Simulador de Circuitos Elétricos</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/circuitos.css">
+  <style>
+    /* Override standard nav for this full-screen app */
+    .navbar {
+      position: relative;
+      z-index: 50;
+    }
+
+    /* Hide the injected nav if we want, but let's keep it and adjust layout */
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .main-container {
+      height: auto;
+      flex: 1;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Navigation will be injected by script.js -->
+
+  <div class="main-container">
+    <div id="toolbar">
+      <button data-tool="select" class="active">
+        <span class="tool-icon">↦</span> Selecionar
+      </button>
+      <button data-tool="resistor">
+        <span class="tool-icon">⏚</span> Resistor
+      </button>
+      <button data-tool="voltage">
+        <span class="tool-icon">⎓</span> Fonte V
+      </button>
+      <button data-tool="current">
+        <span class="tool-icon">⎔</span> Fonte I
+      </button>
+      <button data-tool="capacitor">
+        <span class="tool-icon">⎏</span> Capacitor
+      </button>
+      <button data-tool="inductor">
+        <span class="tool-icon">⎑</span> Indutor
+      </button>
+      <button data-tool="diode">
+        <span class="tool-icon">↦</span> Diodo
+      </button>
+      <button data-tool="lamp">
+        <span class="tool-icon">○</span> Lâmpada
+      </button>
+      <button data-tool="switch">
+        <span class="tool-icon">⭘</span> Interruptor
+      </button>
+      <button data-tool="ground">
+        <span class="tool-icon">⏚</span> Terra
+      </button>
+      <button data-tool="wire">
+        <span class="tool-icon">➰</span> Fio
+      </button>
+      <button data-tool="delete">
+        <span class="tool-icon">🗑</span> Excluir
+      </button>
+    </div>
+
+    <div id="canvas-container">
+      <div id="work-area"></div>
+      <svg id="wires"></svg>
+
+      <!-- Floating Menu Button for Mobile -->
+      <button id="mobileMenuBtn" class="btn btn-primary"
+        style="position: absolute; top: 10px; left: 10px; z-index: 100; padding: 8px; border-radius: 50%; width: 40px; height: 40px; display: none;">
+        ☰
+      </button>
+
+      <div id="mobile-controls">
+        <div class="actions-row" id="actions">
+          <button id="btnSim">
+            <span class="action-icon">⚡</span> Simular
+          </button>
+          <button id="btnShowCalc">
+            <span class="action-icon">📊</span> Cálculos
+          </button>
+          <button id="btnClearAll">
+            <span class="action-icon">🗑</span> Limpar
+          </button>
+          <button id="btnToggleAnimation">
+            <span class="action-icon">🎬</span> Animação
+          </button>
+        </div>
+
+        <div class="zoom-controls">
+          <button id="btnZoomIn">+</button>
+          <button id="btnZoomOut">-</button>
+          <button id="btnResetView">⟲</button>
+        </div>
+      </div>
+
+      <div id="output">
+        Bem-vindo ao Simulador de Circuitos!
+
+        Instruções:
+        1. Selecione um componente na barra lateral
+        2. Toque na área preta para adicionar
+        3. Use a ferramenta "Fio" para conectar os pontos
+        4. Clique em "Simular" para ver os resultados
+
+        Dica: Toque duplo em interruptores e diodos para interagir.
+      </div>
+
+      <div id="calcPanel">
+        <strong>Fórmulas Utilizadas</strong>
+        <pre>
+// Análise de Circuito Série
+// -------------------------
+
+1. Resistência Total (Rtot):
+   Rtot = Σ R_i
+
+2. Lei de Ohm Geral:
+   I = (Vfonte - Σ Vdiodos) / Rtot
+
+3. Queda de Tensão:
+   - Resistor: V = I × R
+   - Lâmpada: V = I × R
+   - Diodo (forward): V = Vf
+   - Capacitor (DC): V = Vfonte
+   - Indutor (DC): V = 0
+
+4. Potência Dissipada:
+   P = V × I
+        </pre>
+      </div>
+    </div>
+  </div>
+
+  <div id="tooltip"></div>
+
+  <!-- Overlay para diálogos em mobile -->
+  <div class="mobile-overlay" id="mobileOverlay">
+    <div class="mobile-dialog">
+      <h3 id="dialogTitle">Adicionar Componente</h3>
+      <input type="text" id="dialogInput" placeholder="Valor">
+      <div class="dialog-buttons">
+        <button class="dialog-cancel" id="dialogCancel">Cancelar</button>
+        <button class="dialog-confirm" id="dialogConfirm">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/script.js"></script>
+  <script src="js/circuitos.js"></script>
+  <script>
+    // Mobile menu button visibility logic
+    function checkMobile() {
+      const btn = document.getElementById('mobileMenuBtn');
+      if (window.innerWidth < 768) {
+        btn.style.display = 'flex';
+        btn.style.alignItems = 'center';
+        btn.style.justifyContent = 'center';
+      } else {
+        btn.style.display = 'none';
+      }
+    }
+    window.addEventListener('resize', checkMobile);
+    checkMobile();
+  </script>
+</body>
+
+</html>

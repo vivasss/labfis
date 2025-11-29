@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador do Modelo Atômico de Bohr</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --accent: #06b6d4;
+            --accent-light: #22d3ee;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #0f172a;
+            --dark-card: #1e293b;
+            --dark-hover: #334155;
+            --light: #f8fafc;
+            --muted: #94a3b8;
+            --lyman: #ff6b6b;
+            --balmer: #4ecdc4;
+            --paschen: #45b7d1;
+            --uv-color: #9d4edd;
+            --visible-color: #8a2be2;
+            --ir-color: #f72585;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            color: var(--light);
+            min-height: 100vh;
+            padding: 1rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Backgrounds animados */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 50%);
+            animation: rotate 60s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
+        }
+
+        @keyframes glow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+            }
+
+            50% {
+                box-shadow: 0 0 30px rgba(99, 102, 241, 0.6);
+            }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            animation: fadeIn 1s ease-out;
+        }
+
+        h1 {
+            font-size: clamp(1.8rem, 5vw, 2.5rem);
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--primary-light), var(--secondary), var(--accent-light));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+            font-weight: 500;
+        }
+
+        /* Controles superiores */
+        .top-controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+            animation: fadeIn 1.2s ease-out;
+        }
+
+        .control-btn {
+            background: rgba(99, 102, 241, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            color: var(--light);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .control-btn:hover {
+            background: rgba(99, 102, 241, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .control-btn:active {
+            transform: translateY(0);
+        }
+
+        .control-btn.active {
+            background: var(--primary);
+            border-color: var(--primary-light);
+        }
+
+        /* Card principal */
+        .simulation-area {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 0 1px rgba(255, 255, 255, 0.1);
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            animation: fadeIn 1.4s ease-out;
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: clamp(300px, 50vh, 450px);
+            margin-bottom: 1.5rem;
+            border-radius: 1rem;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        #atomCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .info-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-card {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .info-card::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .info-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .info-card:hover {
+            background: rgba(0, 0, 0, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.2);
+        }
+
+        .info-label {
+            font-size: clamp(0.75rem, 2.5vw, 0.85rem);
+            color: var(--muted);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .info-value {
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-light), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* Controles */
+        .controls-area {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            animation: fadeIn 1.6s ease-out;
+        }
+
+        .section-title {
+            font-size: clamp(1rem, 3vw, 1.3rem);
+            margin-bottom: 1rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--accent-light), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            border-bottom: 2px solid rgba(6, 182, 212, 0.2);
+            padding-bottom: 0.75rem;
+        }
+
+        .level-selector {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+            overflow-x: auto;
+            padding: 1rem 0.5rem;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) rgba(0, 0, 0, 0.3);
+        }
+
+        .level-selector::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .level-selector::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+
+        .level-selector::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        .level-btn {
+            flex: 0 0 auto;
+            width: clamp(55px, 12vw, 65px);
+            height: clamp(55px, 12vw, 65px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            position: relative;
+        }
+
+        .level-btn::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 50%;
+            padding: 2px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .level-btn:hover {
+            background: rgba(99, 102, 241, 0.2);
+            transform: scale(1.15);
+            box-shadow: 0 5px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .level-btn.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-color: var(--primary-light);
+            transform: scale(1.2);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.6);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .level-btn.active::before {
+            opacity: 1;
+        }
+
+        /* Transições */
+        .possible-transitions {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 2rem;
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) rgba(0, 0, 0, 0.3);
+        }
+
+        .possible-transitions::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .possible-transitions::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+
+        .possible-transitions::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        .transition-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 0.75rem;
+            background: rgba(255, 255, 255, 0.03);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .transition-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .transition-item:hover::before {
+            left: 100%;
+        }
+
+        .transition-item:hover {
+            background: rgba(99, 102, 241, 0.15);
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(99, 102, 241, 0.3);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .transition-item:active {
+            transform: translateX(2px);
+        }
+
+        .transition-item.visible-spectrum {
+            border: 2px solid var(--visible-color);
+            background: rgba(138, 43, 226, 0.1);
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .transition-left {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .transition-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .transition-type {
+            font-size: clamp(0.65rem, 2vw, 0.75rem);
+            padding: 0.3rem 0.7rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .emission {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .absorption {
+            background: rgba(6, 182, 212, 0.2);
+            color: var(--accent-light);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+        }
+
+        .transition-arrow {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .transition-details {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            text-align: right;
+            gap: 0.25rem;
+        }
+
+        .wavelength {
+            font-size: clamp(0.95rem, 2.5vw, 1.1rem);
+            font-weight: 700;
+            color: var(--accent-light);
+        }
+
+        .energy-value {
+            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+            font-weight: 600;
+            color: var(--warning);
+        }
+
+        .region {
+            font-size: clamp(0.7rem, 2vw, 0.8rem);
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .region.visible {
+            color: var(--visible-color);
+            font-weight: 700;
+        }
+
+        .region.uv {
+            color: var(--uv-color);
+            font-weight: 600;
+        }
+
+        .region.ir {
+            color: var(--ir-color);
+            font-weight: 600;
+        }
+
+        .series {
+            font-size: clamp(0.65rem, 2vw, 0.75rem);
+            padding: 0.25rem 0.6rem;
+            border-radius: 0.4rem;
+            font-weight: 600;
+            margin-top: 0.25rem;
+        }
+
+        .series.lyman {
+            background: rgba(255, 107, 107, 0.2);
+            color: var(--lyman);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+
+        .series.balmer {
+            background: rgba(78, 205, 196, 0.2);
+            color: var(--balmer);
+            border: 1px solid rgba(78, 205, 196, 0.3);
+        }
+
+        .series.paschen {
+            background: rgba(69, 183, 209, 0.2);
+            color: var(--paschen);
+            border: 1px solid rgba(69, 183, 209, 0.3);
+        }
+
+        /* Níveis de energia */
+        .energy-levels {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .energy-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .energy-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(3px);
+        }
+
+        .energy-item.current {
+            background: rgba(6, 182, 212, 0.2);
+            border: 2px solid var(--accent);
+            font-weight: 700;
+        }
+
+        /* Espectro */
+        .spectrum-container {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            animation: fadeIn 1.8s ease-out;
+        }
+
+        .spectrum-visualization {
+            width: 100%;
+            height: clamp(120px, 20vh, 150px);
+            background: linear-gradient(90deg,
+                    #4a00e0 0%,
+                    #8e2de2 8%,
+                    #4a00e0 15%,
+                    #0066ff 25%,
+                    #00b4db 35%,
+                    #00bf8f 50%,
+                    #ffeb3b 65%,
+                    #f7b733 75%,
+                    #fc4a1a 90%,
+                    #fc4a1a 100%);
+            border-radius: 0.75rem;
+            position: relative;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .wavelength-marker {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            width: 4px;
+            background: white;
+            box-shadow: 0 0 20px white, 0 0 40px rgba(255, 255, 255, 0.5);
+            transform: translateX(-50%);
+            z-index: 5;
+            transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .wavelength-marker::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 15px white;
+        }
+
+        .wavelength-value {
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 0.4rem 1rem;
+            border-radius: 0.5rem;
+            font-size: clamp(0.75rem, 2vw, 0.85rem);
+            color: white;
+            white-space: nowrap;
+            font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .spectrum-labels {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 15px;
+            color: var(--muted);
+            font-size: clamp(0.75rem, 2vw, 0.85rem);
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .spectrum-regions {
+            display: flex;
+            justify-content: space-around;
+            gap: 1rem;
+        }
+
+        .spectrum-region {
+            text-align: center;
+            font-size: clamp(0.75rem, 2vw, 0.9rem);
+            font-weight: 600;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .spectrum-region:hover {
+            transform: translateY(-2px);
+        }
+
+        .spectrum-region.uv {
+            color: var(--uv-color);
+            background: rgba(157, 78, 221, 0.1);
+        }
+
+        .spectrum-region.visible {
+            color: var(--visible-color);
+            background: rgba(138, 43, 226, 0.1);
+        }
+
+        .spectrum-region.ir {
+            color: var(--ir-color);
+            background: rgba(247, 37, 133, 0.1);
+        }
+
+        /* Hint */
+        .touch-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            padding: 1.5rem 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            max-width: 90%;
+            z-index: 10;
+            animation: fadeIn 1s ease-out, pulse 2s ease-in-out infinite;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .touch-hint p {
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+            margin: 0.5rem 0;
+            font-weight: 600;
+        }
+
+        .touch-hint p:first-child {
+            font-size: clamp(1.1rem, 3vw, 1.3rem);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            padding: 2rem 1rem;
+            color: var(--muted);
+            font-size: clamp(0.85rem, 2.5vw, 0.95rem);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            animation: fadeIn 2s ease-out;
+        }
+
+        footer p {
+            font-weight: 500;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .info-panel {
+                grid-template-columns: 1fr;
+            }
+
+            .energy-levels {
+                grid-template-columns: 1fr;
+            }
+
+            .transition-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            .transition-details {
+                align-items: flex-start;
+                text-align: left;
+                width: 100%;
+            }
+
+            .top-controls {
+                flex-direction: column;
+            }
+
+            .control-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 0.5rem;
+            }
+
+            .simulation-area,
+            .controls-area,
+            .spectrum-container {
+                padding: 1rem;
+                border-radius: 1rem;
+            }
+
+            .level-selector {
+                gap: 0.5rem;
+                padding: 0.75rem 0;
+            }
+        }
+
+        @media (min-width: 1400px) {
+            .container {
+                max-width: 1400px;
+            }
+
+            .canvas-container {
+                height: 500px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>⚛️ Simulador do Modelo Atômico de Bohr</h1>
+            <p class="subtitle">Explore as transições eletrônicas no átomo de hidrogênio</p>
+        </header>
+
+        <div class="top-controls">
+            <button class="control-btn" id="resetBtn">
+                🔄 Resetar
+            </button>
+            <button class="control-btn" id="pauseBtn">
+                ⏸️ Pausar Animação
+            </button>
+            <button class="control-btn" id="speedBtn">
+                ⚡ Velocidade: Normal
+            </button>
+        </div>
+
+        <div class="simulation-area">
+            <div class="canvas-container">
+                <canvas id="atomCanvas"></canvas>
+                <div class="touch-hint" id="touchHint">
+                    <p>💡 Como usar</p>
+                    <p>Selecione um nível de energia</p>
+                    <p>Clique em uma transição possível</p>
+                </div>
+            </div>
+
+            <div class="info-panel">
+                <div class="info-card">
+                    <div class="info-label">Nível Atual</div>
+                    <div class="info-value" id="currentLevel">n = 1</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Energia do Nível</div>
+                    <div class="info-value" id="energyValue">13.600 eV</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Transições Possíveis</div>
+                    <div class="info-value" id="transitionsCount">0</div>
+                </div>
+                <div class="info-card">
+                    <div class="info-label">Comprimento de Onda</div>
+                    <div class="info-value" id="photonWavelength">— nm</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="spectrum-container">
+            <h3 class="section-title">📊 Espectro Eletromagnético</h3>
+            <div class="spectrum-visualization" id="spectrumVisualization">
+                <div class="wavelength-marker" id="wavelengthMarker" style="display: none;">
+                    <div class="wavelength-value" id="wavelengthValue">0 nm</div>
+                </div>
+            </div>
+            <div class="spectrum-labels">
+                <span>100 nm</span>
+                <span>400 nm</span>
+                <span>700 nm</span>
+                <span>1000 nm</span>
+            </div>
+            <div class="spectrum-regions">
+                <div class="spectrum-region uv">🟣 Ultravioleta</div>
+                <div class="spectrum-region visible">🌈 Visível</div>
+                <div class="spectrum-region ir">🔴 Infravermelho</div>
+            </div>
+        </div>
+
+        <div class="controls-area">
+            <h3 class="section-title">⚙️ Selecionar Nível de Energia Inicial</h3>
+            <div class="level-selector" id="levelSelector">
+                <!-- Gerado por JavaScript -->
+            </div>
+
+            <h3 class="section-title">🔀 Transições Eletrônicas Possíveis</h3>
+            <div class="possible-transitions" id="possibleTransitions">
+                <!-- Gerado por JavaScript -->
+            </div>
+
+            <h3 class="section-title">📈 Níveis de Energia Quantizados</h3>
+            <div class="energy-levels" id="energyLevels">
+                <!-- Gerado por JavaScript -->
+            </div>
+        </div>
+
+        <footer>
+            <p>⚛️ Simulador Interativo do Modelo Atômico de Bohr | Física Quântica</p>
+            <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--muted);">
+                Baseado na equação de Rydberg e nos níveis de energia quantizados
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // ==================== ELEMENTOS DO DOM ====================
+        const canvas = document.getElementById('atomCanvas');
+        const ctx = canvas.getContext('2d');
+        const currentLevelEl = document.getElementById('currentLevel');
+        const energyValueEl = document.getElementById('energyValue');
+        const transitionsCountEl = document.getElementById('transitionsCount');
+        const photonWavelengthEl = document.getElementById('photonWavelength');
+        const levelSelector = document.getElementById('levelSelector');
+        const possibleTransitionsEl = document.getElementById('possibleTransitions');
+        const energyLevelsEl = document.getElementById('energyLevels');
+        const touchHint = document.getElementById('touchHint');
+        const wavelengthMarker = document.getElementById('wavelengthMarker');
+        const wavelengthValue = document.getElementById('wavelengthValue');
+        const resetBtn = document.getElementById('resetBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const speedBtn = document.getElementById('speedBtn');
+
+        // ==================== ESTADO DA SIMULAÇÃO ====================
+        let currentLevel = 1;
+        let isAnimating = false;
+        let isPaused = false;
+        let animationFrameId = null;
+        let rotation = 0;
+        let currentTransition = null;
+        let animationSpeed = 1; // 1 = normal, 2 = rápido, 0.5 = lento
+        const speedModes = [
+            { speed: 0.5, label: 'Lenta' },
+            { speed: 1, label: 'Normal' },
+            { speed: 2, label: 'Rápida' }
+        ];
+        let currentSpeedIndex = 1;
+
+        // ==================== CONSTANTES FÍSICAS ====================
+        const R = 1.097373e7; // Constante de Rydberg (m⁻¹)
+        const h = 4.135667662e-15; // Constante de Planck (eV·s)
+        const c = 2.99792458e8; // Velocidade da luz (m/s)
+
+        // ==================== CONFIGURAÇÃO DE CORES E VISUAL ====================
+        const colors = {
+            nucleus: { start: '#ff2070', end: '#cc0052' },
+            electron: { start: '#22d3ee', end: '#0891b2' },
+            orbit: {
+                current: 'rgba(34, 211, 238, 0.7)',
+                emission: 'rgba(251, 191, 36, 0.6)',
+                absorption: 'rgba(34, 211, 238, 0.5)',
+                normal: 'rgba(255, 255, 255, 0.12)'
+            },
+            photon: '#fbbf24'
+        };
+
+        // ==================== INICIALIZAÇÃO ====================
+        function initCanvas() {
+            const container = canvas.parentElement;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = container.clientWidth * dpr;
+            canvas.height = container.clientHeight * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = container.clientWidth + 'px';
+            canvas.style.height = container.clientHeight + 'px';
+        }
+
+        // ==================== CÁLCULOS FÍSICOS ====================
+        function getEnergyLevelValue(n) {
+            return Math.abs(-13.6 / (n * n));
+        }
+
+        function getPhotonEnergy(initialLevel, finalLevel) {
+            return Math.abs(getEnergyLevelValue(finalLevel) - getEnergyLevelValue(initialLevel));
+        }
+
+        function calculateWavelength(initialLevel, finalLevel) {
+            if (initialLevel === finalLevel) return 0;
+
+            const n1 = Math.min(initialLevel, finalLevel);
+            const n2 = Math.max(initialLevel, finalLevel);
+
+            const waveNumber = R * (1 / (n1 * n1) - 1 / (n2 * n2));
+            return Math.round(1 / (waveNumber * 1e-9));
+        }
+
+        function getSpectralRegion(wavelength) {
+            if (wavelength < 380) return "UV";
+            if (wavelength <= 750) return "Visível";
+            return "IR";
+        }
+
+        function getSpectralSeries(finalLevel) {
+            if (finalLevel === 1) return "Lyman";
+            if (finalLevel === 2) return "Balmer";
+            if (finalLevel === 3) return "Paschen";
+            return "Outra";
+        }
+
+        // ==================== MARCADOR DE ESPECTRO ====================
+        function updateWavelengthMarker(wavelength) {
+            if (!wavelength || wavelength === 0) {
+                wavelengthMarker.style.display = 'none';
+                photonWavelengthEl.textContent = "— nm";
+                return;
+            }
+
+            wavelengthMarker.style.display = 'block';
+
+            const minWavelength = 100;
+            const maxWavelength = 1000;
+
+            const logMin = Math.log10(minWavelength);
+            const logMax = Math.log10(maxWavelength);
+            const logWavelength = Math.log10(wavelength);
+
+            let position = ((logWavelength - logMin) / (logMax - logMin)) * 100;
+            position = Math.max(0, Math.min(100, position));
+
+            wavelengthMarker.style.left = `${position}%`;
+            wavelengthValue.textContent = `${wavelength} nm`;
+            photonWavelengthEl.textContent = `${wavelength} nm`;
+        }
+
+        // ==================== CÁLCULO DE TRANSIÇÕES ====================
+        function calculatePossibleTransitions(currentLevel) {
+            const transitions = {
+                emission: [],
+                absorption: []
+            };
+
+            for (let n = 1; n < currentLevel; n++) {
+                const wavelength = calculateWavelength(currentLevel, n);
+                const region = getSpectralRegion(wavelength);
+                const energy = getPhotonEnergy(currentLevel, n);
+                const series = getSpectralSeries(n);
+
+                transitions.emission.push({
+                    from: currentLevel,
+                    to: n,
+                    wavelength: wavelength,
+                    energy: energy.toFixed(3),
+                    region: region,
+                    series: series
+                });
+            }
+
+            for (let n = currentLevel + 1; n <= 7; n++) {
+                const wavelength = calculateWavelength(currentLevel, n);
+                const region = getSpectralRegion(wavelength);
+                const energy = getPhotonEnergy(currentLevel, n);
+                const series = getSpectralSeries(currentLevel);
+
+                transitions.absorption.push({
+                    from: currentLevel,
+                    to: n,
+                    wavelength: wavelength,
+                    energy: energy.toFixed(3),
+                    region: region,
+                    series: series
+                });
+            }
+
+            return transitions;
+        }
+
+        // ==================== INTERFACE ====================
+        function updatePossibleTransitions() {
+            const transitions = calculatePossibleTransitions(currentLevel);
+            possibleTransitionsEl.innerHTML = '';
+
+            const totalTransitions = transitions.emission.length + transitions.absorption.length;
+            transitionsCountEl.textContent = totalTransitions;
+
+            const renderTransition = (transition, type) => {
+                const isVisible = transition.region === "Visível";
+                const isUV = transition.region === "UV";
+                const isIR = transition.region === "IR";
+
+                const item = document.createElement('div');
+                item.className = `transition-item ${isVisible ? 'visible-spectrum' : ''}`;
+                item.innerHTML = `
+                    <div class="transition-left">
+                        <div class="transition-header">
+                            <span class="transition-type ${type}">${type === 'emission' ? 'Emissão' : 'Absorção'}</span>
+                            <span class="transition-arrow">${transition.from} → ${transition.to}</span>
+                        </div>
+                        <div class="series ${transition.series.toLowerCase()}">${transition.series}</div>
+                    </div>
+                    <div class="transition-details">
+                        <span class="energy-value">⚡ ${transition.energy} eV</span>
+                        <span class="wavelength">λ ${transition.wavelength} nm</span>
+                        <span class="region ${isVisible ? 'visible' : ''} ${isUV ? 'uv' : ''} ${isIR ? 'ir' : ''}">
+                            ${transition.region}
+                        </span>
+                    </div>
+                `;
+
+                item.addEventListener('click', () => {
+                    if (!isAnimating) {
+                        currentTransition = transition;
+                        updateWavelengthMarker(transition.wavelength);
+                        executeTransition(transition.from, transition.to);
+                    }
+                });
+
+                item.addEventListener('mouseenter', () => {
+                    updateWavelengthMarker(transition.wavelength);
+                });
+
+                possibleTransitionsEl.appendChild(item);
+            };
+
+            transitions.emission.forEach(t => renderTransition(t, 'emission'));
+            transitions.absorption.forEach(t => renderTransition(t, 'absorption'));
+
+            if (transitions.emission.length === 0 && transitions.absorption.length === 0) {
+                const item = document.createElement('div');
+                item.className = 'transition-item';
+                item.innerHTML = '<span>Nenhuma transição possível</span>';
+                possibleTransitionsEl.appendChild(item);
+                updateWavelengthMarker(0);
+            }
+        }
+
+        function updateEnergyLevels() {
+            energyLevelsEl.innerHTML = '';
+
+            for (let n = 1; n <= 7; n++) {
+                const item = document.createElement('div');
+                item.className = `energy-item ${n === currentLevel ? 'current' : ''}`;
+                item.innerHTML = `
+                    <span>n = ${n}</span>
+                    <span>${getEnergyLevelValue(n).toFixed(3)} eV</span>
+                `;
+                energyLevelsEl.appendChild(item);
+            }
+        }
+
+        function initLevelSelector() {
+            levelSelector.innerHTML = '';
+
+            for (let n = 1; n <= 7; n++) {
+                const btn = document.createElement('div');
+                btn.className = `level-btn ${n === currentLevel ? 'active' : ''}`;
+                btn.textContent = n;
+                btn.addEventListener('click', () => {
+                    if (!isAnimating && n !== currentLevel) {
+                        updateWavelengthMarker(0);
+                        changeLevel(n);
+                    }
+                });
+                levelSelector.appendChild(btn);
+            }
+        }
+
+        function updateInfoDisplays() {
+            currentLevelEl.textContent = `n = ${currentLevel}`;
+            energyValueEl.textContent = `${getEnergyLevelValue(currentLevel).toFixed(3)} eV`;
+
+            const levelBtns = levelSelector.querySelectorAll('.level-btn');
+            levelBtns.forEach((btn, index) => {
+                const n = index + 1;
+                if (n === currentLevel) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            updatePossibleTransitions();
+            updateEnergyLevels();
+        }
+
+        // ==================== LÓGICA DE TRANSIÇÃO ====================
+        function changeLevel(newLevel) {
+            if (isAnimating) return;
+
+            const oldLevel = currentLevel;
+            currentLevel = newLevel;
+
+            animateLevelChange(oldLevel, newLevel);
+            touchHint.style.display = 'none';
+        }
+
+        function executeTransition(from, to) {
+            if (isAnimating) return;
+
+            if (currentLevel !== from) {
+                currentLevel = from;
+                updateInfoDisplays();
+
+                setTimeout(() => {
+                    changeLevel(to);
+                }, 300);
+            } else {
+                changeLevel(to);
+            }
+        }
+
+        // ==================== ANIMAÇÕES ====================
+        function animateLevelChange(oldLevel, newLevel) {
+            isAnimating = true;
+
+            const duration = 1500 / animationSpeed;
+            const startTime = Date.now();
+
+            const maxRadius = Math.min(canvas.width, canvas.height) * 0.35;
+            const startRadius = maxRadius * (oldLevel / 7);
+            const endRadius = maxRadius * (newLevel / 7);
+
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+
+                const easedProgress = 1 - Math.pow(1 - progress, 3);
+                const currentRadius = startRadius + (endRadius - startRadius) * easedProgress;
+
+                rotation += 0.05 * animationSpeed;
+
+                render(currentRadius);
+
+                if (progress < 1) {
+                    animationFrameId = requestAnimationFrame(animate);
+                } else {
+                    isAnimating = false;
+                    updateInfoDisplays();
+
+                    if (newLevel < oldLevel) {
+                        showPhotonAnimation();
+                    }
+                }
+            }
+
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        function showPhotonAnimation() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const maxRadius = Math.min(canvas.width, canvas.height) * 0.35;
+            const radius = maxRadius * (currentLevel / 7);
+
+            let photonProgress = 0;
+            const photonDuration = 1000 / animationSpeed;
+            const startTime = Date.now();
+
+            function animatePhoton() {
+                const elapsed = Date.now() - startTime;
+                photonProgress = Math.min(elapsed / photonDuration, 1);
+
+                render();
+
+                ctx.save();
+                const angle = rotation;
+                const photonRadius = radius + 50 * photonProgress;
+                const photonX = centerX + Math.cos(angle) * photonRadius;
+                const photonY = centerY + Math.sin(angle) * photonRadius;
+
+                const size = 8 * (1 - photonProgress * 0.5);
+                ctx.beginPath();
+                ctx.arc(photonX, photonY, size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(251, 191, 36, ${1 - photonProgress})`;
+                ctx.shadowColor = colors.photon;
+                ctx.shadowBlur = 20;
+                ctx.fill();
+                ctx.restore();
+
+                if (photonProgress < 1) {
+                    requestAnimationFrame(animatePhoton);
+                }
+            }
+
+            animatePhoton();
+        }
+
+        // ==================== RENDERIZAÇÃO ====================
+        function render(electronRadius = null) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const maxRadius = Math.min(canvas.width, canvas.height) * 0.35;
+
+            // Desenhar órbitas
+            for (let n = 1; n <= 7; n++) {
+                const radius = maxRadius * (n / 7);
+
+                const transitions = calculatePossibleTransitions(currentLevel);
+                let isPossibleTransition = false;
+                let transitionType = '';
+
+                if (n < currentLevel) {
+                    const transition = transitions.emission.find(t => t.to === n);
+                    if (transition) {
+                        isPossibleTransition = true;
+                        transitionType = 'emission';
+                    }
+                } else if (n > currentLevel) {
+                    const transition = transitions.absorption.find(t => t.to === n);
+                    if (transition) {
+                        isPossibleTransition = true;
+                        transitionType = 'absorption';
+                    }
+                }
+
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+
+                if (n === currentLevel) {
+                    ctx.strokeStyle = colors.orbit.current;
+                    ctx.lineWidth = 3;
+                } else if (isPossibleTransition) {
+                    ctx.strokeStyle = transitionType === 'emission' ?
+                        colors.orbit.emission : colors.orbit.absorption;
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 3]);
+                } else {
+                    ctx.strokeStyle = colors.orbit.normal;
+                    ctx.lineWidth = 1;
+                }
+
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Rótulos
+                if (n === currentLevel || isPossibleTransition) {
+                    ctx.fillStyle = n === currentLevel ?
+                        colors.orbit.current :
+                        (transitionType === 'emission' ? colors.orbit.emission : colors.orbit.absorption);
+                    ctx.font = 'bold 14px Inter, sans-serif';
+                } else {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                    ctx.font = '12px Inter, sans-serif';
+                }
+                ctx.textAlign = 'center';
+                ctx.fillText(`n=${n}`, centerX + radius + 28, centerY + 4);
+            }
+
+            // Núcleo
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 16, 0, Math.PI * 2);
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 16);
+            gradient.addColorStop(0, colors.nucleus.start);
+            gradient.addColorStop(1, colors.nucleus.end);
+            ctx.fillStyle = gradient;
+            ctx.shadowColor = colors.nucleus.start;
+            ctx.shadowBlur = 25;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Elétron
+            const radius = electronRadius !== null ?
+                electronRadius : (maxRadius * (currentLevel / 7));
+
+            const electronX = centerX + Math.cos(rotation) * radius;
+            const electronY = centerY + Math.sin(rotation) * radius;
+
+            ctx.beginPath();
+            ctx.arc(electronX, electronY, 9, 0, Math.PI * 2);
+            const electronGradient = ctx.createRadialGradient(
+                electronX, electronY, 0,
+                electronX, electronY, 9
+            );
+            electronGradient.addColorStop(0, colors.electron.start);
+            electronGradient.addColorStop(1, colors.electron.end);
+            ctx.fillStyle = electronGradient;
+            ctx.shadowColor = colors.electron.start;
+            ctx.shadowBlur = 20;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Título
+            ctx.fillStyle = 'rgba(248, 250, 252, 0.9)';
+            ctx.font = 'bold 18px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Átomo de Hidrogênio', centerX, 35);
+        }
+
+        // ==================== CONTROLES ====================
+        resetBtn.addEventListener('click', () => {
+            if (!isAnimating) {
+                currentLevel = 1;
+                updateInfoDisplays();
+                updateWavelengthMarker(0);
+                touchHint.style.display = 'flex';
+                setTimeout(() => {
+                    touchHint.style.display = 'none';
+                }, 3000);
+            }
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            isPaused = !isPaused;
+            pauseBtn.innerHTML = isPaused ? '▶️ Retomar Animação' : '⏸️ Pausar Animação';
+            if (isPaused) {
+                pauseBtn.classList.add('active');
+            } else {
+                pauseBtn.classList.remove('active');
+            }
+        });
+
+        speedBtn.addEventListener('click', () => {
+            currentSpeedIndex = (currentSpeedIndex + 1) % speedModes.length;
+            const mode = speedModes[currentSpeedIndex];
+            animationSpeed = mode.speed;
+            speedBtn.innerHTML = `⚡ Velocidade: ${mode.label}`;
+        });
+
+        // ==================== INICIALIZAÇÃO E LOOP ====================
+        function init() {
+            initCanvas();
+            initLevelSelector();
+            updateInfoDisplays();
+            updateWavelengthMarker(0);
+            render();
+
+            function animateAtom() {
+                if (!isAnimating && !isPaused) {
+                    rotation += 0.015 * animationSpeed;
+                    render();
+                }
+                requestAnimationFrame(animateAtom);
+            }
+            animateAtom();
+
+            setTimeout(() => {
+                touchHint.style.display = 'none';
+            }, 6000);
+
+            window.addEventListener('resize', () => {
+                initCanvas();
+                render();
+            });
+        }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+
+</html>

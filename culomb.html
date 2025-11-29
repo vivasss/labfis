@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Simulador da Lei de Coulomb — Responsivo</title>
+  <style>
+    :root {
+      --bg: #071028;
+      --card: #0f1724;
+      --muted: #94a3b8;
+      --primary: #8a2be2;
+      --accent: #00bfff;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --positive: #ff595e;
+      --negative: #1982c4;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: all 0.3s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, 'Segoe UI', Roboto, Arial;
+      background: linear-gradient(180deg, #071028 0%, #071021 60%);
+      color: #e6eef8;
+      min-height: 100vh;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+
+    header {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    h1 {
+      font-size: clamp(16px, 4vw, 18px);
+      margin: 0;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: textGlow 3s infinite alternate;
+      text-align: center;
+      flex: 1;
+    }
+
+    .tab-container {
+      display: flex;
+      background: var(--card);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      width: 100%;
+    }
+
+    .tab {
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      flex: 1;
+      text-align: center;
+    }
+
+    .tab:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .tab.active {
+      background: var(--primary);
+      font-weight: 700;
+      box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
+    }
+
+    .tab::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 3px;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    .tab.active::after {
+      width: 100%;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 18px;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    main {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      padding: 0 18px 18px;
+      animation: slideUp 0.6s ease-out;
+    }
+
+    .simulation-container {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+      min-height: 50vh;
+      flex: 1;
+    }
+
+    .simulation-container::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(138, 43, 226, 0.05) 0%, transparent 70%);
+      animation: rotate 20s linear infinite;
+      pointer-events: none;
+    }
+
+    #simCanvas {
+      width: 100%;
+      height: 100%;
+      min-height: 300px;
+      border-radius: 8px;
+      background: transparent;
+      display: block;
+      animation: canvasAppear 1s ease-out;
+      touch-action: none;
+    }
+
+    .info-panel {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .info-card {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      border-left: 3px solid var(--primary);
+      position: relative;
+      overflow: hidden;
+      animation: cardSlideIn 0.5s ease-out;
+    }
+
+    .info-card:nth-child(2) {
+      border-left-color: var(--accent);
+      animation-delay: 0.1s;
+    }
+
+    .info-card:nth-child(3) {
+      border-left-color: var(--success);
+      animation-delay: 0.2s;
+    }
+
+    .info-card:nth-child(4) {
+      border-left-color: var(--warning);
+      animation-delay: 0.3s;
+    }
+
+    .info-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .info-card:hover::before {
+      left: 100%;
+    }
+
+    .info-card .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .info-card .value {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .controls {
+      background: var(--card);
+      padding: 16px;
+      border-radius: 12px;
+      overflow-y: auto;
+      animation: slideInRight 0.6s ease-out;
+      max-height: 70vh;
+    }
+
+    .controls::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .controls::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    .controls::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 3px;
+    }
+
+    .group {
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .group:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .group:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+
+    .group:nth-child(4) {
+      animation-delay: 0.3s;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    input[type='range'] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type='range']::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+      transition: all 0.2s ease;
+    }
+
+    input[type='range']::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 10px rgba(138, 43, 226, 0.8);
+    }
+
+    input[type='number'],
+    select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.02);
+      color: inherit;
+      margin-bottom: 8px;
+      transition: all 0.3s ease;
+    }
+
+    input[type='number']:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background: linear-gradient(90deg, var(--primary), #6a0dad);
+      border: 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.secondary {
+      background: linear-gradient(90deg, #444, #666);
+    }
+
+    button.secondary:hover {
+      box-shadow: 0 5px 15px rgba(102, 102, 102, 0.4);
+    }
+
+    .muted {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .explanation-container {
+      padding: 18px;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    .explanation-content {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      margin-bottom: 18px;
+    }
+
+    .explanation-content h2 {
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1.5rem;
+    }
+
+    .explanation-content h3 {
+      margin: 20px 0 10px;
+      color: var(--primary);
+      font-size: 1.2rem;
+    }
+
+    .explanation-content p {
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+
+    .explanation-content ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    .explanation-content li {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .highlight {
+      background: linear-gradient(90deg, transparent, rgba(138, 43, 226, 0.1), transparent);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .formula {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 12px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-family: monospace;
+      text-align: center;
+      border-left: 3px solid var(--accent);
+    }
+
+    .example {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 3px solid var(--success);
+    }
+
+    .concept-card {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 3px solid var(--primary);
+      transition: all 0.3s ease;
+    }
+
+    .concept-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .touch-hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      max-width: 80%;
+      z-index: 5;
+      animation: pulse 2s infinite;
+    }
+
+    /* Botão de ajuda flutuante */
+    .help-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      transition: all 0.3s ease;
+      border: none;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .help-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 25px rgba(138, 43, 226, 0.5);
+    }
+
+    .help-button:active {
+      transform: scale(0.95);
+    }
+
+    /* Painel de ajuda */
+    .help-panel {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 320px;
+      max-height: 70vh;
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      overflow-y: auto;
+      transform: translateY(20px);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    .help-panel.active {
+      transform: translateY(0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .help-panel h2 {
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .help-panel h3 {
+      margin: 15px 0 8px;
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+
+    .help-panel p {
+      margin-bottom: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .help-panel ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    .help-panel li {
+      margin-bottom: 6px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .help-panel .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .help-panel .close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    footer {
+      padding: 12px 20px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+      animation: fadeIn 1s ease-out;
+    }
+
+    /* Animações personalizadas */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes canvasAppear {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes cardSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes textGlow {
+      0% {
+        text-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+      }
+      100% {
+        text-shadow: 0 0 15px rgba(0, 191, 255, 0.8), 0 0 20px rgba(138, 43, 226, 0.6);
+      }
+    }
+
+    @keyframes rotate {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: 0.7;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0.7;
+      }
+    }
+
+    /* Responsividade */
+    @media (min-width: 768px) {
+      main {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        height: calc(100vh - 134px);
+      }
+      
+      .simulation-container {
+        min-height: auto;
+      }
+      
+      #simCanvas {
+        height: 100%;
+      }
+      
+      .info-panel {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      
+      .help-panel {
+        width: 380px;
+        right: 20px;
+      }
+      
+      button {
+        width: auto;
+      }
+      
+      header {
+        flex-direction: row;
+      }
+      
+      h1 {
+        text-align: left;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      main {
+        grid-template-columns: 1fr 420px;
+      }
+      
+      .controls {
+        max-height: none;
+      }
+    }
+
+    @media (max-width: 767px) {
+      header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+      }
+      
+      h1 {
+        text-align: center;
+      }
+      
+      .tab-container {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #simCanvas {
+        min-height: 250px;
+      }
+      
+      .touch-hint {
+        font-size: 14px;
+        padding: 12px;
+      }
+      
+      .info-panel {
+        grid-template-columns: 1fr;
+      }
+      
+      header {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 12px 15px;
+      }
+      
+      .tab-container {
+        width: 100%;
+      }
+      
+      .tab {
+        flex: 1;
+        text-align: center;
+        padding: 12px 8px;
+        font-size: 13px;
+      }
+      
+      .simulation-container {
+        padding: 8px;
+      }
+      
+      .controls {
+        padding: 12px;
+      }
+      
+      button {
+        padding: 12px 16px;
+        font-size: 16px;
+      }
+      
+      .help-button {
+        width: 50px;
+        height: 50px;
+        bottom: 15px;
+        right: 15px;
+        font-size: 20px;
+      }
+      
+      .help-panel {
+        width: calc(100% - 30px);
+        right: 15px;
+        bottom: 75px;
+      }
+      
+      .explanation-container {
+        padding: 12px;
+      }
+      
+      .explanation-content {
+        padding: 15px;
+      }
+      
+      main {
+        padding: 0 12px 12px;
+        gap: 12px;
+      }
+      
+      .row {
+        flex-direction: column;
+        gap: 8px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .row {
+        flex-direction: column;
+        gap: 8px;
+      }
+      
+      .tab {
+        padding: 10px 6px;
+        font-size: 12px;
+      }
+      
+      .info-card {
+        padding: 8px;
+      }
+      
+      .info-card .value {
+        font-size: 0.9rem;
+      }
+      
+      .help-panel {
+        width: calc(100% - 20px);
+        right: 10px;
+        bottom: 70px;
+      }
+    }
+
+    /* Melhorias para orientação paisagem em dispositivos móveis */
+    @media (max-height: 500px) and (orientation: landscape) {
+      main {
+        height: auto;
+        min-height: calc(100vh - 134px);
+      }
+      
+      .simulation-container {
+        min-height: 300px;
+      }
+      
+      .controls {
+        max-height: 50vh;
+      }
+      
+      .help-panel {
+        max-height: 60vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Simulador da Lei de Coulomb</h1>
+    <div class="tab-container">
+      <div class="tab active" data-tab="simulation">Simulação</div>
+      <div class="tab" data-tab="explanation">Explicação</div>
+    </div>
+  </header>
+
+  <div class="tab-content active" id="simulation-tab">
+    <main>
+      <div class="simulation-container">
+        <canvas id="simCanvas"></canvas>
+        
+        <div class="touch-hint" id="touchHint">
+          <p>💡 Arraste as cargas para movê-las</p>
+          <p>Use os controles para ajustar valores</p>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-card">
+            <div class="label">Distância</div>
+            <div class="value" id="distanceValue">0.0 m</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Força Elétrica</div>
+            <div class="value" id="forceValue">0.0 N</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Tipo de Força</div>
+            <div class="value" id="forceType">--</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Energia Potencial</div>
+            <div class="value" id="energyValue">0.0 J</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; display:flex; gap:10px;">
+          <button id="resetBtn">Resetar Posições</button>
+        </div>
+      </div>
+
+      <aside class="controls">
+        <div class="group">
+          <label><strong>Cargas Elétricas</strong></label>
+          <div class="row">
+            <div style="flex:1">
+              <label class="small">Carga Q₁ (μC)</label>
+              <input id="q1" type="number" step="0.1" value="2">
+            </div>
+            <div style="flex:1">
+              <label class="small">Carga Q₂ (μC)</label>
+              <input id="q2" type="number" step="0.1" value="-3">
+            </div>
+          </div>
+          <div class="row">
+            <div style="flex:1">
+              <label class="small">Constante k (×10⁹)</label>
+              <input id="k" type="number" step="0.1" value="9">
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <label><strong>Visualização</strong></label>
+          <label class="small"><input id="showForces" type="checkbox" checked> Mostrar vetores de força</label>
+          <label class="small"><input id="showField" type="checkbox"> Mostrar campo elétrico</label>
+          <label class="small"><input id="showValues" type="checkbox" checked> Mostrar valores</label>
+          <label class="small"><input id="touchHintToggle" type="checkbox"> Mostrar dicas</label>
+        </div>
+
+        <div class="group">
+          <label><strong>Opções de Visualização</strong></label>
+          <label class="small">Escala de Força</label>
+          <input id="forceScale" type="range" min="0.5" max="2" step="0.1" value="1">
+          <label class="small">Escala de Campo</label>
+          <input id="fieldScale" type="range" min="0.5" max="2" step="0.1" value="1">
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div class="tab-content" id="explanation-tab">
+    <div class="explanation-container">
+      <div class="explanation-content">
+        <h2>Como Usar o Simulador</h2>
+        <p>Este simulador permite explorar diferentes aspectos da Lei de Coulomb de forma interativa:</p>
+        
+        <div class="concept-card">
+          <h3>Interação Direta</h3>
+          <p>Arraste as cargas elétricas para alterar suas posições. Observe como a força entre elas muda em tempo real.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Controles</h3>
+          <p>Use os controles para ajustar os valores das cargas, a constante eletrostática e as opções de visualização.</p>
+        </div>
+        
+        <p>Experimente diferentes configurações e observe como as forças elétricas se comportam!</p>
+      </div>
+
+      <div class="explanation-content">
+        <h2>O que é a Lei de Coulomb?</h2>
+        <p>A Lei de Coulomb descreve a força eletrostática entre duas cargas elétricas pontuais. Foi formulada pelo físico francês Charles-Augustin de Coulomb no século XVIII e é uma das leis fundamentais do eletromagnetismo.</p>
+        
+        <div class="formula">
+          F = k × |q₁ × q₂| / r²
+        </div>
+        
+        <p>Onde:</p>
+        <ul>
+          <li><span class="highlight">F</span> é a magnitude da força eletrostática entre as cargas</li>
+          <li><span class="highlight">k</span> é a constante eletrostática (8.99 × 10⁹ N·m²/C² no vácuo)</li>
+          <li><span class="highlight">q₁ e q₂</span> são os valores das cargas elétricas</li>
+          <li><span class="highlight">r</span> é a distância entre as cargas</li>
+        </ul>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Direção da Força Eletrostática</h2>
+        
+        <p>A força eletrostática atua ao longo da linha que conecta as duas cargas:</p>
+        
+        <ul>
+          <li><span class="highlight">Cargas de mesmo sinal</span> se repelem (força repulsiva)</li>
+          <li><span class="highlight">Cargas de sinais opostos</span> se atraem (força atrativa)</li>
+        </ul>
+        
+        <div class="example">
+          <h3>Exemplo Prático</h3>
+          <p>Duas cargas de 1 μC cada, separadas por 1 metro no vácuo, exercem uma força de:</p>
+          <p>F = (9 × 10⁹) × (1 × 10⁻⁶) × (1 × 10⁻⁶) / (1)² = 9 × 10⁻³ N</p>
+          <p>Isso equivale a aproximadamente 0.9 gramas-força.</p>
+        </div>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Campo Elétrico</h2>
+        
+        <p>O campo elétrico é uma grandeza vetorial que representa a força que uma carga de prova sofreria em cada ponto do espaço:</p>
+        
+        <div class="formula">
+          E = k × q / r²
+        </div>
+        
+        <p>Onde:</p>
+        <ul>
+          <li><span class="highlight">E</span> é a magnitude do campo elétrico</li>
+          <li><span class="highlight">q</span> é a carga que gera o campo</li>
+          <li><span class="highlight">r</span> é a distância da carga ao ponto</li>
+        </ul>
+        
+        <p>No simulador, as linhas de campo elétrico mostram a direção e intensidade do campo em cada ponto do espaço.</p>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Energia Potencial Eletrostática</h2>
+        
+        <p>A energia potencial eletrostática é a energia armazenada no sistema de cargas devido à sua posição relativa:</p>
+        
+        <div class="formula">
+          U = k × q₁ × q₂ / r
+        </div>
+        
+        <p>Onde:</p>
+        <ul>
+          <li><span class="highlight">U</span> é a energia potencial eletrostática</li>
+          <li><span class="highlight">q₁ e q₂</span> são os valores das cargas elétricas</li>
+          <li><span class="highlight">r</span> é a distância entre as cargas</li>
+        </ul>
+        
+        <p>Para cargas de mesmo sinal, a energia potencial é positiva, indicando que trabalho deve ser realizado para aproximá-las. Para cargas de sinais opostos, a energia potencial é negativa, indicando que energia é liberada quando elas se aproximam.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botão de ajuda flutuante -->
+  <button class="help-button" id="helpButton">?</button>
+
+  <!-- Painel de ajuda -->
+  <div class="help-panel" id="helpPanel">
+    <button class="close-btn" id="closeHelp">&times;</button>
+    <h2>💡 Como Usar o Simulador</h2>
+    
+    <h3>Interação com as Cargas</h3>
+    <p>Você pode interagir diretamente com as cargas elétricas:</p>
+    <ul>
+      <li><strong>Arraste</strong> as cargas para movê-las</li>
+      <li><strong>Observe</strong> como a força muda em tempo real</li>
+    </ul>
+    
+    <h3>Controles de Carga</h3>
+    <p>Ajuste os valores das cargas e a constante eletrostática:</p>
+    <ul>
+      <li><strong>Cargas positivas</strong> são mostradas em vermelho</li>
+      <li><strong>Cargas negativas</strong> são mostradas em azul</li>
+      <li><strong>Constante k</strong> controla a intensidade da força</li>
+    </ul>
+    
+    <h3>Visualizações</h3>
+    <ul>
+      <li><strong>Vetores de força</strong> mostram direção e magnitude</li>
+      <li><strong>Campo elétrico</strong> mostra linhas de força</li>
+      <li><strong>Valores numéricos</strong> mostram medidas precisas</li>
+    </ul>
+    
+    <h3>Fórmula da Lei de Coulomb</h3>
+    <div class="formula">F = k × |q₁ × q₂| / r²</div>
+    <p>Onde F é a força, k é a constante, q são as cargas e r é a distância.</p>
+    
+    <p style="margin-top: 15px; font-style: italic; text-align: center;">
+      Explore diferentes configurações e observe como as forças elétricas se comportam!
+    </p>
+  </div>
+
+  <footer>Simulador da Lei de Coulomb — HTML5 & Canvas</footer>
+
+  <script>
+    // Canvas and context
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Controls
+    const q1Input = document.getElementById('q1');
+    const q2Input = document.getElementById('q2');
+    const kInput = document.getElementById('k');
+    const showForces = document.getElementById('showForces');
+    const showField = document.getElementById('showField');
+    const showValues = document.getElementById('showValues');
+    const forceScale = document.getElementById('forceScale');
+    const fieldScale = document.getElementById('fieldScale');
+    const resetBtn = document.getElementById('resetBtn');
+    const touchHintToggle = document.getElementById('touchHintToggle');
+    const touchHint = document.getElementById('touchHint');
+
+    // Help elements
+    const helpButton = document.getElementById('helpButton');
+    const helpPanel = document.getElementById('helpPanel');
+    const closeHelp = document.getElementById('closeHelp');
+
+    // Info displays
+    const distanceValue = document.getElementById('distanceValue');
+    const forceValue = document.getElementById('forceValue');
+    const forceType = document.getElementById('forceType');
+    const energyValue = document.getElementById('energyValue');
+
+    // Simulation state
+    let charges = [
+      { x: 200, y: 250, r: 25, dragging: false, charge: parseFloat(q1Input.value) * 1e-6 },
+      { x: 600, y: 250, r: 25, dragging: false, charge: parseFloat(q2Input.value) * 1e-6 }
+    ];
+    
+    let k = parseFloat(kInput.value) * 1e9;
+    let showForceVectors = showForces.checked;
+    let showElectricField = showField.checked;
+    let showNumericValues = showValues.checked;
+    let forceScaleValue = parseFloat(forceScale.value);
+    let fieldScaleValue = parseFloat(fieldScale.value);
+    
+    // Touch interaction state
+    let isDragging = false;
+    let touchHintTimeout = null;
+
+    // Resize canvas properly for high-dpi and fullscreen
+    function resizeCanvas() {
+      const ratio = devicePixelRatio || 1;
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      
+      // Only resize if dimensions have changed
+      if (canvas.width !== width * ratio || canvas.height !== height * ratio) {
+        canvas.width = width * ratio;
+        canvas.height = height * ratio;
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        return true;
+      }
+      return false;
+    }
+
+    // Handle all resize events
+    function handleResize() {
+      const wasResized = resizeCanvas();
+      
+      if (wasResized) {
+        // Keep charges within bounds after resize
+        charges.forEach(charge => {
+          // Adjust charge size based on screen size
+          charge.r = Math.max(20, Math.min(30, canvas.width / 15));
+          
+          charge.x = Math.min(Math.max(charge.x, charge.r), canvas.width - charge.r);
+          charge.y = Math.min(Math.max(charge.y, charge.r), canvas.height - charge.r);
+        });
+        
+        render();
+      }
+    }
+
+    // Add all resize event listeners
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    
+    // Handle fullscreen changes
+    document.addEventListener('fullscreenchange', handleResize);
+    document.addEventListener('webkitfullscreenchange', handleResize);
+    document.addEventListener('mozfullscreenchange', handleResize);
+    document.addEventListener('MSFullscreenChange', handleResize);
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const id = tab.getAttribute('data-tab');
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(id + '-tab').classList.add('active');
+        
+        // Animate content when switching to explanation tab
+        if (id === 'explanation') {
+          document.querySelectorAll('.explanation-content').forEach((content, index) => {
+            content.style.animation = `slideUp 0.6s ease-out ${index * 0.1}s both`;
+          });
+        }
+        
+        // Ensure canvas is properly sized after tab switch
+        setTimeout(handleResize, 100);
+      });
+    });
+
+    // Help panel functionality
+    helpButton.addEventListener('click', () => {
+      helpPanel.classList.toggle('active');
+    });
+
+    closeHelp.addEventListener('click', () => {
+      helpPanel.classList.remove('active');
+    });
+
+    // Close help panel when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!helpPanel.contains(e.target) && e.target !== helpButton) {
+        helpPanel.classList.remove('active');
+      }
+    });
+
+    // Touch hint toggle
+    touchHintToggle.addEventListener('change', () => {
+      if (touchHintToggle.checked) {
+        touchHint.style.display = 'block';
+        // Auto-hide after 5 seconds
+        clearTimeout(touchHintTimeout);
+        touchHintTimeout = setTimeout(() => {
+          touchHint.style.display = 'none';
+          touchHintToggle.checked = false;
+        }, 5000);
+      } else {
+        touchHint.style.display = 'none';
+      }
+    });
+
+    // Calculate distance between two points
+    function distance(a, b) {
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    // Calculate angle between two points
+    function angle(a, b) {
+      return Math.atan2(b.y - a.y, b.x - a.x);
+    }
+
+    // Calculate forces and update info
+    function calculateForces() {
+      const charge1 = charges[0];
+      const charge2 = charges[1];
+      
+      const r = distance(charge1, charge2);
+      const ang = angle(charge1, charge2);
+      
+      // Avoid division by zero
+      if (r < 1) return { force: 0, forceX: 0, forceY: 0, energy: 0 };
+      
+      const F = k * Math.abs(charge1.charge * charge2.charge) / (r * r);
+      const direction = (charge1.charge * charge2.charge > 0) ? -1 : 1;
+      const Fx = Math.cos(ang) * F * direction;
+      const Fy = Math.sin(ang) * F * direction;
+      
+      // Calculate potential energy
+      const energy = k * charge1.charge * charge2.charge / r;
+      
+      return {
+        force: F,
+        forceX: Fx,
+        forceY: Fy,
+        energy: energy
+      };
+    }
+
+    // Draw electric field
+    function drawElectricField() {
+      // Adjust grid size based on screen size
+      const gridSize = window.innerWidth < 600 ? 50 : 30;
+      const scale = fieldScaleValue * 1e7;
+      
+      for (let x = gridSize; x < canvas.width; x += gridSize) {
+        for (let y = gridSize; y < canvas.height; y += gridSize) {
+          let ex = 0, ey = 0;
+          
+          // Calculate electric field from each charge
+          charges.forEach(charge => {
+            const dx = x - charge.x;
+            const dy = y - charge.y;
+            const r = Math.hypot(dx, dy);
+            
+            if (r > 10) { // Avoid division by zero and points too close
+              const eMagnitude = k * Math.abs(charge.charge) / (r * r);
+              const angle = Math.atan2(dy, dx);
+              const direction = charge.charge > 0 ? 1 : -1;
+              
+              ex += Math.cos(angle) * eMagnitude * direction;
+              ey += Math.sin(angle) * eMagnitude * direction;
+            }
+          });
+          
+          // Normalize and draw field vector
+          const eMagnitude = Math.hypot(ex, ey);
+          if (eMagnitude > 0) {
+            const vectorScale = Math.min(15, eMagnitude * scale);
+            const vectorAngle = Math.atan2(ey, ex);
+            
+            ctx.strokeStyle = 'rgba(100, 200, 255, 0.7)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(
+              x + Math.cos(vectorAngle) * vectorScale,
+              y + Math.sin(vectorAngle) * vectorScale
+            );
+            ctx.stroke();
+            
+            // Draw arrow head
+            ctx.fillStyle = 'rgba(100, 200, 255, 0.7)';
+            ctx.beginPath();
+            ctx.moveTo(
+              x + Math.cos(vectorAngle) * vectorScale,
+              y + Math.sin(vectorAngle) * vectorScale
+            );
+            ctx.lineTo(
+              x + Math.cos(vectorAngle - Math.PI/6) * vectorScale * 0.3,
+              y + Math.sin(vectorAngle - Math.PI/6) * vectorScale * 0.3
+            );
+            ctx.lineTo(
+              x + Math.cos(vectorAngle + Math.PI/6) * vectorScale * 0.3,
+              y + Math.sin(vectorAngle + Math.PI/6) * vectorScale * 0.3
+            );
+            ctx.closePath();
+            ctx.fill();
+          }
+        }
+      }
+    }
+
+    // Draw force vectors
+    function drawForceVectors(forces) {
+      const scale = forceScaleValue * 1e11;
+      
+      // Draw force vector on charge 1
+      drawVector(
+        charges[0].x, 
+        charges[0].y, 
+        forces.forceX * scale, 
+        forces.forceY * scale, 
+        '#ffca3a'
+      );
+      
+      // Draw force vector on charge 2
+      drawVector(
+        charges[1].x, 
+        charges[1].y, 
+        -forces.forceX * scale, 
+        -forces.forceY * scale, 
+        '#8ac926'
+      );
+    }
+
+    // Draw a vector with arrow
+    function drawVector(x, y, vx, vy, color) {
+      const magnitude = Math.hypot(vx, vy);
+      
+      if (magnitude > 0.5) { // Only draw if vector is significant
+        const angle = Math.atan2(vy, vx);
+        
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + vx, y + vy);
+        ctx.stroke();
+        
+        // Draw arrow head
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(x + vx, y + vy);
+        ctx.lineTo(
+          x + vx - Math.cos(angle - Math.PI/6) * 10,
+          y + vy - Math.sin(angle - Math.PI/6) * 10
+        );
+        ctx.lineTo(
+          x + vx - Math.cos(angle + Math.PI/6) * 10,
+          y + vy - Math.sin(angle + Math.PI/6) * 10
+        );
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+
+    // Draw charges
+    function drawCharges() {
+      charges.forEach((charge, i) => {
+        // Draw charge circle
+        ctx.beginPath();
+        ctx.arc(charge.x, charge.y, charge.r, 0, Math.PI * 2);
+        ctx.fillStyle = charge.charge > 0 ? 'var(--positive)' : 'var(--negative)';
+        ctx.fill();
+        
+        // Draw border
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        // Draw charge symbol
+        ctx.fillStyle = 'white';
+        ctx.font = `bold ${Math.max(16, charge.r * 0.8)}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(charge.charge > 0 ? '+' : '−', charge.x, charge.y);
+        
+        // Show values if enabled
+        if (showNumericValues) {
+          ctx.font = `${Math.max(12, charge.r * 0.5)}px Arial`;
+          ctx.fillText(`${Math.abs(charge.charge * 1e6)} μC`, charge.x, charge.y + charge.r + 15);
+        }
+        
+        // Draw charge label (Q1, Q2)
+        ctx.font = `bold ${Math.max(14, charge.r * 0.6)}px Arial`;
+        ctx.fillText(`Q${i+1}`, charge.x, charge.y - charge.r - 15);
+      });
+    }
+
+    // Update info display
+    function updateInfo(forces) {
+      const r = distance(charges[0], charges[1]);
+      distanceValue.textContent = (r / 100).toFixed(2) + ' m';
+      forceValue.textContent = forces.force.toExponential(2) + ' N';
+      
+      const type = charges[0].charge * charges[1].charge > 0 ? 'Repulsão' : 'Atração';
+      forceType.textContent = type;
+      forceType.style.color = type === 'Repulsão' ? 'var(--positive)' : 'var(--negative)';
+      
+      energyValue.textContent = forces.energy.toExponential(2) + ' J';
+    }
+
+    // Main drawing function
+    function render() {
+      // Ensure canvas size matches CSS
+      resizeCanvas();
+
+      // Clear
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw electric field if enabled
+      if (showElectricField) {
+        drawElectricField();
+      }
+
+      // Draw line between charges
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(charges[0].x, charges[0].y);
+      ctx.lineTo(charges[1].x, charges[1].y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Calculate forces
+      const forces = calculateForces();
+
+      // Draw force vectors if enabled
+      if (showForceVectors) {
+        drawForceVectors(forces);
+      }
+
+      // Draw charges
+      drawCharges();
+
+      // Update info display
+      updateInfo(forces);
+    }
+
+    // Mouse interaction for desktop
+    let isMouseDown = false;
+
+    canvas.addEventListener('mousedown', (e) => {
+      isMouseDown = true;
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+      
+      charges.forEach(charge => {
+        if (Math.hypot(x - charge.x, y - charge.y) < charge.r) {
+          charge.dragging = true;
+          isDragging = true;
+        }
+      });
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (isDragging && isMouseDown) {
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+        
+        charges.forEach(charge => {
+          if (charge.dragging) {
+            charge.x = x;
+            charge.y = y;
+            
+            // Keep charges within canvas bounds
+            charge.x = Math.max(charge.r, Math.min(charge.x, canvas.width - charge.r));
+            charge.y = Math.max(charge.r, Math.min(charge.y, canvas.height - charge.r));
+          }
+        });
+        
+        render();
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      isMouseDown = false;
+      charges.forEach(charge => charge.dragging = false);
+      isDragging = false;
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      isMouseDown = false;
+      charges.forEach(charge => charge.dragging = false);
+      isDragging = false;
+    });
+
+    // Touch interaction handlers
+    function handleTouchStart(e) {
+      e.preventDefault();
+      
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
+        const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+        
+        charges.forEach(charge => {
+          if (Math.hypot(x - charge.x, y - charge.y) < charge.r) {
+            charge.dragging = true;
+            isDragging = true;
+          }
+        });
+      }
+    }
+
+    function handleTouchMove(e) {
+      e.preventDefault();
+      
+      if (isDragging && e.touches.length === 1) {
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
+        const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+        
+        charges.forEach(charge => {
+          if (charge.dragging) {
+            charge.x = x;
+            charge.y = y;
+            
+            // Keep charges within canvas bounds
+            charge.x = Math.max(charge.r, Math.min(charge.x, canvas.width - charge.r));
+            charge.y = Math.max(charge.r, Math.min(charge.y, canvas.height - charge.r));
+          }
+        });
+        
+        render();
+      }
+    }
+
+    function handleTouchEnd(e) {
+      if (e.touches.length === 0) {
+        charges.forEach(charge => charge.dragging = false);
+        isDragging = false;
+      }
+    }
+
+    // Add touch event listeners
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd);
+    canvas.addEventListener('touchcancel', handleTouchEnd);
+
+    // Update params from controls
+    function updateParams() {
+      charges[0].charge = parseFloat(q1Input.value) * 1e-6;
+      charges[1].charge = parseFloat(q2Input.value) * 1e-6;
+      k = parseFloat(kInput.value) * 1e9;
+      showForceVectors = showForces.checked;
+      showElectricField = showField.checked;
+      showNumericValues = showValues.checked;
+      forceScaleValue = parseFloat(forceScale.value);
+      fieldScaleValue = parseFloat(fieldScale.value);
+    }
+
+    // Attach input listeners
+    [
+      q1Input, q2Input, kInput,
+      showForces, showField, showValues,
+      forceScale, fieldScale
+    ].forEach(el => el.addEventListener('input', () => {
+      updateParams();
+      render();
+    }));
+
+    // Reset button
+    resetBtn.onclick = () => {
+      charges[0].x = canvas.width * 0.25;
+      charges[0].y = canvas.height * 0.5;
+      charges[1].x = canvas.width * 0.75;
+      charges[1].y = canvas.height * 0.5;
+      render();
+    };
+
+    // Initial setup
+    function start() {
+      handleResize(); // Use the improved resize function
+      
+      // Set initial positions based on canvas size
+      charges[0].x = canvas.width * 0.25;
+      charges[0].y = canvas.height * 0.5;
+      charges[1].x = canvas.width * 0.75;
+      charges[1].y = canvas.height * 0.5;
+      
+      // Adjust charge sizes based on screen size
+      charges.forEach(charge => {
+        charge.r = Math.max(20, Math.min(30, canvas.width / 15));
+      });
+      
+      updateParams();
+      render();
+      
+      // Auto-hide touch hint after 5 seconds
+      touchHintTimeout = setTimeout(() => {
+        touchHint.style.display = 'none';
+      }, 5000);
+    }
+
+    start();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1621 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Experimento da Dupla Fenda com Elétrons</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+    :root {
+      --bg: #071028;
+      --card: #0f1724;
+      --muted: #94a3b8;
+      --primary: #8a2be2;
+      --accent: #00bfff;
+      --success: #10b981;
+      --warning: #f59e0b;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: all 0.3s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, 'Segoe UI', Roboto, Arial;
+      background: linear-gradient(180deg, #071028 0%, #071021 60%);
+      color: #e6eef8;
+      min-height: 100vh;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+
+    header {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: textGlow 3s infinite alternate;
+    }
+
+    .tab-container {
+      display: flex;
+      background: var(--card);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .tab {
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tab:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .tab.active {
+      background: var(--primary);
+      font-weight: 700;
+      box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
+    }
+
+    .tab::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 3px;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    .tab.active::after {
+      width: 100%;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 18px;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 18px;
+      height: calc(100vh - 134px);
+      padding: 0 18px 18px;
+      animation: slideUp 0.6s ease-out;
+    }
+
+    .simulation-container {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .simulation-container::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(138, 43, 226, 0.05) 0%, transparent 70%);
+      animation: rotate 20s linear infinite;
+      pointer-events: none;
+    }
+
+    #simulationCanvas {
+      width: 100%;
+      height: 560px;
+      border-radius: 8px;
+      background: transparent;
+      display: block;
+      animation: canvasAppear 1s ease-out;
+      touch-action: none;
+    }
+
+    .info-panel {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .info-card {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      border-left: 3px solid var(--primary);
+      position: relative;
+      overflow: hidden;
+      animation: cardSlideIn 0.5s ease-out;
+    }
+
+    .info-card:nth-child(2) {
+      border-left-color: var(--accent);
+      animation-delay: 0.1s;
+    }
+
+    .info-card:nth-child(3) {
+      border-left-color: var(--success);
+      animation-delay: 0.2s;
+    }
+
+    .info-card:nth-child(4) {
+      border-left-color: var(--warning);
+      animation-delay: 0.3s;
+    }
+
+    .info-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .info-card:hover::before {
+      left: 100%;
+    }
+
+    .info-card .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .info-card .value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .controls {
+      background: var(--card);
+      padding: 16px;
+      border-radius: 12px;
+      height: 100%;
+      overflow-y: auto;
+      animation: slideInRight 0.6s ease-out;
+    }
+
+    .controls::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .controls::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    .controls::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 3px;
+    }
+
+    .group {
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .group:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .group:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+
+    .group:nth-child(4) {
+      animation-delay: 0.3s;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    input[type='range'] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type='range']::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+      transition: all 0.2s ease;
+    }
+
+    input[type='range']::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 10px rgba(138, 43, 226, 0.8);
+    }
+
+    input[type='number'],
+    select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.02);
+      color: inherit;
+      margin-bottom: 8px;
+      transition: all 0.3s ease;
+    }
+
+    input[type='number']:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background: linear-gradient(90deg, var(--primary), #6a0dad);
+      border: 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.secondary {
+      background: linear-gradient(90deg, #444, #666);
+    }
+
+    button.secondary:hover {
+      box-shadow: 0 5px 15px rgba(102, 102, 102, 0.4);
+    }
+
+    .muted {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .charts-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .chart-panel {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    .chart-panel:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .chart-container {
+      height: 240px;
+      width: 100%;
+    }
+
+    .explanation-container {
+      padding: 18px;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    .explanation-content {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      margin-bottom: 18px;
+    }
+
+    .explanation-content h2 {
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1.5rem;
+    }
+
+    .explanation-content h3 {
+      margin: 20px 0 10px;
+      color: var(--primary);
+      font-size: 1.2rem;
+    }
+
+    .explanation-content p {
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+
+    .explanation-content ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    .explanation-content li {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .highlight {
+      background: linear-gradient(90deg, transparent, rgba(138, 43, 226, 0.1), transparent);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .formula {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 12px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-family: monospace;
+      text-align: center;
+      border-left: 3px solid var(--accent);
+    }
+
+    .example {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 3px solid var(--success);
+    }
+
+    .concept-card {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 3px solid var(--primary);
+      transition: all 0.3s ease;
+    }
+
+    .concept-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .touch-hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      max-width: 80%;
+      z-index: 5;
+      animation: pulse 2s infinite;
+    }
+
+    /* Botão de ajuda flutuante */
+    .help-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      transition: all 0.3s ease;
+      border: none;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .help-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 25px rgba(138, 43, 226, 0.5);
+    }
+
+    .help-button:active {
+      transform: scale(0.95);
+    }
+
+    /* Painel de ajuda */
+    .help-panel {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 320px;
+      max-height: 70vh;
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      overflow-y: auto;
+      transform: translateY(20px);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    .help-panel.active {
+      transform: translateY(0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .help-panel h2 {
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .help-panel h3 {
+      margin: 15px 0 8px;
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+
+    .help-panel p {
+      margin-bottom: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .help-panel ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    .help-panel li {
+      margin-bottom: 6px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .help-panel .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .help-panel .close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    footer {
+      padding: 12px 20px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+      animation: fadeIn 1s ease-out;
+    }
+
+    /* Animações personalizadas */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes canvasAppear {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes cardSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes textGlow {
+      0% {
+        text-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+      }
+      100% {
+        text-shadow: 0 0 15px rgba(0, 191, 255, 0.8), 0 0 20px rgba(138, 43, 226, 0.6);
+      }
+    }
+
+    @keyframes rotate {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: 0.7;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0.7;
+      }
+    }
+
+    /* Responsividade */
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+        height: auto;
+        padding-bottom: 18px;
+      }
+      
+      #simulationCanvas {
+        height: 420px;
+      }
+      
+      .info-panel {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .help-panel {
+        width: 280px;
+        right: 10px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .info-panel {
+        grid-template-columns: 1fr;
+      }
+      
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .tab-container {
+        width: 100%;
+      }
+      
+      .tab {
+        flex: 1;
+        text-align: center;
+        padding: 12px 8px;
+      }
+      
+      .simulation-container {
+        padding: 8px;
+      }
+      
+      #simulationCanvas {
+        height: 60vh;
+        min-height: 400px;
+      }
+      
+      .controls {
+        padding: 12px;
+      }
+      
+      button {
+        padding: 12px 16px;
+        font-size: 16px;
+      }
+      
+      .help-button {
+        width: 50px;
+        height: 50px;
+        bottom: 15px;
+        right: 15px;
+        font-size: 20px;
+      }
+      
+      .help-panel {
+        width: calc(100% - 30px);
+        right: 15px;
+        bottom: 75px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #simulationCanvas {
+        height: 50vh;
+        min-height: 350px;
+      }
+      
+      .touch-hint {
+        font-size: 14px;
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Experimento da Dupla Fenda com Elétrons</h1>
+    <div class="tab-container">
+      <div class="tab active" data-tab="simulation">Simulação</div>
+      <div class="tab" data-tab="charts">Gráficos</div>
+      <div class="tab" data-tab="explanation">Explicação</div>
+    </div>
+  </header>
+
+  <div class="tab-content active" id="simulation-tab">
+    <main>
+      <div class="simulation-container">
+        <canvas id="simulationCanvas"></canvas>
+        
+        <div class="touch-hint" id="touchHint">
+          <p>💡 Arraste para ajustar a separação das fendas</p>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-card">
+            <div class="label">Elétrons Disparados</div>
+            <div class="value" id="electronCount">0</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Tempo Decorrido</div>
+            <div class="value" id="timeElapsed">0s</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Padrão Formado</div>
+            <div class="value" id="patternIntensity">0%</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Velocidade Média</div>
+            <div class="value" id="averageSpeed">0.0</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; display:flex; gap:10px;">
+          <button id="startBtn">Iniciar</button>
+          <button id="pauseBtn" class="secondary">Pausar</button>
+          <button id="resetBtn" class="secondary">Resetar</button>
+        </div>
+      </div>
+
+      <aside class="controls">
+        <div class="group">
+          <label><strong>Parâmetros do Experimento</strong></label>
+          
+          <div class="slider-container">
+            <label for="electronSpeed">Velocidade dos Elétrons</label>
+            <input type="range" id="electronSpeed" min="1" max="5" value="3" step="1">
+            <div class="muted" id="speed-value">Médio</div>
+          </div>
+          
+          <div class="slider-container">
+            <label for="slitSeparation">Distância entre Fendas (nm)</label>
+            <input type="range" id="slitSeparation" min="50" max="500" value="200" step="10">
+            <div class="muted" id="separation-value">200 nm</div>
+          </div>
+          
+          <div class="slider-container">
+            <label for="electronRate">Taxa de Elétrons</label>
+            <input type="range" id="electronRate" min="1" max="5" value="3" step="1">
+            <div class="muted" id="rate-value">Médio</div>
+          </div>
+          
+          <div class="slider-container">
+            <label for="waveEffect">Comprimento de Onda (nm)</label>
+            <input type="range" id="waveEffect" min="1" max="5" value="3" step="1">
+            <div class="muted" id="wave-value">Médio</div>
+          </div>
+        </div>
+
+        <div class="group">
+          <label><strong>Configurações de Visualização</strong></label>
+          <label class="small"><input id="showTrajectory" type="checkbox" checked> Mostrar trajetórias</label>
+          <label class="small"><input id="showInterference" type="checkbox" checked> Mostrar interferência</label>
+          <label class="small"><input id="touchHintToggle" type="checkbox"> Mostrar dicas</label>
+        </div>
+
+        <div class="group">
+          <label><strong>Modo de Observação</strong></label>
+          <select id="observationMode">
+            <option value="cumulative">Acumulativo (Padrão)</option>
+            <option value="individual">Individual (Observação)</option>
+          </select>
+          <div class="muted">No modo "Observação", o padrão não se forma</div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div class="tab-content" id="charts-tab">
+    <div class="charts-container" style="padding:12px 18px;">
+      <div class="chart-panel">
+        <h3 style="margin:0 0 8px 0">Distribuição de Impactos</h3>
+        <div class="chart-container"><canvas id="distributionChart"></canvas></div>
+      </div>
+
+      <div class="chart-panel" style="margin-top:10px">
+        <h3 style="margin:0 0 8px 0">Histograma de Posições</h3>
+        <div class="chart-container"><canvas id="histogramChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="explanation-tab">
+    <div class="explanation-container">
+      <div class="explanation-content">
+        <h2>Experimento da Dupla Fenda com Elétrons</h2>
+        <p>Este experimento demonstra um dos fenômenos mais intrigantes da mecânica quântica: a dualidade onda-partícula. Originalmente realizado por Clinton Davisson e Lester Germer em 1927, o experimento mostra que partículas como elétrons podem exibir comportamento tanto de partícula quanto de onda.</p>
+        
+        <div class="concept-card">
+          <h3>O Paradoxo Quântico</h3>
+          <p>Quando elétrons são disparados um por um através de duas fendas, esperaríamos que cada elétron passasse por uma fenda específica e criasse um padrão de duas faixas no detector. No entanto, o que observamos é um padrão de interferência característico de ondas, sugerindo que cada elétron interfere consigo mesmo ao passar por ambas as fendas simultaneamente.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>O Efeito do Observador</h3>
+          <p>Quando tentamos determinar por qual fenda cada elétron passa (observação), o padrão de interferência desaparece e voltamos ao padrão de duas faixas. Isso demonstra que o ato de medir afeta o sistema quântico - um princípio fundamental da mecânica quântica.</p>
+        </div>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Interpretações Físicas</h2>
+        
+        <div class="formula">
+          λ = h / p
+        </div>
+        
+        <p>Onde:</p>
+        <ul>
+          <li><span class="highlight">λ</span> é o comprimento de onda de de Broglie</li>
+          <li><span class="highlight">h</span> é a constante de Planck (6.626 × 10⁻³⁴ J·s)</li>
+          <li><span class="highlight">p</span> é o momento do elétron</li>
+        </ul>
+        
+        <p>Esta relação, proposta por Louis de Broglie em 1924, estabelece que toda partícula tem uma natureza ondulatória associada. Para elétrons com energias típicas em experimentos de dupla fenda, o comprimento de onda é da ordem de nanômetros, compatível com as dimensões das fendas.</p>
+        
+        <div class="example">
+          <h3>Exemplo Prático</h3>
+          <p>Um elétron acelerado por uma diferença de potencial de 50V tem um comprimento de onda de aproximadamente:</p>
+          <p>λ ≈ 1.23 / √V nm ≈ 0.17 nm</p>
+          <p>Isso explica por que as fendas precisam estar muito próximas (da ordem de nanômetros) para observar o padrão de interferência.</p>
+        </div>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Como Usar o Simulador</h2>
+        
+        <p>Este simulador permite explorar diferentes aspectos do experimento da dupla fenda:</p>
+        
+        <ul>
+          <li><span class="highlight">Ajuste a distância entre fendas</span>: Observe como o padrão de interferência muda com a separação entre as fendas</li>
+          <li><span class="highlight">Altere a taxa de elétrons</span>: Veja como o padrão se forma gradualmente com o tempo</li>
+          <li><span class="highlight">Modifique a velocidade dos elétrons</span>: Isso altera o comprimento de onda de de Broglie</li>
+          <li><span class="highlight">Experimente o modo de observação</span>: Ative o modo "Observação" para ver como medir por qual fenda o elétron passa destrói o padrão de interferência</li>
+        </ul>
+        
+        <p>Explore diferentes configurações e observe como elas afetam o padrão resultante no detector!</p>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Significado e Implicações</h2>
+        
+        <p>O experimento da dupla fenda com elétrons tem profundas implicações para nossa compreensão da realidade:</p>
+        
+        <ul>
+          <li><span class="highlight">Superposição Quântica</span>: Partículas podem existir em múltiplos estados simultaneamente</li>
+          <li><span class="highlight">Colapso da Função de Onda</span>: A medição força o sistema a "escolher" um estado específico</li>
+          <li><span class="highlight">Não-localidade</span>: Fenômenos quânticos podem desafiar nossa intuição sobre localidade e causalidade</li>
+        </ul>
+        
+        <p>Estes conceitos desafiam nossa compreensão clássica do mundo e são fundamentais para tecnologias modernas como computação quântica e criptografia quântica.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botão de ajuda flutuante -->
+  <button class="help-button" id="helpButton">?</button>
+
+  <!-- Painel de ajuda -->
+  <div class="help-panel" id="helpPanel">
+    <button class="close-btn" id="closeHelp">&times;</button>
+    <h2>💡 Como Usar o Simulador</h2>
+    
+    <h3>Controles Interativos</h3>
+    <p>Você pode interagir diretamente com a simulação:</p>
+    <ul>
+      <li><strong>Arraste as fendas</strong> para ajustar a separação entre elas</li>
+      <li><strong>Use os controles deslizantes</strong> para ajustar os parâmetros do experimento</li>
+      <li><strong>Altere o modo de observação</strong> para ver o efeito do observador</li>
+    </ul>
+    
+    <h3>Parâmetros Ajustáveis</h3>
+    <ul>
+      <li><strong>Velocidade dos Elétrons:</strong> Afeta o comprimento de onda de de Broglie</li>
+      <li><strong>Distância entre Fendas:</strong> Determina o padrão de interferência</li>
+      <li><strong>Taxa de Elétrons:</strong> Controla quantos elétrons são disparados por segundo</li>
+      <li><strong>Comprimento de Onda:</strong> Define diretamente a natureza ondulatória</li>
+    </ul>
+    
+    <h3>Modos de Visualização</h3>
+    <p><strong>Acumulativo:</strong> Mostra o padrão de interferência se formando gradualmente</p>
+    <p><strong>Individual (Observação):</strong> Mostra qual fenda cada elétron passa, destruindo o padrão de interferência</p>
+    
+    <h3>Fórmula Importante</h3>
+    <div class="formula">λ = h / p</div>
+    <p>Relação de de Broglie entre comprimento de onda e momento para partículas quânticas.</p>
+    
+    <p style="margin-top: 15px; font-style: italic; text-align: center;">
+      Explore diferentes configurações e observe o comportamento quântico dos elétrons!
+    </p>
+  </div>
+
+  <footer>Experimento da Dupla Fenda com Elétrons — Simulação Quântica Interativa</footer>
+
+  <script>
+    // Canvas e contexto
+    const canvas = document.getElementById('simulationCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Gráficos
+    let distributionChart, histogramChart;
+
+    // Dados para gráficos
+    const chartData = {
+      positions: [],
+      time: [],
+      intensity: []
+    };
+    const maxDataPoints = 200;
+
+    // Controles
+    const electronSpeedSlider = document.getElementById('electronSpeed');
+    const speedValue = document.getElementById('speed-value');
+    const slitSeparationSlider = document.getElementById('slitSeparation');
+    const separationValue = document.getElementById('separation-value');
+    const electronRateSlider = document.getElementById('electronRate');
+    const rateValue = document.getElementById('rate-value');
+    const waveEffectSlider = document.getElementById('waveEffect');
+    const waveValue = document.getElementById('wave-value');
+
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const showTrajectory = document.getElementById('showTrajectory');
+    const showInterference = document.getElementById('showInterference');
+    const touchHintToggle = document.getElementById('touchHintToggle');
+    const touchHint = document.getElementById('touchHint');
+    const observationMode = document.getElementById('observationMode');
+
+    // Elementos de ajuda
+    const helpButton = document.getElementById('helpButton');
+    const helpPanel = document.getElementById('helpPanel');
+    const closeHelp = document.getElementById('closeHelp');
+
+    // Elementos de estatísticas
+    const electronCountElem = document.getElementById('electronCount');
+    const timeElapsedElem = document.getElementById('timeElapsed');
+    const patternIntensityElem = document.getElementById('patternIntensity');
+    const averageSpeedElem = document.getElementById('averageSpeed');
+
+    // Parâmetros da simulação
+    let params = {
+      electronSpeed: 3,
+      slitSeparation: 200, // em nanômetros
+      electronRate: 3,
+      waveEffect: 3,
+      isRunning: false,
+      startTime: null,
+      lastElectronTime: 0,
+      electronCount: 0,
+      patternIntensity: 0,
+      observationMode: 'cumulative',
+      averageSpeed: 0,
+      totalSpeed: 0
+    };
+
+    // Estado da simulação
+    let electrons = [];
+    let impacts = [];
+    let animationId = null;
+    let startTime = null;
+    let detectorData = new Array(100).fill(0); // Array para armazenar impactos no detector
+
+    // Interação por toque/arraste
+    let isDragging = false;
+    let dragStartX = 0;
+    let initialSeparation = 0;
+    let touchHintTimeout = null;
+
+    // Ajustar tamanho do canvas
+    function resizeCanvas() {
+      const ratio = devicePixelRatio || 1;
+      canvas.width = canvas.clientWidth * ratio;
+      canvas.height = canvas.clientHeight * ratio;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    // Inicializar gráficos
+    function initCharts() {
+      const distributionCtx = document.getElementById('distributionChart').getContext('2d');
+      distributionChart = new Chart(distributionCtx, {
+        type: 'line',
+        data: {
+          labels: Array.from({length: 100}, (_, i) => i),
+          datasets: [
+            { 
+              label: 'Intensidade no Detector', 
+              data: detectorData, 
+              borderColor: '#00bfff', 
+              backgroundColor: 'rgba(0, 191, 255, 0.1)', 
+              tension: 0.4,
+              fill: true
+            }
+          ]
+        },
+        options: {
+          responsive: true, 
+          maintainAspectRatio: false,
+          scales: {
+            x: { 
+              ticks: { color: '#cbd5e1' }, 
+              title: { display: true, text: 'Posição no Detector', color: '#9ca3af' } 
+            },
+            y: { 
+              ticks: { color: '#cbd5es1' }, 
+              title: { display: true, text: 'Intensidade', color: '#9ca3af' },
+              beginAtZero: true
+            }
+          },
+          plugins: { 
+            legend: { labels: { color: '#e6eef8' } },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return `Intensidade: ${context.parsed.y.toFixed(2)}`;
+                }
+              }
+            }
+          }
+        }
+      });
+
+      const histogramCtx = document.getElementById('histogramChart').getContext('2d');
+      histogramChart = new Chart(histogramCtx, {
+        type: 'bar',
+        data: {
+          labels: Array.from({length: 20}, (_, i) => `${i*5}-${(i+1)*5}%`),
+          datasets: [
+            { 
+              label: 'Distribuição de Impactos', 
+              data: new Array(20).fill(0), 
+              backgroundColor: 'rgba(138, 43, 226, 0.7)',
+              borderColor: 'rgba(138, 43, 226, 1)',
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true, 
+          maintainAspectRatio: false,
+          scales: {
+            x: { 
+              ticks: { color: '#cbd5e1' }, 
+              title: { display: true, text: 'Posição no Detector', color: '#9ca3af' } 
+            },
+            y: { 
+              ticks: { color: '#cbd5e1' }, 
+              title: { display: true, text: 'Número de Impactos', color: '#9ca3af' },
+              beginAtZero: true
+            }
+          },
+          plugins: { 
+            legend: { labels: { color: '#e6eef8' } }
+          }
+        }
+      });
+    }
+
+    // Atualizar valores exibidos
+    function updateDisplayValues() {
+      const speedLabels = ['Muito Lento', 'Lento', 'Médio', 'Rápido', 'Muito Rápido'];
+      const rateLabels = ['Muito Baixa', 'Baixa', 'Média', 'Alta', 'Muito Alta'];
+      const waveLabels = ['Muito Curto', 'Curto', 'Médio', 'Longo', 'Muito Longo'];
+      
+      speedValue.textContent = speedLabels[params.electronSpeed - 1];
+      separationValue.textContent = `${params.slitSeparation} nm`;
+      rateValue.textContent = rateLabels[params.electronRate - 1];
+      waveValue.textContent = waveLabels[params.waveEffect - 1];
+    }
+
+    // Classe para representar um elétron
+    class Electron {
+      constructor() {
+        this.x = 50;
+        this.y = canvas.height / 2 + (Math.random() - 0.5) * 100;
+        this.speed = 2 + params.electronSpeed;
+        this.size = 3;
+        this.trajectory = [];
+        this.reachedScreen = false;
+        this.impactX = null;
+        this.impactY = null;
+        this.color = `hsl(${200 + Math.random() * 40}, 100%, 65%)`;
+        this.passedSlit = false;
+        this.slitChoice = Math.random() < 0.5 ? -1 : 1; // Escolhe qual fenda "passar"
+        this.wavelength = 0.1 + params.waveEffect * 0.05; // Comprimento de onda em nanômetros (escala arbitrária)
+        
+        // No modo de observação, determinamos por qual fenda o elétron passa
+        if (params.observationMode === 'individual') {
+          this.observedSlit = this.slitChoice;
+        } else {
+          this.observedSlit = null; // Não observado - comportamento de onda
+        }
+      }
+      
+      update() {
+        if (this.reachedScreen) return;
+        
+        // Adicionar ponto à trajetória (mantém apenas os últimos 20 pontos)
+        this.trajectory.push({ x: this.x, y: this.y });
+        if (this.trajectory.length > 20) {
+          this.trajectory.shift();
+        }
+        
+        // Mover o elétron
+        this.x += this.speed;
+        
+        // Comportamento antes das fendas - movimento relativamente reto
+        if (this.x < canvas.width * 0.4) {
+          // Pequena variação aleatória no movimento vertical
+          this.y += (Math.random() - 0.5) * 0.5;
+        } 
+        // Comportamento nas fendas
+        else if (this.x >= canvas.width * 0.4 && this.x < canvas.width * 0.45) {
+          if (!this.passedSlit) {
+            this.passedSlit = true;
+            // Ajusta a trajetória baseado na fenda escolhida
+            const separation = params.slitSeparation / 10; // Ajuste de escala
+            this.targetY = canvas.height / 2 + this.slitChoice * separation;
+          }
+          
+          // Move em direção à fenda escolhida
+          const dy = this.targetY - this.y;
+          this.y += dy * 0.05;
+        }
+        // Comportamento após as fendas - movimento influenciado pelo efeito de onda
+        else {
+          // Se estamos observando, não há interferência
+          if (params.observationMode === 'individual') {
+            // Movimento reto após a fenda
+            // Pequena variação aleatória
+            this.y += (Math.random() - 0.5) * 0.2;
+          } else {
+            // Efeito de interferência - movimento ondulatório
+            // A frequência depende do comprimento de onda e da separação das fendas
+            const waveStrength = this.wavelength * 2;
+            const frequency = 0.02 * (200 / params.slitSeparation);
+            this.y += Math.sin((this.x - canvas.width * 0.45) * frequency) * waveStrength;
+          }
+        }
+        
+        // Verificar se chegou ao anteparo
+        if (this.x >= canvas.width - 50) {
+          this.reachedScreen = true;
+          this.impactX = this.x;
+          this.impactY = this.y;
+          
+          // Registrar o impacto
+          impacts.push({
+            x: this.impactX,
+            y: this.impactY,
+            intensity: 1,
+            age: 0
+          });
+          
+          // Atualizar dados do detector
+          const detectorPos = Math.floor((this.impactY / canvas.height) * 100);
+          if (detectorPos >= 0 && detectorPos < 100) {
+            detectorData[detectorPos]++;
+            
+            // Atualizar histograma
+            if (histogramChart) {
+              const binIndex = Math.floor(detectorPos / 5);
+              histogramChart.data.datasets[0].data[binIndex]++;
+              histogramChart.update();
+            }
+          }
+          
+          params.electronCount++;
+          params.totalSpeed += this.speed;
+          params.averageSpeed = params.totalSpeed / params.electronCount;
+          electronCountElem.textContent = params.electronCount;
+          averageSpeedElem.textContent = params.averageSpeed.toFixed(1);
+          
+          // Atualizar a intensidade do padrão formado
+          params.patternIntensity = Math.min(100, Math.floor(params.electronCount / 5));
+          patternIntensityElem.textContent = `${params.patternIntensity}%`;
+          
+          // Atualizar gráfico de distribuição
+          if (distributionChart) {
+            distributionChart.update();
+          }
+        }
+      }
+      
+      draw() {
+        // Desenhar trajetória se habilitado
+        if (showTrajectory.checked && this.trajectory.length > 1) {
+          ctx.strokeStyle = this.color;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(this.trajectory[0].x, this.trajectory[0].y);
+          for (let i = 1; i < this.trajectory.length; i++) {
+            ctx.lineTo(this.trajectory[i].x, this.trajectory[i].y);
+          }
+          ctx.stroke();
+        }
+        
+        // Desenhar elétron
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Desenhar ponto de impacto se aplicável
+        if (this.reachedScreen) {
+          ctx.fillStyle = '#ffeb3b';
+          ctx.beginPath();
+          ctx.arc(this.impactX, this.impactY, 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        // Indicador de fenda observada (modo individual)
+        if (params.observationMode === 'individual' && this.passedSlit && !this.reachedScreen) {
+          ctx.fillStyle = this.observedSlit > 0 ? '#ff0000' : '#00ff00';
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+    
+    // Desenhar o cenário (fonte, fendas, anteparo)
+    function drawScenario() {
+      // Limpar canvas
+      ctx.fillStyle = '#0d1b2a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Desenhar grade de fundo
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.lineWidth = 1;
+      const gridSize = 50;
+      for (let x = 0; x < canvas.width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+      
+      // Desenhar fonte de elétrons
+      ctx.fillStyle = '#4fc3f7';
+      ctx.beginPath();
+      ctx.arc(50, canvas.height / 2, 15, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Desenhar barreira com fendas
+      ctx.fillStyle = '#37474f';
+      ctx.fillRect(canvas.width * 0.4 - 10, 0, 20, canvas.height);
+      
+      // Desenhar fendas
+      const centerY = canvas.height / 2;
+      const separation = params.slitSeparation / 10; // Ajuste de escala
+      const slitWidth = 15;
+      
+      ctx.fillStyle = '#0d1b2a';
+      // Fenda superior
+      ctx.fillRect(
+        canvas.width * 0.4 - 10, 
+        centerY - separation - slitWidth/2, 
+        20, 
+        slitWidth
+      );
+      
+      // Fenda inferior
+      ctx.fillRect(
+        canvas.width * 0.4 - 10, 
+        centerY + separation - slitWidth/2, 
+        20, 
+        slitWidth
+      );
+      
+      // Rótulos das fendas
+      ctx.fillStyle = '#b0bec5';
+      ctx.font = '12px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('Fenda A', canvas.width * 0.4, centerY - separation - 20);
+      ctx.fillText('Fenda B', canvas.width * 0.4, centerY + separation + 20);
+      
+      // Desenhar anteparo
+      ctx.fillStyle = '#455a64';
+      ctx.fillRect(canvas.width - 50, 0, 5, canvas.height);
+      
+      // Rótulo do detector
+      ctx.fillStyle = '#b0bec5';
+      ctx.font = '12px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('Detector', canvas.width - 25, 20);
+      
+      // Desenhar padrão de interferência no anteparo (baseado nos impactos)
+      if (showInterference.checked) {
+        for (let i = 0; i < impacts.length; i++) {
+          const impact = impacts[i];
+          const intensity = Math.max(0, 1 - impact.age / 300); // Intensidade diminui com o tempo
+          
+          if (intensity > 0) {
+            ctx.fillStyle = `rgba(233, 30, 99, ${intensity * 0.7})`;
+            ctx.beginPath();
+            ctx.arc(impact.x, impact.y, 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Atualizar a idade do impacto
+            impact.age++;
+          } else {
+            // Remover impacto muito antigo
+            impacts.splice(i, 1);
+            i--;
+          }
+        }
+      }
+      
+      // Desenhar linha de referência
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height / 2);
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    
+    // Loop de animação
+    function animate() {
+      drawScenario();
+      
+      // Atualizar e desenhar elétrons
+      for (let i = electrons.length - 1; i >= 0; i--) {
+        electrons[i].update();
+        electrons[i].draw();
+        
+        // Remover elétrons que saíram da tela
+        if (electrons[i].x > canvas.width + 50) {
+          electrons.splice(i, 1);
+        }
+      }
+      
+      // Adicionar novos elétrons conforme a taxa definida
+      const currentTime = Date.now();
+      if (params.isRunning && currentTime - params.lastElectronTime > 1000 / (params.electronRate * 2)) {
+        electrons.push(new Electron());
+        params.lastElectronTime = currentTime;
+      }
+      
+      // Atualizar tempo decorrido
+      if (params.isRunning && startTime) {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        timeElapsedElem.textContent = `${elapsed}s`;
+      }
+      
+      animationId = requestAnimationFrame(animate);
+    }
+    
+    // Iniciar simulação
+    function startSimulation() {
+      if (!params.isRunning) {
+        params.isRunning = true;
+        startTime = startTime || Date.now();
+        params.lastElectronTime = Date.now();
+        
+        if (!animationId) {
+          animate();
+        }
+      }
+    }
+    
+    // Pausar simulação
+    function pauseSimulation() {
+      params.isRunning = false;
+    }
+    
+    // Reiniciar simulação
+    function resetSimulation() {
+      params.isRunning = false;
+      startTime = null;
+      params.lastElectronTime = 0;
+      params.electronCount = 0;
+      params.patternIntensity = 0;
+      params.averageSpeed = 0;
+      params.totalSpeed = 0;
+      
+      electrons = [];
+      impacts = [];
+      detectorData = new Array(100).fill(0);
+      
+      electronCountElem.textContent = '0';
+      timeElapsedElem.textContent = '0s';
+      patternIntensityElem.textContent = '0%';
+      averageSpeedElem.textContent = '0.0';
+      
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+      
+      // Resetar gráficos
+      if (histogramChart) {
+        histogramChart.data.datasets[0].data = new Array(20).fill(0);
+        histogramChart.update();
+      }
+      
+      if (distributionChart) {
+        distributionChart.data.datasets[0].data = detectorData;
+        distributionChart.update();
+      }
+      
+      drawScenario();
+    }
+
+    // Manipulação de abas
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const id = tab.getAttribute('data-tab');
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(id + '-tab').classList.add('active');
+      });
+    });
+
+    // Painel de ajuda
+    helpButton.addEventListener('click', () => {
+      helpPanel.classList.toggle('active');
+    });
+
+    closeHelp.addEventListener('click', () => {
+      helpPanel.classList.remove('active');
+    });
+
+    // Fechar painel de ajuda ao clicar fora
+    document.addEventListener('click', (e) => {
+      if (!helpPanel.contains(e.target) && e.target !== helpButton) {
+        helpPanel.classList.remove('active');
+      }
+    });
+
+    // Dica de toque
+    touchHintToggle.addEventListener('change', () => {
+      if (touchHintToggle.checked) {
+        touchHint.style.display = 'block';
+        // Auto-ocultar após 5 segundos
+        clearTimeout(touchHintTimeout);
+        touchHintTimeout = setTimeout(() => {
+          touchHint.style.display = 'none';
+          touchHintToggle.checked = false;
+        }, 5000);
+      } else {
+        touchHint.style.display = 'none';
+      }
+    });
+
+    // Manipulação de toque/arraste para ajustar separação das fendas
+    canvas.addEventListener('mousedown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+      
+      // Verificar se o clique está próximo da barreira com fendas
+      if (x > canvas.width * 0.35 && x < canvas.width * 0.45) {
+        isDragging = true;
+        dragStartX = x;
+        initialSeparation = params.slitSeparation;
+      }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+        const deltaX = x - dragStartX;
+        
+        // Ajustar separação baseado no movimento do mouse
+        params.slitSeparation = Math.max(50, Math.min(500, initialSeparation + deltaX * 2));
+        slitSeparationSlider.value = params.slitSeparation;
+        updateDisplayValues();
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      isDragging = false;
+    });
+
+    // Event listeners para controles
+    electronSpeedSlider.addEventListener('input', function() {
+      params.electronSpeed = parseInt(this.value);
+      updateDisplayValues();
+    });
+    
+    slitSeparationSlider.addEventListener('input', function() {
+      params.slitSeparation = parseInt(this.value);
+      updateDisplayValues();
+    });
+    
+    electronRateSlider.addEventListener('input', function() {
+      params.electronRate = parseInt(this.value);
+      updateDisplayValues();
+    });
+    
+    waveEffectSlider.addEventListener('input', function() {
+      params.waveEffect = parseInt(this.value);
+      updateDisplayValues();
+    });
+    
+    observationMode.addEventListener('change', function() {
+      params.observationMode = this.value;
+      // Reiniciar a simulação para aplicar a mudança
+      resetSimulation();
+    });
+    
+    startBtn.addEventListener('click', startSimulation);
+    pauseBtn.addEventListener('click', pauseSimulation);
+    resetBtn.addEventListener('click', resetSimulation);
+    
+    // Inicializar
+    resizeCanvas();
+    initCharts();
+    updateDisplayValues();
+    drawScenario();
+    
+    // Auto-ocultar dica de toque após 5 segundos
+    touchHintTimeout = setTimeout(() => {
+      touchHint.style.display = 'none';
+    }, 5000);
+  </script>
+</body>
+</html>

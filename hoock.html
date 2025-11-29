@@ -1,0 +1,1544 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Simulação Interativa — Lei de Hooke</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #071028;
+      --card: #0f1724;
+      --muted: #94a3b8;
+      --primary: #8a2be2;
+      --accent: #00bfff;
+      --success: #10b981;
+      --warning: #f59e0b;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      transition: all 0.3s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: system-ui, 'Segoe UI', Roboto, Arial;
+      background: linear-gradient(180deg, #071028 0%, #071021 60%);
+      color: #e6eef8;
+      min-height: 100vh;
+      overflow-x: hidden;
+      touch-action: manipulation;
+    }
+
+    header {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    h1 {
+      font-size: 18px;
+      margin: 0;
+      background: linear-gradient(to right, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: textGlow 3s infinite alternate;
+    }
+
+    .tab-container {
+      display: flex;
+      background: var(--card);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .tab {
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tab:hover {
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .tab.active {
+      background: var(--primary);
+      font-weight: 700;
+      box-shadow: 0 0 15px rgba(138, 43, 226, 0.5);
+    }
+
+    .tab::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 3px;
+      background: var(--accent);
+      transition: width 0.3s ease;
+    }
+
+    .tab.active::after {
+      width: 100%;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 18px;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 18px;
+      height: calc(100vh - 134px);
+      padding: 0 18px 18px;
+      animation: slideUp 0.6s ease-out;
+    }
+
+    .simulation-container {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 6px 30px rgba(2, 6, 23, 0.6);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .simulation-container::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(138, 43, 226, 0.05) 0%, transparent 70%);
+      animation: rotate 20s linear infinite;
+      pointer-events: none;
+    }
+
+    #simCanvas {
+      width: 100%;
+      height: 560px;
+      border-radius: 8px;
+      background: transparent;
+      display: block;
+      animation: canvasAppear 1s ease-out;
+      touch-action: none;
+    }
+
+    .info-panel {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .info-card {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      border-left: 3px solid var(--primary);
+      position: relative;
+      overflow: hidden;
+      animation: cardSlideIn 0.5s ease-out;
+    }
+
+    .info-card:nth-child(2) {
+      border-left-color: var(--accent);
+      animation-delay: 0.1s;
+    }
+
+    .info-card:nth-child(3) {
+      border-left-color: var(--success);
+      animation-delay: 0.2s;
+    }
+
+    .info-card:nth-child(4) {
+      border-left-color: var(--warning);
+      animation-delay: 0.3s;
+    }
+
+    .info-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .info-card:hover::before {
+      left: 100%;
+    }
+
+    .info-card .label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .info-card .value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .controls {
+      background: var(--card);
+      padding: 16px;
+      border-radius: 12px;
+      height: 100%;
+      overflow-y: auto;
+      animation: slideInRight 0.6s ease-out;
+    }
+
+    .controls::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .controls::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+    }
+
+    .controls::-webkit-scrollbar-thumb {
+      background: var(--primary);
+      border-radius: 3px;
+    }
+
+    .group {
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .group:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+
+    .group:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+
+    .group:nth-child(4) {
+      animation-delay: 0.3s;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    input[type='range'] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type='range']::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--primary);
+      cursor: pointer;
+      box-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+      transition: all 0.2s ease;
+    }
+
+    input[type='range']::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+      box-shadow: 0 0 10px rgba(138, 43, 226, 0.8);
+    }
+
+    input[type='number'],
+    select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.02);
+      color: inherit;
+      margin-bottom: 8px;
+      transition: all 0.3s ease;
+    }
+
+    input[type='number']:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2);
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background: linear-gradient(90deg, var(--primary), #6a0dad);
+      border: 0;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(138, 43, 226, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.secondary {
+      background: linear-gradient(90deg, #444, #666);
+    }
+
+    button.secondary:hover {
+      box-shadow: 0 5px 15px rgba(102, 102, 102, 0.4);
+    }
+
+    .muted {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .charts-container {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .chart-panel {
+      background: var(--card);
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    .chart-panel:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .chart-container {
+      height: 240px;
+      width: 100%;
+    }
+
+    .explanation-container {
+      padding: 18px;
+      animation: fadeIn 0.8s ease-out;
+    }
+
+    .explanation-content {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      margin-bottom: 18px;
+    }
+
+    .explanation-content h2 {
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1.5rem;
+    }
+
+    .explanation-content h3 {
+      margin: 20px 0 10px;
+      color: var(--primary);
+      font-size: 1.2rem;
+    }
+
+    .explanation-content p {
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+
+    .explanation-content ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    .explanation-content li {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    .highlight {
+      background: linear-gradient(90deg, transparent, rgba(138, 43, 226, 0.1), transparent);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .formula {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 12px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-family: monospace;
+      text-align: center;
+      border-left: 3px solid var(--accent);
+    }
+
+    .example {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 3px solid var(--success);
+    }
+
+    .concept-card {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      border-left: 3px solid var(--primary);
+      transition: all 0.3s ease;
+    }
+
+    .concept-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .touch-hint {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      max-width: 80%;
+      z-index: 5;
+      animation: pulse 2s infinite;
+    }
+
+    /* Botão de ajuda flutuante */
+    .help-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      transition: all 0.3s ease;
+      border: none;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .help-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 25px rgba(138, 43, 226, 0.5);
+    }
+
+    .help-button:active {
+      transform: scale(0.95);
+    }
+
+    /* Painel de ajuda */
+    .help-panel {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      width: 320px;
+      max-height: 70vh;
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      overflow-y: auto;
+      transform: translateY(20px);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    .help-panel.active {
+      transform: translateY(0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .help-panel h2 {
+      margin-bottom: 15px;
+      color: var(--accent);
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .help-panel h3 {
+      margin: 15px 0 8px;
+      color: var(--primary);
+      font-size: 1.1rem;
+    }
+
+    .help-panel p {
+      margin-bottom: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .help-panel ul {
+      margin-left: 20px;
+      margin-bottom: 15px;
+    }
+
+    .help-panel li {
+      margin-bottom: 6px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .help-panel .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .help-panel .close-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    footer {
+      padding: 12px 20px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.03);
+      animation: fadeIn 1s ease-out;
+    }
+
+    /* Animações personalizadas */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes canvasAppear {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes cardSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes textGlow {
+      0% {
+        text-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+      }
+      100% {
+        text-shadow: 0 0 15px rgba(0, 191, 255, 0.8), 0 0 20px rgba(138, 43, 226, 0.6);
+      }
+    }
+
+    @keyframes rotate {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: 0.7;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0.7;
+      }
+    }
+
+    /* Responsividade */
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+        height: auto;
+        padding-bottom: 18px;
+      }
+      
+      #simCanvas {
+        height: 420px;
+      }
+      
+      .info-panel {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .help-panel {
+        width: 280px;
+        right: 10px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .info-panel {
+        grid-template-columns: 1fr;
+      }
+      
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .tab-container {
+        width: 100%;
+      }
+      
+      .tab {
+        flex: 1;
+        text-align: center;
+        padding: 12px 8px;
+      }
+      
+      .simulation-container {
+        padding: 8px;
+      }
+      
+      #simCanvas {
+        height: 60vh;
+        min-height: 400px;
+      }
+      
+      .controls {
+        padding: 12px;
+      }
+      
+      button {
+        padding: 12px 16px;
+        font-size: 16px;
+      }
+      
+      .help-button {
+        width: 50px;
+        height: 50px;
+        bottom: 15px;
+        right: 15px;
+        font-size: 20px;
+      }
+      
+      .help-panel {
+        width: calc(100% - 30px);
+        right: 15px;
+        bottom: 75px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #simCanvas {
+        height: 50vh;
+        min-height: 350px;
+      }
+      
+      .touch-hint {
+        font-size: 14px;
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Lei de Hooke</h1>
+    <div class="tab-container">
+      <div class="tab active" data-tab="simulation">Simulação</div>
+      <div class="tab" data-tab="charts">Gráficos</div>
+      <div class="tab" data-tab="explanation">Explicação</div>
+    </div>
+  </header>
+
+  <div class="tab-content active" id="simulation-tab">
+    <main>
+      <div class="simulation-container">
+        <canvas id="simCanvas"></canvas>
+        
+        <div class="touch-hint" id="touchHint">
+          <p>💡 Arraste o bloco para esticar a mola</p>
+        </div>
+
+        <div class="info-panel">
+          <div class="info-card">
+            <div class="label">Deslocamento x (m)</div>
+            <div class="value" id="xVal">0.000</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Velocidade v (m/s)</div>
+            <div class="value" id="vVal">0.000</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Força da mola F (N)</div>
+            <div class="value" id="fVal">0.000</div>
+          </div>
+          <div class="info-card">
+            <div class="label">Energ. Potencial (J)</div>
+            <div class="value" id="peVal">0.000</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; display:flex; gap:10px;">
+          <button id="startBtn">Iniciar</button>
+          <button id="pauseBtn" class="secondary">Pausar</button>
+          <button id="resetBtn" class="secondary">Resetar</button>
+          <button id="exportBtn" class="secondary">Exportar CSV</button>
+        </div>
+      </div>
+
+      <aside class="controls">
+        <div class="group">
+          <label><strong>Parâmetros Físicos</strong></label>
+          <div class="row">
+            <div style="flex:1">
+              <label class="small">Gravidade (m/s²)</label>
+              <input id="gravity" type="number" step="0.1" value="9.8">
+            </div>
+            <div style="flex:1">
+              <label class="small">Amortecimento</label>
+              <input id="damping" type="number" step="0.001" value="0.02" min="0" max="1">
+            </div>
+          </div>
+          <div class="row">
+            <div style="flex:1">
+              <label class="small">Velocidade (x)</label>
+              <input id="speed" type="number" step="0.1" value="1.0" min="0.1" max="3">
+            </div>
+          </div>
+        </div>
+
+        <div class="group">
+          <label><strong>Constante Elástica k (N/m)</strong></label>
+          <input id="kRange" type="range" min="1" max="200" value="40">
+          <input id="kNum" type="number" min="1" max="200" value="40">
+        </div>
+
+        <div class="group">
+          <label><strong>Massa (kg)</strong></label>
+          <input id="massRange" type="range" min="0.1" max="10" step="0.1" value="1">
+          <input id="massNum" type="number" min="0.1" max="10" step="0.1" value="1">
+        </div>
+
+        <div class="group">
+          <label><strong>Comprimento de Equilíbrio (m)</strong></label>
+          <input id="eqLenNum" type="number" min="0.4" max="3" step="0.1" value="1.2">
+        </div>
+
+        <div class="group">
+          <label><strong>Visual</strong></label>
+          <label class="small"><input id="trail" type="checkbox" checked> Mostrar rastro</label>
+          <label class="small"><input id="grid" type="checkbox" checked> Mostrar grade</label>
+          <label class="small"><input id="touchHintToggle" type="checkbox"> Mostrar dicas</label>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div class="tab-content" id="charts-tab">
+    <div class="charts-container" style="padding:12px 18px;">
+      <div class="chart-panel">
+        <h3 style="margin:0 0 8px 0">Energias</h3>
+        <div class="chart-container"><canvas id="energyChart"></canvas></div>
+      </div>
+
+      <div class="chart-panel" style="margin-top:10px">
+        <h3 style="margin:0 0 8px 0">Posição e Velocidade</h3>
+        <div class="chart-container"><canvas id="positionChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="explanation-tab">
+    <div class="explanation-container">
+      <div class="explanation-content">
+        <h2>Como Usar o Simulador</h2>
+        <p>Este simulador permite explorar a Lei de Hooke de forma interativa:</p>
+        
+        <div class="concept-card">
+          <h3>Interação Direta</h3>
+          <p>Arraste o bloco para esticar ou comprimir a mola. Observe como a força aplicada varia com o deslocamento.</p>
+        </div>
+        
+        <div class="concept-card">
+          <h3>Controles</h3>
+          <p>Use os botões Iniciar, Pausar e Resetar para controlar a simulação. Ajuste os parâmetros físicos nos controles laterais para ver como afetam o movimento.</p>
+        </div>
+        
+        <p>Experimente diferentes configurações e observe como o sistema massa-mola se comporta!</p>
+      </div>
+
+      <div class="explanation-content">
+        <h2>O que é a Lei de Hooke?</h2>
+        <p>A Lei de Hooke é um princípio da física que descreve a relação entre a força aplicada a uma mola e sua deformação. Ela estabelece que, para pequenas deformações, a força exercida por uma mola é diretamente proporcional à sua extensão ou compressão.</p>
+        
+        <div class="concept-card">
+          <h3>Formulação Matemática</h3>
+          <p>A Lei de Hooke é expressa pela equação:</p>
+          <div class="formula">F = -k × x</div>
+          <p>Onde:</p>
+          <ul>
+            <li><span class="highlight">F</span> é a força exercida pela mola (em Newtons)</li>
+            <li><span class="highlight">k</span> é a constante elástica da mola (em N/m)</li>
+            <li><span class="highlight">x</span> é o deslocamento da posição de equilíbrio (em metros)</li>
+          </ul>
+          <p>O sinal negativo indica que a força é restauradora, ou seja, oposta ao deslocamento.</p>
+        </div>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Movimento Harmônico Simples</h2>
+        
+        <p>Quando uma massa está presa a uma mola e é deslocada de sua posição de equilíbrio, ela executa um movimento oscilatório conhecido como Movimento Harmônico Simples (MHS).</p>
+        
+        <div class="formula">
+          Equação do MHS: m × a = -k × x
+        </div>
+        
+        <p>Onde:</p>
+        <ul>
+          <li><span class="highlight">m</span> é a massa do objeto (kg)</li>
+          <li><span class="highlight">a</span> é a aceleração (m/s²)</li>
+          <li><span class="highlight">k</span> é a constante elástica (N/m)</li>
+          <li><span class="highlight">x</span> é o deslocamento (m)</li>
+        </ul>
+        
+        <p>Esta equação descreve como a aceleração é proporcional ao deslocamento, mas em sentido oposto.</p>
+        
+        <div class="example">
+          <h3>Período de Oscilação</h3>
+          <p>O período T de oscilação de um sistema massa-mola é dado por:</p>
+          <div class="formula">T = 2π × √(m/k)</div>
+          <p>Isso significa que o período aumenta com a massa e diminui com o aumento da constante elástica.</p>
+        </div>
+      </div>
+
+      <div class="explanation-content">
+        <h2>Energia no Sistema Massa-Mola</h2>
+        
+        <p>Durante a oscilação de um sistema massa-mola, ocorre uma conversão contínua entre energia potencial e energia cinética:</p>
+        
+        <ul>
+          <li><span class="highlight">Energia Potencial Elástica</span>: Máxima nos pontos de máxima deformação da mola, onde a velocidade é zero</li>
+          <li><span class="highlight">Energia Cinética</span>: Máxima na posição de equilíbrio, onde a velocidade é máxima</li>
+          <li><span class="highlight">Energia Total</span>: Permanece constante em um sistema ideal sem atrito</li>
+        </ul>
+        
+        <div class="formula">
+          Energia Potencial: E<sub>p</sub> = ½ × k × x²
+        </div>
+        
+        <div class="formula">
+          Energia Cinética: E<sub>c</sub> = ½ × m × v²
+        </div>
+        
+        <div class="formula">
+          Energia Total: E<sub>total</sub> = E<sub>p</sub> + E<sub>c</sub> = ½ × k × A²
+        </div>
+        
+        <p>Onde A é a amplitude do movimento (deslocamento máximo).</p>
+        
+        <p>Em sistemas reais, a energia total diminui gradualmente devido ao amortecimento (atrito com o ar, resistência interna da mola, etc.).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Botão de ajuda flutuante -->
+  <button class="help-button" id="helpButton">?</button>
+
+  <!-- Painel de ajuda -->
+  <div class="help-panel" id="helpPanel">
+    <button class="close-btn" id="closeHelp">&times;</button>
+    <h2>💡 Como Usar o Simulador</h2>
+    
+    <h3>Controles Interativos</h3>
+    <p>Você pode interagir diretamente com o sistema massa-mola:</p>
+    <ul>
+      <li><strong>Arraste o bloco</strong> para esticar ou comprimir a mola</li>
+      <li><strong>Ajuste os parâmetros</strong> para ver como afetam o movimento</li>
+      <li><strong>Observe os gráficos</strong> para analisar o comportamento do sistema</li>
+    </ul>
+    
+    <h3>Parâmetros Ajustáveis</h3>
+    <ul>
+      <li><strong>Constante Elástica (k):</strong> Rigidez da mola (maior k = mola mais rígida)</li>
+      <li><strong>Massa:</strong> Massa do bloco preso à mola</li>
+      <li><strong>Amortecimento:</strong> Simula a perda de energia por atrito</li>
+      <li><strong>Gravidade:</strong> Afeta o equilíbrio do sistema</li>
+    </ul>
+    
+    <h3>Fórmulas Importantes</h3>
+    <div class="formula">F = -k × x</div>
+    <p>Lei de Hooke - Força é proporcional ao deslocamento</p>
+    
+    <div class="formula">T = 2π × √(m/k)</div>
+    <p>Período de oscilação do sistema massa-mola</p>
+    
+    <p style="margin-top: 15px; font-style: italic; text-align: center;">
+      Explore diferentes configurações e observe como o sistema se comporta!
+    </p>
+  </div>
+
+  <footer>Simulação Interativa — Lei de Hooke • Desenvolvido para experimentação educativa</footer>
+
+  <script>
+    // Canvas and context
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Charts variables
+    let energyChart, positionChart;
+
+    // Chart data buffers
+    const chartData = { time: [], kinetic: [], potential: [], total: [], position: [], velocity: [] };
+    const maxDataPoints = 200;
+
+    // Controls
+    const kRange = document.getElementById('kRange');
+    const kNum = document.getElementById('kNum');
+    const massRange = document.getElementById('massRange');
+    const massNum = document.getElementById('massNum');
+    const dampingInput = document.getElementById('damping');
+    const gravityInput = document.getElementById('gravity');
+    const speedInput = document.getElementById('speed');
+    const eqLenNum = document.getElementById('eqLenNum');
+
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const trailChk = document.getElementById('trail');
+    const gridChk = document.getElementById('grid');
+    const touchHintToggle = document.getElementById('touchHintToggle');
+    const touchHint = document.getElementById('touchHint');
+
+    // Info displays
+    const xVal = document.getElementById('xVal');
+    const vVal = document.getElementById('vVal');
+    const fVal = document.getElementById('fVal');
+    const peVal = document.getElementById('peVal');
+
+    // Help elements
+    const helpButton = document.getElementById('helpButton');
+    const helpPanel = document.getElementById('helpPanel');
+    const closeHelp = document.getElementById('closeHelp');
+
+    // Simulation state
+    let running = false;
+    let lastTime = null;
+    let trailPoints = [];
+    let chartTime = 0;
+    let maxEnergy = 1;
+
+    // Touch interaction state
+    let isDragging = false;
+    let touchHintTimeout = null;
+
+    // Spring state
+    let state = {
+      x: 0,           // displacement from equilibrium (m)
+      v: 0,           // velocity (m/s)
+      k: parseFloat(kRange.value),  // spring constant (N/m)
+      m: parseFloat(massRange.value), // mass (kg)
+      damping: parseFloat(dampingInput.value),
+      gravity: parseFloat(gravityInput.value),
+      speed: parseFloat(speedInput.value),
+      eqLength: parseFloat(eqLenNum.value)  // equilibrium length (m)
+    };
+
+    // Resize canvas properly for high-dpi
+    function resizeCanvas(){
+      const ratio = devicePixelRatio || 1;
+      canvas.width = canvas.clientWidth * ratio;
+      canvas.height = canvas.clientHeight * ratio;
+      ctx.setTransform(ratio,0,0,ratio,0,0);
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const id = tab.getAttribute('data-tab');
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(id + '-tab').classList.add('active');
+        
+        // Animate content when switching to explanation tab
+        if (id === 'explanation') {
+          document.querySelectorAll('.explanation-content').forEach((content, index) => {
+            content.style.animation = `slideUp 0.6s ease-out ${index * 0.1}s both`;
+          });
+        }
+      });
+    });
+
+    // Help panel functionality
+    helpButton.addEventListener('click', () => {
+      helpPanel.classList.toggle('active');
+    });
+
+    closeHelp.addEventListener('click', () => {
+      helpPanel.classList.remove('active');
+    });
+
+    // Close help panel when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!helpPanel.contains(e.target) && e.target !== helpButton) {
+        helpPanel.classList.remove('active');
+      }
+    });
+
+    // Touch hint toggle
+    touchHintToggle.addEventListener('change', () => {
+      if (touchHintToggle.checked) {
+        touchHint.style.display = 'block';
+        // Auto-hide after 5 seconds
+        clearTimeout(touchHintTimeout);
+        touchHintTimeout = setTimeout(() => {
+          touchHint.style.display = 'none';
+          touchHintToggle.checked = false;
+        }, 5000);
+      } else {
+        touchHint.style.display = 'none';
+      }
+    });
+
+    // Touch interaction handlers
+    function handleTouchStart(e) {
+      e.preventDefault();
+      
+      if (e.touches.length === 1) {
+        // Single touch - check if we're touching the mass
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
+        const y = (touch.clientY - rect.top) * (canvas.height / rect.height);
+        
+        const origin = { x: 100, y: canvas.height / (2 * (devicePixelRatio || 1)) };
+        const scale = Math.min(canvas.clientWidth / 8, 140);
+        
+        const massX = origin.x + state.eqLength * scale + state.x * scale;
+        const massY = origin.y;
+        const massSize = 20 + (state.m - 1) * 4;
+        
+        const distance = Math.sqrt((x - massX) ** 2 + (y - massY) ** 2);
+        
+        if (distance < massSize * 2) {
+          isDragging = true;
+          running = false;
+        }
+      }
+    }
+
+    function handleTouchMove(e) {
+      e.preventDefault();
+      
+      if (isDragging && e.touches.length === 1) {
+        // Drag the mass
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const x = (touch.clientX - rect.left) * (canvas.width / rect.width);
+        
+        const origin = { x: 100, y: canvas.height / (2 * (devicePixelRatio || 1)) };
+        const scale = Math.min(canvas.clientWidth / 8, 140);
+        
+        // Calculate displacement from equilibrium
+        state.x = (x - origin.x - state.eqLength * scale) / scale;
+        state.v = 0; // when user sets position, velocity zeroed
+        
+        renderOnce();
+      }
+    }
+
+    function handleTouchEnd(e) {
+      if (e.touches.length === 0) {
+        // All touches ended
+        isDragging = false;
+        
+        // If we were dragging, start the simulation
+        if (!isDragging) {
+          running = true;
+        }
+      }
+    }
+
+    // Add touch event listeners
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd);
+    canvas.addEventListener('touchcancel', handleTouchEnd);
+
+    // Mouse interaction for desktop
+    let isMouseDown = false;
+
+    canvas.addEventListener('mousedown', (e) => {
+      isMouseDown = true;
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+      
+      const origin = { x: 100, y: canvas.height / (2 * (devicePixelRatio || 1)) };
+      const scale = Math.min(canvas.clientWidth / 8, 140);
+      
+      const massX = origin.x + state.eqLength * scale + state.x * scale;
+      const massY = origin.y;
+      const massSize = 20 + (state.m - 1) * 4;
+      
+      const distance = Math.sqrt((x - massX) ** 2 + (y - massY) ** 2);
+      
+      if (distance < massSize * 2) {
+        isDragging = true;
+        running = false;
+      }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (isDragging && isMouseDown) {
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+        
+        const origin = { x: 100, y: canvas.height / (2 * (devicePixelRatio || 1)) };
+        const scale = Math.min(canvas.clientWidth / 8, 140);
+        
+        // Calculate displacement from equilibrium
+        state.x = (x - origin.x - state.eqLength * scale) / scale;
+        state.v = 0; // when user sets position, velocity zeroed
+        
+        renderOnce();
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      isMouseDown = false;
+      if (isDragging) {
+        isDragging = false;
+        running = true;
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      isMouseDown = false;
+      if (isDragging) {
+        isDragging = false;
+        running = true;
+      }
+    });
+
+    // Charts initialization
+    function initCharts() {
+      const energyCtx = document.getElementById('energyChart').getContext('2d');
+      energyChart = new Chart(energyCtx, {
+        type: 'line',
+        data: {
+          labels: chartData.time,
+          datasets: [
+            { label: 'Energia Cinética', data: chartData.kinetic, borderColor: '#00bfff', backgroundColor: 'transparent', tension: .3 },
+            { label: 'Energia Potencial', data: chartData.potential, borderColor: '#ff2070', backgroundColor: 'transparent', tension: .3 },
+            { label: 'Energia Total', data: chartData.total, borderColor: '#8a2be2', backgroundColor: 'transparent', tension: .3, borderDash: [5,5] }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: {
+            x: { ticks: { color: '#cbd5e1' }, title: { display: true, text: 'Tempo (s)', color: '#9ca3af' } },
+            y: { ticks: { color: '#cbd5e1' }, title: { display: true, text: 'Energia (J)', color: '#9ca3af' } }
+          },
+          plugins: { legend: { labels: { color: '#e6eef8' } } }
+        }
+      });
+
+      const positionCtx = document.getElementById('positionChart').getContext('2d');
+      positionChart = new Chart(positionCtx, {
+        type: 'line',
+        data: {
+          labels: chartData.time,
+          datasets: [
+            { label: 'Posição (m)', data: chartData.position, borderColor: '#8a2be2', backgroundColor: 'transparent', tension: .3 },
+            { label: 'Velocidade (m/s)', data: chartData.velocity, borderColor: '#ff2070', backgroundColor: 'transparent', tension: .3, borderDash: [4,4] }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: {
+            x: { ticks: { color: '#cbd5e1' }, title: { display: true, text: 'Tempo (s)', color: '#9ca3af' } },
+            y: { ticks: { color: '#cbd5e1' }, title: { display: true, text: 'Posição/Velocidade', color: '#9ca3af' } }
+          },
+          plugins: { legend: { labels: { color: '#e6eef8' } } }
+        }
+      });
+    }
+
+    // Update params from controls
+    function updateParams() {
+      state.k = parseFloat(kRange.value);
+      state.m = parseFloat(massRange.value);
+      state.damping = parseFloat(dampingInput.value);
+      state.gravity = parseFloat(gravityInput.value);
+      state.speed = parseFloat(speedInput.value);
+      state.eqLength = parseFloat(eqLenNum.value);
+
+      state.v = 0;
+      trailPoints = [];
+    }
+
+    // Attach input listeners
+    [
+      kRange, kNum, massRange, massNum, dampingInput, gravityInput, speedInput, eqLenNum
+    ].forEach(el => el.addEventListener('input', () => { 
+      // Sync kRange and kNum
+      if (el === kRange) kNum.value = kRange.value;
+      if (el === kNum) kRange.value = kNum.value;
+      
+      // Sync massRange and massNum
+      if (el === massRange) massNum.value = massRange.value;
+      if (el === massNum) massRange.value = massNum.value;
+      
+      updateParams(); 
+      if (!running) renderOnce(); 
+    }));
+
+    // Buttons
+    startBtn.onclick = () => { running = true; lastTime = null; chartTime = 0; clearChartBuffers(); };
+    pauseBtn.onclick = () => { running = false; };
+    resetBtn.onclick = () => { resetSimulation(); };
+
+    // Export data
+    exportBtn.addEventListener('click', () => {
+      let csv = 't,x,v,F,Ep,Ec\n';
+      for(let i = 0; i < chartData.time.length; i++) {
+        const F = -state.k * chartData.position[i];
+        const Ep = 0.5 * state.k * chartData.position[i] * chartData.position[i];
+        const Ec = 0.5 * state.m * chartData.velocity[i] * chartData.velocity[i];
+        csv += `${chartData.time[i]},${chartData.position[i]},${chartData.velocity[i]},${F},${Ep},${Ec}\n`;
+      }
+      const blob = new Blob([csv], {type:'text/csv'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); 
+      a.href = url; 
+      a.download = 'hooke_timeseries.csv'; 
+      a.click(); 
+      URL.revokeObjectURL(url);
+    });
+
+    function clearChartBuffers(){
+      chartData.time.length = 0; 
+      chartData.kinetic.length = 0; 
+      chartData.potential.length = 0; 
+      chartData.total.length = 0; 
+      chartData.position.length = 0; 
+      chartData.velocity.length = 0;
+      if (energyChart) energyChart.update();
+      if (positionChart) positionChart.update();
+    }
+
+    function resetSimulation(){
+      running = false;
+      state.x = 0;
+      state.v = 0;
+      chartTime = 0;
+      trailPoints = [];
+      clearChartBuffers();
+      renderOnce();
+    }
+
+    // Physics update
+    function updatePhysics(dt) {
+      // Hooke's Law: F = -k*x
+      // With damping: F = -k*x - c*v
+      // Newton's 2nd Law: m*a = F
+      // So: a = (-k*x - c*v) / m
+      
+      const a = (-state.k * state.x - state.damping * state.v) / state.m;
+      
+      // Semi-implicit Euler integration
+      state.v += a * dt * state.speed;
+      state.x += state.v * dt * state.speed;
+    }
+
+    // Energies
+    function calculateEnergies(){
+      const potential = 0.5 * state.k * state.x * state.x;
+      const kinetic = 0.5 * state.m * state.v * state.v;
+      return { kinetic, potential, total: kinetic + potential };
+    }
+
+    // Update info display
+    function updateInfo(){
+      const F = -state.k * state.x;
+      const energies = calculateEnergies();
+      
+      xVal.textContent = state.x.toFixed(3);
+      vVal.textContent = state.v.toFixed(3);
+      fVal.textContent = F.toFixed(3);
+      peVal.textContent = energies.potential.toFixed(3);
+    }
+
+    // Update chart buffers and refresh charts
+    function pushChartData(energies){
+      if (chartData.time.length >= maxDataPoints) {
+        chartData.time.shift(); 
+        chartData.kinetic.shift(); 
+        chartData.potential.shift(); 
+        chartData.total.shift(); 
+        chartData.position.shift(); 
+        chartData.velocity.shift();
+      }
+      chartData.time.push(chartTime.toFixed(2));
+      chartData.kinetic.push(energies.kinetic);
+      chartData.potential.push(energies.potential);
+      chartData.total.push(energies.total);
+      chartData.position.push(state.x);
+      chartData.velocity.push(state.v);
+
+      if (energyChart) energyChart.update();
+      if (positionChart) positionChart.update();
+    }
+
+    // Drawing the simulation
+    function renderOnce(){
+      // ensure canvas size matches CSS
+      resizeCanvas();
+
+      // Clear
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      // Visual grid
+      if (gridChk.checked) {
+        ctx.save();
+        ctx.globalAlpha = 0.06;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        const gridSize = 60;
+        for (let x = 0; x < canvas.width; x += gridSize) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+        }
+        for (let y = 0; y < canvas.height; y += gridSize) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      const ratio = devicePixelRatio || 1;
+      const origin = { x: 100, y: canvas.height / (2 * ratio) }; // wall position
+      const scale = Math.min(canvas.clientWidth / 8, 140); // pixels per meter approx.
+
+      // Draw wall
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.fillRect(origin.x - 20, origin.y - 60, 20, 120);
+      
+      // Draw equilibrium position marker
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(origin.x + state.eqLength * scale, origin.y - 50);
+      ctx.lineTo(origin.x + state.eqLength * scale, origin.y + 50);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // Calculate positions
+      const springStartX = origin.x;
+      const springEndX = origin.x + state.eqLength * scale + state.x * scale;
+      const springY = origin.y;
+      
+      // Draw spring
+      ctx.strokeStyle = 'rgba(125,211,252,0.95)';
+      ctx.lineWidth = 3;
+      
+      // Draw spring as a coil
+      const coils = 12;
+      const amplitude = 15;
+      const springLength = springEndX - springStartX;
+      
+      ctx.beginPath();
+      ctx.moveTo(springStartX, springY);
+      
+      for (let i = 0; i <= coils; i++) {
+        const x = springStartX + (i / coils) * springLength;
+        const y = springY + amplitude * Math.sin(i * 0.5) * (1 - Math.min(1, Math.abs(i - coils/2) / (coils/2)));
+        ctx.lineTo(x, y);
+      }
+      
+      ctx.stroke();
+      
+      // Draw mass
+      const massSize = 20 + (state.m - 1) * 4;
+      ctx.fillStyle = 'rgba(125,211,252,0.95)';
+      ctx.fillRect(springEndX - massSize/2, springY - massSize/2, massSize, massSize);
+      
+      // Draw trail if enabled
+      if (trailChk.checked && running) {
+        trailPoints.push({x: springEndX, y: springY});
+        if (trailPoints.length > 100) trailPoints.shift();
+        
+        if (trailPoints.length > 1) {
+          ctx.beginPath();
+          ctx.moveTo(trailPoints[0].x, trailPoints[0].y);
+          for (let i = 1; i < trailPoints.length; i++) {
+            ctx.lineTo(trailPoints[i].x, trailPoints[i].y);
+          }
+          ctx.strokeStyle = 'rgba(255,200,80,0.6)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Main draw loop
+    function loop(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      const dt = Math.min(0.03, (timestamp - lastTime) / 1000);
+      lastTime = timestamp;
+
+      if (running && !isDragging) {
+        updatePhysics(dt);
+        chartTime += dt * state.speed;
+        const energies = calculateEnergies();
+        // Track max energy for normalization if desired
+        if (energies.total > maxEnergy) maxEnergy = energies.total;
+        pushChartData(energies);
+      }
+
+      renderOnce();
+      updateInfo();
+      requestAnimationFrame(loop);
+    }
+
+    // initial setup
+    function start() {
+      resizeCanvas();
+      initCharts();
+      updateParams();
+      renderOnce();
+      requestAnimationFrame(loop);
+      
+      // Auto-hide touch hint after 5 seconds
+      touchHintTimeout = setTimeout(() => {
+        touchHint.style.display = 'none';
+      }, 5000);
+    }
+
+    start();
+
+  </script>
+</body>
+</html>

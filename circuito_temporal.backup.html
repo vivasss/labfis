@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Circuitos Elétricos Interativo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #container {
+            display: grid;
+            grid-template-columns: 250px 1fr 280px;
+            grid-template-rows: 70px 1fr 250px;
+            height: 100vh;
+            gap: 12px;
+            padding: 12px;
+        }
+
+        #header {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 15px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 1.6em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .tool-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.85em;
+        }
+
+        .tool-btn:hover {
+            background: rgba(102, 126, 234, 0.3);
+            border-color: #667eea;
+        }
+
+        .tool-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: #667eea;
+        }
+
+        #componentPalette {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto;
+        }
+
+        #canvas-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        #circuitCanvas {
+            display: block;
+            background: repeating-linear-gradient(0deg,
+                    rgba(255, 255, 255, 0.03) 0px,
+                    transparent 1px,
+                    transparent 20px,
+                    rgba(255, 255, 255, 0.03) 21px),
+                repeating-linear-gradient(90deg,
+                    rgba(255, 255, 255, 0.03) 0px,
+                    transparent 1px,
+                    transparent 20px,
+                    rgba(255, 255, 255, 0.03) 21px);
+            cursor: crosshair;
+        }
+
+        #propertiesPanel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-y: auto;
+        }
+
+        #graphPanel {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 15px;
+        }
+
+        .section-title {
+            font-size: 1em;
+            color: #667eea;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .component-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: grab;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .component-item:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: #667eea;
+            transform: translateX(5px);
+        }
+
+        .component-item:active {
+            cursor: grabbing;
+        }
+
+        .component-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+        }
+
+        .property-group {
+            margin-bottom: 15px;
+        }
+
+        .property-group label {
+            display: block;
+            margin-bottom: 6px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.85em;
+        }
+
+        .property-group input {
+            width: 100%;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: white;
+            font-size: 0.9em;
+        }
+
+        .property-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+        }
+
+        canvas.graph {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+
+        .graph-container {
+            flex: 1;
+        }
+
+        .graph-title {
+            font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 8px;
+        }
+
+        .info-text {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.8em;
+            font-style: italic;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 1200px) {
+            #container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr auto auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <div id="header">
+            <h1>⚡ Editor de Circuitos Interativo</h1>
+            <div class="toolbar">
+                <button class="tool-btn" id="playBtn">▶️ Play</button>
+                <button class="tool-btn" id="pauseBtn">⏸️ Pause</button>
+                <button class="tool-btn" id="resetBtn">🔄 Reset</button>
+                <button class="tool-btn" id="clearBtn">🗑️ Limpar</button>
+            </div>
+        </div>
+
+        <div id="componentPalette">
+            <div class="section-title">Componentes</div>
+            <div class="component-item" data-type="resistor">
+                <div class="component-icon">🔶</div>
+                <div>
+                    <div><strong>Resistor</strong></div>
+                    <div style="font-size: 0.75em; color: rgba(255,255,255,0.6)">Resistência</div>
+                </div>
+            </div>
+            <div class="component-item" data-type="capacitor">
+                <div class="component-icon">⚡</div>
+                <div>
+                    <div><strong>Capacitor</strong></div>
+                    <div style="font-size: 0.75em; color: rgba(255,255,255,0.6)">Armazena carga</div>
+                </div>
+            </div>
+            <div class="component-item" data-type="inductor">
+                <div class="component-icon">🌀</div>
+                <div>
+                    <div><strong>Indutor</strong></div>
+                    <div style="font-size: 0.75em; color: rgba(255,255,255,0.6)">Bobina</div>
+                </div>
+            </div>
+            <div class="component-item" data-type="battery">
+                <div class="component-icon">🔋</div>
+                const width = canvas.width;
+                const height = canvas.height;
+
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.fillRect(0, 0, width, height);
+
+                // Grade
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.lineWidth = 1;
+                for (let i = 0; i <= 5; i++) { const y=(i / 5) * height; ctx.beginPath(); ctx.moveTo(0, y);
+                    ctx.lineTo(width, y); ctx.stroke(); } if (xData.length < 2) return; const minX=Math.min(...xData);
+                    const maxX=Math.max(...xData); const minY=Math.min(0, ...yData); const maxY=Math.max(...yData);
+                    ctx.strokeStyle=color; ctx.lineWidth=2; ctx.beginPath(); xData.forEach((x, i)=> {
+                    const px = ((x - minX) / (maxX - minX || 1)) * width;
+                    const py = height - ((yData[i] - minY) / (maxY - minY || 1)) * height;
+
+                    if (i === 0) {
+                    ctx.moveTo(px, py);
+                    } else {
+                    ctx.lineTo(px, py);
+                    }
+                    });
+
+                    ctx.stroke();
+                    }
+
+                    // ==========================================
+                    // RENDERIZAÇÃO
+                    // ==========================================
+                    function render() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                    // Desenhar fios primeiro
+                    wires.forEach(wire => wire.draw(ctx));
+
+                    // Desenhar fio em progresso
+                    if (wireStart && hoveredTerminal) {
+                    const t1 = wireStart.component.terminals[wireStart.terminalId];
+                    const t2 = hoveredTerminal.component.terminals[hoveredTerminal.terminalId];
+
+                    ctx.beginPath();
+                    ctx.moveTo(t1.x, t1.y);
+                    ctx.lineTo(t2.x, t2.y);
+                    ctx.strokeStyle = 'rgba(102, 126, 234, 0.5)';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    }
+
+                    // Desenhar componentes
+                    components.forEach(comp => comp.draw(ctx));
+                    }
+
+                    // ==========================================
+                    // LOOP DE ANIMAÇÃO
+                    // ==========================================
+                    function animate() {
+                    simulateCircuit();
+                    render();
+
+                    // Atualizar gráficos
+                    drawGraph('voltageGraph', timeData, voltageData, '#667eea', 'Tensão (V)');
+                    drawGraph('currentGraph', timeData, currentData, '#764ba2', 'Corrente (mA)');
+
+                    requestAnimationFrame(animate);
+                    }
+
+                    // Iniciar
+                    updatePropertiesPanel();
+                    render();
+                    animate();
+                    </script>
+</body>
+
+</html>
